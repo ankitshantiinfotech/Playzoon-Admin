@@ -1,0 +1,68 @@
+import type { SimpleMasterDataItem } from "../shared/SimpleMasterDataPage";
+
+export const enquiryCategoryMockData: SimpleMasterDataItem[] = [
+  {
+    id: "ENQ-1001",
+    name: "General Inquiry",
+    status: "active",
+    createdAt: "2024-01-20",
+    updatedAt: "2024-06-10",
+    isAssociated: true,
+  },
+  {
+    id: "ENQ-1002",
+    name: "Booking Issue",
+    status: "active",
+    createdAt: "2024-01-20",
+    updatedAt: "2024-06-10",
+    isAssociated: true,
+  },
+  {
+    id: "ENQ-1003",
+    name: "Payment Problem",
+    status: "active",
+    createdAt: "2024-02-18",
+    updatedAt: "2024-07-02",
+    isAssociated: true,
+  },
+  {
+    id: "ENQ-1004",
+    name: "Account Issue",
+    status: "active",
+    createdAt: "2024-02-18",
+    updatedAt: "2024-07-02",
+    isAssociated: false,
+  },
+  {
+    id: "ENQ-1005",
+    name: "Facility Complaint",
+    status: "active",
+    createdAt: "2024-03-25",
+    updatedAt: "2024-08-14",
+    isAssociated: true,
+  },
+  {
+    id: "ENQ-1006",
+    name: "Coach Feedback",
+    status: "inactive",
+    createdAt: "2024-03-25",
+    updatedAt: "2024-08-14",
+    isAssociated: false,
+  },
+  {
+    id: "ENQ-1007",
+    name: "Technical Support",
+    status: "active",
+    createdAt: "2024-04-30",
+    updatedAt: "2024-09-05",
+    isAssociated: true,
+  },
+  {
+    id: "ENQ-1008",
+    name: "Partnership",
+    status: "active",
+    createdAt: "2024-04-30",
+    updatedAt: "2024-09-05",
+    isAssociated: false,
+  },
+];

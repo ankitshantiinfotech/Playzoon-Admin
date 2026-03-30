@@ -1,0 +1,78 @@
+// ─── Start of Week Management — Mock Data ───────────────────────────────────
+
+import type { StartOfWeekEntry } from "./types";
+
+export const INITIAL_START_OF_WEEK_DATA: StartOfWeekEntry[] = [
+  {
+    id: "sow-1",
+    country: "Saudi Arabia",
+    countryCode: "SA",
+    startOfWeek: "Sunday",
+    isActive: true,
+    createdAt: "2024-01-15",
+    updatedAt: "2024-06-01",
+  },
+  {
+    id: "sow-2",
+    country: "United Arab Emirates",
+    countryCode: "AE",
+    startOfWeek: "Sunday",
+    isActive: true,
+    createdAt: "2024-01-15",
+    updatedAt: "2024-06-01",
+  },
+  {
+    id: "sow-3",
+    country: "Bahrain",
+    countryCode: "BH",
+    startOfWeek: "Sunday",
+    isActive: true,
+    createdAt: "2024-03-01",
+    updatedAt: "2024-06-01",
+  },
+  {
+    id: "sow-4",
+    country: "Qatar",
+    countryCode: "QA",
+    startOfWeek: "Sunday",
+    isActive: true,
+    createdAt: "2024-03-01",
+    updatedAt: "2024-06-01",
+  },
+  {
+    id: "sow-5",
+    country: "Kuwait",
+    countryCode: "KW",
+    startOfWeek: "Sunday",
+    isActive: false,
+    createdAt: "2024-03-01",
+    updatedAt: "2024-06-01",
+  },
+  {
+    id: "sow-6",
+    country: "India",
+    countryCode: "IN",
+    startOfWeek: "Monday",
+    isActive: true,
+    createdAt: "2024-04-10",
+    updatedAt: "2024-07-15",
+  },
+  {
+    id: "sow-7",
+    country: "United Kingdom",
+    countryCode: "GB",
+    startOfWeek: "Monday",
+    isActive: true,
+    createdAt: "2024-04-10",
+    updatedAt: "2024-07-15",
+  },
+  {
+    id: "sow-8",
+    country: "United States",
+    countryCode: "US",
+    startOfWeek: "Sunday",
+    isActive: true,
+    createdAt: "2024-05-20",
+    updatedAt: "2024-08-01",
+  },
+];

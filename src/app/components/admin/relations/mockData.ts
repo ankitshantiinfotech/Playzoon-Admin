@@ -1,0 +1,68 @@
+import type { SimpleMasterDataItem } from "../shared/SimpleMasterDataPage";
+
+export const relationMockData: SimpleMasterDataItem[] = [
+  {
+    id: "REL-1001",
+    name: "Father",
+    status: "active",
+    createdAt: "2024-01-15",
+    updatedAt: "2024-06-20",
+    isAssociated: true,
+  },
+  {
+    id: "REL-1002",
+    name: "Mother",
+    status: "active",
+    createdAt: "2024-01-15",
+    updatedAt: "2024-06-20",
+    isAssociated: true,
+  },
+  {
+    id: "REL-1003",
+    name: "Brother",
+    status: "active",
+    createdAt: "2024-02-10",
+    updatedAt: "2024-07-05",
+    isAssociated: false,
+  },
+  {
+    id: "REL-1004",
+    name: "Sister",
+    status: "active",
+    createdAt: "2024-02-10",
+    updatedAt: "2024-07-05",
+    isAssociated: false,
+  },
+  {
+    id: "REL-1005",
+    name: "Son",
+    status: "active",
+    createdAt: "2024-03-01",
+    updatedAt: "2024-08-12",
+    isAssociated: true,
+  },
+  {
+    id: "REL-1006",
+    name: "Daughter",
+    status: "active",
+    createdAt: "2024-03-01",
+    updatedAt: "2024-08-12",
+    isAssociated: true,
+  },
+  {
+    id: "REL-1007",
+    name: "Spouse",
+    status: "inactive",
+    createdAt: "2024-04-18",
+    updatedAt: "2024-09-01",
+    isAssociated: false,
+  },
+  {
+    id: "REL-1008",
+    name: "Guardian",
+    status: "active",
+    createdAt: "2024-04-18",
+    updatedAt: "2024-09-01",
+    isAssociated: true,
+  },
+];

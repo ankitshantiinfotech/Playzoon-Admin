@@ -1,0 +1,197 @@
+import api from '@/lib/api';
+
+type P = Record<string, unknown>;
+
+export const adminService = {
+  // ── Auth (4) ──────────────────────────────────────────────────────────
+  login: (email: string, password: string) =>
+    api.post('/admin/auth/login', { email, password }).then(r => r.data),
+  forgotPassword: (email: string) =>
+    api.post('/admin/auth/forgot-password', { email }).then(r => r.data),
+  resetPassword: (token: string, password: string) =>
+    api.post('/admin/auth/reset-password', { token, password }).then(r => r.data),
+  logout: () =>
+    api.post('/admin/auth/logout').then(r => r.data),
+
+  // ── Dashboard (1) ────────────────────────────────────────────────────
+  getDashboard: () =>
+    api.get('/admin/dashboard').then(r => r.data),
+
+  // ── Players (7) ──────────────────────────────────────────────────────
+  listPlayers: (params: P) =>
+    api.get('/admin/players', { params }).then(r => r.data),
+  getPlayer: (id: string) =>
+    api.get(`/admin/players/${id}`).then(r => r.data),
+  updatePlayer: (id: string, data: P) =>
+    api.patch(`/admin/players/${id}`, data).then(r => r.data),
+  bulkPlayerAction: (data: P) =>
+    api.post('/admin/players/bulk-action', data).then(r => r.data),
+  createPlayer: (data: P) =>
+    api.post('/admin/players', data).then(r => r.data),
+  deletePlayer: (id: string) =>
+    api.delete(`/admin/players/${id}`).then(r => r.data),
+  exportPlayers: (data: P) =>
+    api.post('/admin/players/export', data).then(r => r.data),
+
+  // ── Providers (5) ────────────────────────────────────────────────────
+  listProviders: (params: P) =>
+    api.get('/admin/providers', { params }).then(r => r.data),
+  getProvider: (id: string) =>
+    api.get(`/admin/providers/${id}`).then(r => r.data),
+  updateProvider: (id: string, data: P) =>
+    api.patch(`/admin/providers/${id}`, data).then(r => r.data),
+  approveProvider: (id: string, data: P) =>
+    api.patch(`/admin/providers/${id}/onboarding`, data).then(r => r.data),
+  bulkProviderAction: (data: P) =>
+    api.post('/admin/providers/bulk-action', data).then(r => r.data),
+
+  // ── Country Modules (1) ──────────────────────────────────────────────
+  getCountryModules: (params: P) =>
+    api.get('/admin/country-modules', { params }).then(r => r.data),
+
+  // ── Banners (2) ──────────────────────────────────────────────────────
+  listBanners: (params: P) =>
+    api.get('/admin/banners', { params }).then(r => r.data),
+  manageBanner: (data: P) =>
+    api.post('/admin/banners', data).then(r => r.data),
+
+  // ── CMS (1) ──────────────────────────────────────────────────────────
+  listCmsPages: (params: P) =>
+    api.get('/admin/cms/pages', { params }).then(r => r.data),
+
+  // ── Master Data (4) ──────────────────────────────────────────────────
+  listSports: (params: P) =>
+    api.get('/admin/master-data/sports', { params }).then(r => r.data),
+  listCourtTypes: (params: P) =>
+    api.get('/admin/master-data/court-types', { params }).then(r => r.data),
+  listLocations: (params: P) =>
+    api.get('/admin/master-data/locations', { params }).then(r => r.data),
+  listMasterData: (type: string, params: P) =>
+    api.get(`/admin/master-data/${type}`, { params }).then(r => r.data),
+
+  // ── Reviews (3) ──────────────────────────────────────────────────────
+  listReviews: (params: P) =>
+    api.get('/admin/reviews', { params }).then(r => r.data),
+  getReview: (id: string) =>
+    api.get(`/admin/reviews/${id}`).then(r => r.data),
+  updateReview: (id: string, data: P) =>
+    api.patch(`/admin/reviews/${id}`, data).then(r => r.data),
+
+  // ── Enquiries (4) ────────────────────────────────────────────────────
+  listEnquiries: (params: P) =>
+    api.get('/admin/enquiries', { params }).then(r => r.data),
+  getEnquiry: (id: string) =>
+    api.get(`/admin/enquiries/${id}`).then(r => r.data),
+  replyEnquiry: (id: string, data: P) =>
+    api.post(`/admin/enquiries/${id}/reply`, data).then(r => r.data),
+  updateEnquiryStatus: (id: string, data: P) =>
+    api.patch(`/admin/enquiries/${id}/status`, data).then(r => r.data),
+
+  // ── Bank Accounts (2) ────────────────────────────────────────────────
+  listBankAccounts: (params: P) =>
+    api.get('/admin/bank-accounts', { params }).then(r => r.data),
+  approveBankAccount: (id: string, data: P) =>
+    api.patch(`/admin/bank-accounts/${id}`, data).then(r => r.data),
+
+  // ── Facility Requests (2) ────────────────────────────────────────────
+  listFacilityRequests: (params: P) =>
+    api.get('/admin/facility-requests', { params }).then(r => r.data),
+  approveFacilityRequest: (id: string, data: P) =>
+    api.patch(`/admin/facility-requests/${id}`, data).then(r => r.data),
+
+  // ── Settings (4) ─────────────────────────────────────────────────────
+  getSettings: () =>
+    api.get('/admin/settings').then(r => r.data),
+  updateSettings: (data: P) =>
+    api.patch('/admin/settings', data).then(r => r.data),
+  getCommissions: (params: P) =>
+    api.get('/admin/settings/commission', { params }).then(r => r.data),
+  updateCommission: (id: string, data: P) =>
+    api.put(`/admin/settings/commission/${id}`, data).then(r => r.data),
+
+  // ── Sub-Admins (2) ───────────────────────────────────────────────────
+  listSubAdmins: (params: P) =>
+    api.get('/admin/sub-admins', { params }).then(r => r.data),
+  manageSubAdmin: (data: P) =>
+    api.post('/admin/sub-admins', data).then(r => r.data),
+
+  // ── Bookings (3) ─────────────────────────────────────────────────────
+  listBookings: (params: P) =>
+    api.get('/admin/bookings', { params }).then(r => r.data),
+  getBooking: (id: string) =>
+    api.get(`/admin/bookings/${id}`).then(r => r.data),
+  cancelBooking: (id: string, data: P) =>
+    api.post(`/admin/bookings/${id}/cancel`, data).then(r => r.data),
+
+  // ── Tournaments (2) ──────────────────────────────────────────────────
+  listTournaments: (params: P) =>
+    api.get('/admin/tournaments', { params }).then(r => r.data),
+  updateTournament: (id: string, data: P) =>
+    api.patch(`/admin/tournaments/${id}`, data).then(r => r.data),
+
+  // ── Trainings (1) ────────────────────────────────────────────────────
+  listTrainings: (params: P) =>
+    api.get('/admin/trainings', { params }).then(r => r.data),
+
+  // ── Facilities (1) ───────────────────────────────────────────────────
+  listFacilities: (params: P) =>
+    api.get('/admin/facilities', { params }).then(r => r.data),
+
+  // ── Promotions (1) ───────────────────────────────────────────────────
+  listPromotions: (params: P) =>
+    api.get('/admin/promotions', { params }).then(r => r.data),
+
+  // ── Payouts (5) ──────────────────────────────────────────────────────
+  listPayouts: (params: P) =>
+    api.get('/admin/payouts', { params }).then(r => r.data),
+  getPayoutDetail: (id: string) =>
+    api.get(`/admin/payouts/${id}`).then(r => r.data),
+  approvePayout: (id: string) =>
+    api.patch(`/admin/payouts/${id}/approve`).then(r => r.data),
+  rejectPayout: (id: string, data: P) =>
+    api.patch(`/admin/payouts/${id}/reject`, data).then(r => r.data),
+  processPayout: (id: string) =>
+    api.post(`/admin/payouts/${id}/process`).then(r => r.data),
+
+  // ── Push Notifications (3) ───────────────────────────────────────────
+  createPushNotif: (data: P) =>
+    api.post('/admin/push-notifications', data).then(r => r.data),
+  listPushNotifs: (params: P) =>
+    api.get('/admin/push-notifications', { params }).then(r => r.data),
+  getPushNotif: (id: string) =>
+    api.get(`/admin/push-notifications/${id}`).then(r => r.data),
+
+  // ── Wallets (2) ──────────────────────────────────────────────────────
+  getUserWallet: (userId: string) =>
+    api.get(`/admin/wallets/${userId}`).then(r => r.data),
+  getUserTransactions: (userId: string, params: P) =>
+    api.get(`/admin/wallets/${userId}/transactions`, { params }).then(r => r.data),
+
+  // ── Notification Settings (3) ────────────────────────────────────────
+  getNotifSettings: () =>
+    api.get('/admin/notification-settings').then(r => r.data),
+  updateNotifSetting: (eventTypeId: string, data: P) =>
+    api.patch(`/admin/notification-settings/${eventTypeId}`, data).then(r => r.data),
+  toggleNotifSetting: (eventTypeId: string) =>
+    api.patch(`/admin/notification-settings/${eventTypeId}/toggle`).then(r => r.data),
+
+  // ── Reports (2) ──────────────────────────────────────────────────────
+  getReport: (type: string, params: P) =>
+    api.get(`/admin/reports/${type}`, { params }).then(r => r.data),
+  exportReport: (data: P) =>
+    api.post('/admin/reports/export', data).then(r => r.data),
+
+  // ── Payments (4) ─────────────────────────────────────────────────────
+  listPayments: (params: P) =>
+    api.get('/admin/payments', { params }).then(r => r.data),
+  getPayment: (id: string) =>
+    api.get(`/admin/payments/${id}`).then(r => r.data),
+  getReconciliation: (params: P) =>
+    api.get('/admin/payments/reconciliation', { params }).then(r => r.data),
+  ackMismatch: (id: string, data: P) =>
+    api.patch(`/admin/payments/reconciliation/${id}`, data).then(r => r.data),
+
+  // ── Audit (1) ────────────────────────────────────────────────────────
+  getAuditTrail: (params: P) =>
+    api.get('/admin/audit-trail', { params }).then(r => r.data),
+};

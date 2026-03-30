@@ -1,0 +1,68 @@
+import type { SimpleMasterDataItem } from "../shared/SimpleMasterDataPage";
+
+export const specialityMockData: SimpleMasterDataItem[] = [
+  {
+    id: "SPC-1001",
+    name: "Fitness Training",
+    status: "active",
+    createdAt: "2024-01-10",
+    updatedAt: "2024-05-22",
+    isAssociated: true,
+  },
+  {
+    id: "SPC-1002",
+    name: "Strength & Conditioning",
+    status: "active",
+    createdAt: "2024-01-10",
+    updatedAt: "2024-05-22",
+    isAssociated: true,
+  },
+  {
+    id: "SPC-1003",
+    name: "Youth Development",
+    status: "active",
+    createdAt: "2024-02-05",
+    updatedAt: "2024-06-15",
+    isAssociated: false,
+  },
+  {
+    id: "SPC-1004",
+    name: "Tactical Analysis",
+    status: "active",
+    createdAt: "2024-02-05",
+    updatedAt: "2024-06-15",
+    isAssociated: true,
+  },
+  {
+    id: "SPC-1005",
+    name: "Goalkeeping",
+    status: "active",
+    createdAt: "2024-03-12",
+    updatedAt: "2024-07-28",
+    isAssociated: true,
+  },
+  {
+    id: "SPC-1006",
+    name: "Rehabilitation",
+    status: "inactive",
+    createdAt: "2024-03-12",
+    updatedAt: "2024-07-28",
+    isAssociated: false,
+  },
+  {
+    id: "SPC-1007",
+    name: "Speed Training",
+    status: "active",
+    createdAt: "2024-04-20",
+    updatedAt: "2024-08-10",
+    isAssociated: false,
+  },
+  {
+    id: "SPC-1008",
+    name: "Endurance",
+    status: "active",
+    createdAt: "2024-04-20",
+    updatedAt: "2024-08-10",
+    isAssociated: true,
+  },
+];
