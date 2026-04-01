@@ -166,10 +166,14 @@ export function PlayerManagementPage() {
   const fetchPlayers = async (params: Record<string, unknown> = {}) => {
     setIsLoading(true);
     try {
-      const data = await adminService.listPlayers(params);
-      const list = (data.players || data.data || data || []).map(mapApiPlayer);
-      setPlayers(list);
-      setTotalRecords(data.total || data.pagination?.total || list.length);
+      const res = await adminService.listPlayers(params);
+      // API returns { success, data: { players, pagination }, message }
+      // adminService unwraps one level (r.data), so res = { success, data: { players, pagination } }
+      const payload = res?.data || res;
+      const list = (payload?.players || payload || []);
+      const mapped = Array.isArray(list) ? list.map(mapApiPlayer) : [];
+      setPlayers(mapped);
+      setTotalRecords(payload?.pagination?.total_items || payload?.pagination?.total || mapped.length);
     } catch (err: any) {
       console.error("Failed to load players:", err);
       showBanner("error", "Failed to load players. Please try again.");

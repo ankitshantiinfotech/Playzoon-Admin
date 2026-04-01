@@ -209,82 +209,64 @@ export function FacilityProviderFormPage() {
   const initialFormRef = useRef<string>("");
   const emailCheckAbort = useRef<AbortController | null>(null);
 
-  // ── Load edit data ──────────────────────────────────────────
+  // ── Load edit data (wired to API) ───────────────────────────
   useEffect(() => {
     if (!isEditMode || !id) return;
-    const timer = setTimeout(() => {
-      const detail = getFacilityProviderDetail(id);
-      if (!detail) {
-        setNotFound(true);
+    let cancelled = false;
+    import("@/services/admin.service").then(({ adminService }) => {
+      adminService.getProvider(id).then((res: Record<string, unknown>) => {
+        if (cancelled) return;
+        const p = (res as Record<string, unknown>)?.data || (res as Record<string, unknown>)?.provider || res;
+        if (!p || !(p as Record<string, unknown>).id) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+        const pr = p as Record<string, unknown>;
+        const mobile = String(pr.mobile || pr.phone || "");
+        const cc = String(pr.country_code || "+971");
+        const mobileNum = mobile.replace(cc, "").trim();
+        const ps = String(pr.profile_status || "pending");
+        const desig = pr.designation as Record<string, unknown> | string | null;
+        const desigStr = typeof desig === "object" && desig ? String(desig.name_en || "") : String(desig || "");
+        const formData: FacilityFormState = {
+          facilityName: String(pr.business_name || pr.club_name || (pr.first_name || "") + " " + (pr.last_name || "")).trim(),
+          incorporationDate: pr.date_of_incorporation ? new Date(String(pr.date_of_incorporation)) : null,
+          email: String(pr.email || ""),
+          countryCode: cc,
+          mobileNumber: mobileNum,
+          personInCharge: ((pr.first_name || "") + " " + (pr.last_name || "")).trim(),
+          designation: desigStr,
+          landline: String(pr.landline || ""),
+          website: String(pr.website || ""),
+          aboutFacility: String(pr.about || ""),
+          openingTime: "",
+          closingTime: "",
+          workingDays: [],
+          facilityRules: "",
+          cancellationPolicy: "",
+          verificationStatus: ps === "approved" ? "Approved" : ps === "rejected" ? "Rejected" : "Pending",
+          accountStatus: pr.is_locked ? "Locked" : "Unlocked",
+          platformStatus: String(pr.status) === "active" ? "Active" : "Inactive",
+          providerId: String(pr.id || ""),
+          registrationNumber: "",
+          taxId: "",
+          businessLicense: "",
+          createdAt: pr.created_at ? new Date(String(pr.created_at)) : null,
+        };
+        setForm(formData);
+        initialFormRef.current = JSON.stringify({
+          ...formData,
+          incorporationDate: formData.incorporationDate?.toISOString() ?? null,
+          createdAt: formData.createdAt?.toISOString() ?? null,
+        });
+        setEmailCheckState("unique");
         setLoading(false);
-        return;
-      }
-
-      const mobileMatch = detail.mobile.match(/^(\+\d+)\s+(.+)$/);
-      const countryCode = mobileMatch ? mobileMatch[1] : "+971";
-      const mobileNum = mobileMatch ? mobileMatch[2] : detail.mobile;
-
-      const formData: FacilityFormState = {
-        facilityName: detail.facilityName,
-        incorporationDate: detail.incorporationDate,
-        email: detail.email,
-        countryCode,
-        mobileNumber: mobileNum,
-        personInCharge: detail.personInCharge,
-        designation: detail.designation,
-        landline: detail.landline,
-        website: detail.website,
-        aboutFacility: detail.aboutFacility,
-        openingTime: detail.openingTime,
-        closingTime: detail.closingTime,
-        workingDays: detail.workingDays,
-        facilityRules: detail.facilityRules,
-        cancellationPolicy: detail.cancellationPolicy,
-        // ── Status & Verification (US-3.2.3) ──
-        verificationStatus: detail.verificationStatus as "Pending" | "Approved" | "Rejected",
-        accountStatus: detail.accountStatus as "Locked" | "Unlocked",
-        platformStatus: detail.platformStatus as "Active" | "Inactive",
-        // ── Additional Information (US-3.2.4) ──
-        providerId: detail.providerId,
-        registrationNumber: detail.registrationNumber,
-        taxId: detail.taxId,
-        businessLicense: detail.businessLicense,
-        createdAt: detail.createdAt,
-      };
-
-      setForm(formData);
-      initialFormRef.current = JSON.stringify({
-        ...formData,
-        incorporationDate: formData.incorporationDate?.toISOString() ?? null,
-        createdAt: formData.createdAt?.toISOString() ?? null,
+      }).catch(() => {
+        if (!cancelled) { setNotFound(true); setLoading(false); }
       });
-
-      // Pre-load documents for edit (mock)
-      if (detail.verificationStatus === "Approved") {
-        setDocuments([
-          {
-            id: "doc-existing-1",
-            name: "Trade License.pdf",
-            size: 2516582,
-            type: "application/pdf",
-            progress: 100,
-            status: "complete" as const,
-          },
-          {
-            id: "doc-existing-2",
-            name: "Facility Registration.pdf",
-            size: 1153434,
-            type: "application/pdf",
-            progress: 100,
-            status: "complete" as const,
-          },
-        ]);
-      }
-
-      setEmailCheckState("unique"); // Existing = unique for this record
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+    });
+    return () => { cancelled = true; };
   }, [id, isEditMode]);
 
   // ── Track dirty state ───────────────────────────────────────
@@ -524,20 +506,56 @@ export function FacilityProviderFormPage() {
 
     setSubmitting(true);
 
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 1500));
+    try {
+      const { adminService } = await import("@/services/admin.service");
 
-    setSubmitting(false);
-    setIsDirty(false);
+      if (isEditMode) {
+        await adminService.updateProvider(id!, {
+          first_name: form.personInCharge?.split(" ")[0] || form.facilityName,
+          last_name: form.personInCharge?.split(" ").slice(1).join(" ") || "",
+          club_name: form.facilityName,
+          email: form.email,
+          mobile: `${form.countryCode}${form.mobileNumber}`,
+          designation: form.designation || null,
+          landline: form.landline || null,
+          date_of_incorporation: form.incorporationDate?.toISOString() || null,
+        });
+        toast.success("Facility provider updated successfully.");
+        navigate(`/providers/facility/${id}`);
+      } else {
+        await adminService.createProvider({
+          first_name: form.personInCharge?.split(" ")[0] || form.facilityName,
+          last_name: form.personInCharge?.split(" ").slice(1).join(" ") || "",
+          email: form.email,
+          country_code: form.countryCode,
+          mobile: form.mobileNumber,
+          provider_type: "facility_provider",
+          club_name: form.facilityName,
+          person_in_charge: form.personInCharge,
+          designation_id: form.designation || null,
+          landline: form.landline || null,
+          date_of_incorporation: form.incorporationDate?.toISOString() || null,
+        });
+        toast.success("Facility provider created successfully.");
+        navigate("/providers");
+      }
 
-    if (isEditMode) {
-      toast.success("Facility provider updated successfully.");
-      navigate(`/providers/facility/${id}`);
-    } else {
-      toast.success("Facility provider created successfully.");
-      navigate("/providers");
+      setIsDirty(false);
+    } catch (err: unknown) {
+      const errResp = (err as { response?: { data?: { message?: string; error?: { details?: { field?: string; message?: string }[] } } } })?.response?.data;
+      const details = errResp?.error?.details;
+      if (details && Array.isArray(details) && details.length > 0) {
+        // Show each field error as a toast and highlight fields
+        details.forEach((d: { field?: string; message?: string }) => {
+          toast.error(`${d.field || 'Error'}: ${d.message || 'Invalid value'}`);
+        });
+      } else {
+        toast.error(errResp?.message || "Failed to save provider.");
+      }
+    } finally {
+      setSubmitting(false);
     }
-  }, [validateAll, emailCheckState, isEditMode, navigate, id]);
+  }, [validateAll, emailCheckState, isEditMode, navigate, id, form]);
 
   // ── Cancel ──────────────────────────────────────────────────
   const [cancelDialogOpen, setCancelDialogOpen] = useState(false);

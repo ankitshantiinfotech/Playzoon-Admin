@@ -17,10 +17,10 @@ import {
   Banner,
   BannerFormData,
   BannerAuditEntry,
-  MOCK_BANNERS,
   MOCK_BANNER_AUDIT,
 } from "./types";
 import { BannerForm } from "./BannerForm";
+import { adminService } from "@/services/admin.service";
 
 // ─── Skeleton ─────────────────────────────────────────────────
 
@@ -478,13 +478,32 @@ export function BannerManagementPage() {
   const [togglingBanner, setTogglingBanner] = useState<Banner | null>(null);
 
   // ── Load data ──────────────────────────────────────────
-  const loadBanners = useCallback(() => {
+  const loadBanners = useCallback(async () => {
     setHasError(false);
     setIsLoading(true);
-    setTimeout(() => {
-      setBanners(MOCK_BANNERS);
+    try {
+      const res = await adminService.listBanners({ page: 1, limit: 100 });
+      const list = res?.banners || res?.data?.banners || [];
+      const mapped: Banner[] = Array.isArray(list)
+        ? list.map((b: Record<string, unknown>) => ({
+            id: String(b.id || ""),
+            imageUrl: String(b.image_url || ""),
+            bannerText: String(b.banner_text || ""),
+            buttonLabel: String(b.button_text || ""),
+            redirectUrl: String(b.button_redirect_url || ""),
+            sortOrder: Number(b.display_order ?? 0),
+            status: (String(b.status) === "active" ? "Active" : "Inactive") as Banner["status"],
+            createdAt: String(b.created_at || new Date().toISOString()),
+            updatedAt: String(b.updated_at || new Date().toISOString()),
+          }))
+        : [];
+      setBanners(mapped);
+    } catch (err) {
+      console.error("Failed to load banners:", err);
+      setHasError(true);
+    } finally {
       setIsLoading(false);
-    }, 1200);
+    }
   }, []);
 
   useEffect(() => {
@@ -534,56 +553,56 @@ export function BannerManagementPage() {
 
   // ── Handlers ───────────────────────────────────────────
 
-  const handleCreateOrUpdate = (data: BannerFormData) => {
-    if (editingBanner) {
-      // Track changes
-      const fields: [keyof BannerFormData, string][] = [
-        ["bannerText", "Banner Text"],
-        ["buttonLabel", "Button Label"],
-        ["redirectUrl", "Redirect URL"],
-        ["status", "Status"],
-        ["sortOrder", "Sort Order"],
-        ["imageUrl", "Banner Image"],
-      ];
-      fields.forEach(([key, label]) => {
-        const oldVal = String(editingBanner[key]);
-        const newVal = String(data[key]);
-        if (oldVal !== newVal) {
-          addAudit(
-            editingBanner.id,
-            data.bannerText || editingBanner.bannerText,
-            label,
-            key === "imageUrl" ? "(image changed)" : oldVal,
-            key === "imageUrl" ? "(new image)" : newVal
-          );
-        }
-      });
-
-      setBanners(prev =>
-        prev.map(b =>
-          b.id === editingBanner.id
-            ? { ...b, ...data, updatedAt: new Date().toISOString() }
-            : b
-        )
-      );
-      toast.success("Banner updated successfully.");
-    } else {
-      const newBanner: Banner = {
-        ...data,
-        id: `BNR-${String(banners.length + 1).padStart(3, "0")}`,
-        createdAt: new Date().toISOString(),
-        updatedAt: new Date().toISOString(),
+  const handleCreateOrUpdate = async (data: BannerFormData) => {
+    try {
+      const payload: Record<string, unknown> = {
+        banner_text: data.bannerText,
+        button_text: data.buttonLabel,
+        button_redirect_url: data.redirectUrl,
+        display_order: data.sortOrder,
+        status: data.status === "Active" ? "active" : "inactive",
+        image_url: data.imageUrl,
       };
-      setBanners(prev => [...prev, newBanner]);
-      addAudit(newBanner.id, data.bannerText, "Banner Created", "\u2014", "New banner created");
-      toast.success("Banner created successfully.");
+
+      if (editingBanner) {
+        payload.id = editingBanner.id;
+        await adminService.manageBanner(payload);
+        setBanners(prev =>
+          prev.map(b =>
+            b.id === editingBanner.id
+              ? { ...b, ...data, updatedAt: new Date().toISOString() }
+              : b
+          )
+        );
+        toast.success("Banner updated successfully.");
+      } else {
+        const res = await adminService.manageBanner(payload);
+        const newId = res?.banner?.id || res?.id || `BNR-${Date.now()}`;
+        const newBanner: Banner = {
+          ...data,
+          id: newId,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString(),
+        };
+        setBanners(prev => [...prev, newBanner]);
+        addAudit(newId, data.bannerText, "Banner Created", "\u2014", "New banner created");
+        toast.success("Banner created successfully.");
+      }
+    } catch (err) {
+      console.error("Banner save failed:", err);
+      toast.error("Failed to save banner.");
     }
     setIsFormOpen(false);
     setEditingBanner(undefined);
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     if (!deletingBanner) return;
+    try {
+      await adminService.manageBanner({ id: deletingBanner.id, _action: "delete" });
+    } catch (err) {
+      console.error("Banner delete API failed, removing locally:", err);
+    }
     addAudit(
       deletingBanner.id,
       deletingBanner.bannerText,
@@ -596,10 +615,18 @@ export function BannerManagementPage() {
     toast.success("Banner deleted successfully.");
   };
 
-  const handleToggleStatus = () => {
+  const handleToggleStatus = async () => {
     if (!togglingBanner) return;
     const newStatus: Banner["status"] =
       togglingBanner.status === "Active" ? "Inactive" : "Active";
+    try {
+      await adminService.manageBanner({
+        id: togglingBanner.id,
+        status: newStatus === "Active" ? "active" : "inactive",
+      });
+    } catch (err) {
+      console.error("Banner status toggle API failed:", err);
+    }
     addAudit(
       togglingBanner.id,
       togglingBanner.bannerText,

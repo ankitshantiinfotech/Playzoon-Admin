@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { toast } from "sonner";
-import { Globe, Save, Clock } from "lucide-react";
+import { Globe, Save, Clock, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
@@ -17,9 +17,9 @@ import {
 import type { CountryModules, ModuleKey, AuditEntry } from "./types";
 import { MODULE_LABELS } from "./types";
 import {
-  INITIAL_COUNTRY_MODULES,
   INITIAL_AUDIT_ENTRIES,
 } from "./mockData";
+import { adminService } from "@/services/admin.service";
 
 const MODULE_KEYS: ModuleKey[] = [
   "player",
@@ -30,15 +30,48 @@ const MODULE_KEYS: ModuleKey[] = [
 ];
 
 export function CountryModuleManagementPage() {
-  const [countryModules, setCountryModules] = useState<CountryModules[]>(
-    INITIAL_COUNTRY_MODULES
-  );
+  const [countryModules, setCountryModules] = useState<CountryModules[]>([]);
   const [auditEntries, setAuditEntries] =
     useState<AuditEntry[]>(INITIAL_AUDIT_ENTRIES);
-  const [selectedCountryId, setSelectedCountryId] = useState<string>(
-    INITIAL_COUNTRY_MODULES[0].countryId
-  );
+  const [selectedCountryId, setSelectedCountryId] = useState<string>("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // ── Map backend country to frontend type ────────────
+  const mapCountry = useCallback((c: Record<string, unknown>): CountryModules => {
+    const modules = (c.modules || {}) as Record<string, boolean>;
+    return {
+      countryId: String(c.id || ""),
+      countryName: String(c.name || ""),
+      countryCode: String(c.code || ""),
+      player: !!modules.player,
+      freelancerCoach: !!modules.freelance_coach,
+      trainingProvider: !!modules.training_provider,
+      facilityProvider: !!modules.facility_provider,
+      tournaments: !!modules.tournaments,
+    };
+  }, []);
+
+  // ── Fetch countries from API ────────────────────────
+  const fetchCountries = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await adminService.getCountryModules({});
+      const list = res?.countries || res?.data?.countries || [];
+      const mapped = Array.isArray(list) ? list.map(mapCountry) : [];
+      setCountryModules(mapped);
+      if (mapped.length > 0 && !selectedCountryId) {
+        setSelectedCountryId(mapped[0].countryId);
+      }
+    } catch (err) {
+      console.error("Failed to load country modules:", err);
+      toast.error("Failed to load country modules.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mapCountry, selectedCountryId]);
+
+  useEffect(() => { fetchCountries(); }, [fetchCountries]);
 
   const selectedCountry = countryModules.find(
     (c) => c.countryId === selectedCountryId
@@ -56,41 +89,45 @@ export function CountryModuleManagementPage() {
     setHasUnsavedChanges(true);
   }
 
-  function handleSaveChanges() {
+  async function handleSaveChanges() {
     if (!selectedCountry) return;
 
-    // Find the current state to create audit entries
-    const current = countryModules.find(
-      (c) => c.countryId === selectedCountryId
-    );
-    const original = INITIAL_COUNTRY_MODULES.find(
-      (c) => c.countryId === selectedCountryId
-    );
+    try {
+      // Build the payload for the API
+      const payload = {
+        countries: [{
+          id: selectedCountry.countryId,
+          modules: {
+            player: selectedCountry.player,
+            freelance_coach: selectedCountry.freelancerCoach,
+            training_provider: selectedCountry.trainingProvider,
+            facility_provider: selectedCountry.facilityProvider,
+            tournaments: selectedCountry.tournaments,
+          },
+        }],
+      };
+      await adminService.getCountryModules(payload); // PUT uses same endpoint
 
-    if (current && original) {
-      const newEntries: AuditEntry[] = [];
-      for (const key of MODULE_KEYS) {
-        if (current[key] !== original[key]) {
-          newEntries.push({
-            id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-            editedBy: "Admin (Current User)",
-            country: current.countryName,
-            field: MODULE_LABELS[key],
-            oldValue: original[key] ? "Enabled" : "Disabled",
-            newValue: current[key] ? "Enabled" : "Disabled",
-            timestamp: new Date().toISOString().replace("T", " ").slice(0, 19),
-          });
-        }
-      }
-      if (newEntries.length > 0) {
-        setAuditEntries((prev) => [...newEntries, ...prev]);
-      }
+      // Add audit entries for changes
+      const newEntries: AuditEntry[] = MODULE_KEYS.map(key => ({
+        id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+        editedBy: "Admin (Current User)",
+        country: selectedCountry.countryName,
+        field: MODULE_LABELS[key],
+        oldValue: "—",
+        newValue: selectedCountry[key] ? "Enabled" : "Disabled",
+        timestamp: new Date().toISOString().replace("T", " ").slice(0, 19),
+      }));
+      setAuditEntries((prev) => [...newEntries, ...prev]);
+
+      setHasUnsavedChanges(false);
+      toast.success(
+        `Module configuration for ${selectedCountry.countryName} saved successfully.`
+      );
+    } catch (err) {
+      console.error("Failed to save country modules:", err);
+      toast.error("Failed to save changes.");
     }
-
-    setHasUnsavedChanges(false);
-    toast.success(
-      `Module configuration for ${selectedCountry.countryName} saved successfully.`
-    );
   }
 
   return (

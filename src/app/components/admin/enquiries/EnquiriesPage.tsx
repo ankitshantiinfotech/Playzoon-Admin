@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import {
   Search, Filter, Inbox, MessageSquare,
@@ -18,9 +18,10 @@ import { toast } from "sonner";
 
 import type { Enquiry, EnquiryCategory, EnquiryStatus, StatusHistoryEntry } from "./enquiry-types";
 import {
-  INITIAL_ENQUIRIES, CATEGORY_STYLES, STATUS_STYLES, ACCOUNT_TYPE_STYLES,
+  CATEGORY_STYLES, STATUS_STYLES, ACCOUNT_TYPE_STYLES,
 } from "./enquiry-types";
 import { EnquiryDetailPanel } from "./EnquiryDetailPanel";
+import { adminService } from "@/services/admin.service";
 
 // ─── Constants ───────────────────────────────────────────────
 
@@ -59,7 +60,45 @@ function StatCard({ label, value, sub, icon: Icon, color }: {
 // ─── Main Page ───────────────────────────────────────────────
 
 export function EnquiriesPage() {
-  const [enquiries, setEnquiries] = useState<Enquiry[]>(INITIAL_ENQUIRIES);
+  const [enquiries, setEnquiries] = useState<Enquiry[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const mapEnquiry = useCallback((e: Record<string, unknown>): Enquiry => {
+    const statusMap: Record<string, EnquiryStatus> = {
+      open: "Open", in_progress: "Open", resolved: "Resolved", closed: "Resolved",
+    };
+    return {
+      id: String(e.id || ""),
+      submitterName: String(e.name || "Unknown"),
+      submitterEmail: String(e.email || ""),
+      submitterPhone: String(e.phone || ""),
+      accountType: String(e.user_type || "Player") as Enquiry["accountType"],
+      category: String(e.category || "General") as EnquiryCategory,
+      subject: String(e.message_preview || "No subject"),
+      message: String(e.message_preview || ""),
+      status: statusMap[String(e.status || "open")] || "Open",
+      submittedAt: new Date(String(e.created_at || Date.now())),
+      lastUpdated: new Date(String(e.updated_at || Date.now())),
+      adminNotes: "",
+      statusHistory: [],
+    };
+  }, []);
+
+  const fetchEnquiries = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await adminService.listEnquiries({ page: 1, limit: 100 });
+      const list = res?.enquiries || res?.data?.enquiries || [];
+      setEnquiries(Array.isArray(list) ? list.map(mapEnquiry) : []);
+    } catch (err) {
+      console.error("Failed to load enquiries:", err);
+      toast.error("Failed to load enquiries.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mapEnquiry]);
+
+  useEffect(() => { fetchEnquiries(); }, [fetchEnquiries]);
 
   // ── Filters ─────────────────────────────────────────────
   const [search,         setSearch]         = useState("");

@@ -265,9 +265,18 @@ export function CreatePlayerPage() {
       toast.success("Player created successfully.");
       if (newId) setTimeout(() => navigate(`/players/${newId}`), 1000);
     } catch (err: any) {
-      const msg = err?.response?.data?.message || "Failed to create player. Please try again.";
-      showBanner("error", msg);
-      toast.error(msg);
+      const details = err?.response?.data?.error?.details;
+      if (details && Array.isArray(details) && details.length > 0) {
+        const fieldMessages = details.map((d: { field?: string; message?: string }) =>
+          `${d.field || 'Error'}: ${d.message || 'Invalid value'}`
+        );
+        showBanner("error", fieldMessages.join('. '));
+        fieldMessages.forEach((m: string) => toast.error(m));
+      } else {
+        const msg = err?.response?.data?.message || "Failed to create player. Please try again.";
+        showBanner("error", msg);
+        toast.error(msg);
+      }
     } finally {
       setIsSubmitting(false);
     }

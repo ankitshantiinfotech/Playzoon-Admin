@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect } from "react";
+import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
   FileText,
@@ -420,6 +420,43 @@ export function StaticPagesTab() {
   const [previewVersion, setPreviewVersion] = useState<PageVersion | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
+
+  // ── Fetch CMS pages from API (override mock data when available) ──
+  useEffect(() => {
+    (async () => {
+      try {
+        const { adminService } = await import("@/services/admin.service");
+        const res = await adminService.listCmsPages({});
+        const list = res?.pages || res?.data?.pages || [];
+        if (Array.isArray(list) && list.length > 0) {
+          const apiPages: Record<string, StaticPage> = {};
+          list.forEach((p: Record<string, unknown>) => {
+            const pageType = String(p.page_type || p.id || "").toLowerCase();
+            const key = pageType.includes("term") ? "terms"
+              : pageType.includes("priv") ? "privacy"
+              : pageType.includes("about") ? "about"
+              : pageType.includes("help") ? "help"
+              : pageType;
+            apiPages[key] = {
+              id: String(p.id || key),
+              title: String(p.title_en || p.title || key),
+              status: String(p.status || "published") as StaticPage["status"],
+              lastUpdated: String(p.last_updated_at || new Date().toISOString()),
+              lastUpdatedBy: "Admin",
+              lastPublished: String(p.last_updated_at || null),
+              contentEn: String(p.content_en || ""),
+              contentAr: String(p.content_ar || ""),
+              versions: [],
+            };
+          });
+          // Merge: API pages override mock, keep mock for pages not in API
+          setPages(prev => ({ ...prev, ...apiPages }));
+        }
+      } catch (err) {
+        console.error("CMS API fetch failed, using fallback data:", err);
+      }
+    })();
+  }, []);
 
   const currentPage = pages[activePageTab] || null;
   const isContentPage = activePageTab !== "social";

@@ -83,7 +83,10 @@ export function PlayerDetailPage() {
   useEffect(() => {
     (async () => {
       try {
-        const data = await adminService.getPlayer(id);
+        const res = await adminService.getPlayer(id);
+        // adminService returns r.data = { success, data: { player fields }, message }
+        const data = res?.data || res;
+        if (!data || !data.id) throw new Error('Player not found');
         // Map API response to PlayerDetail shape, merging with defaults
         setPlayer((prev) => ({
           ...prev,
@@ -94,14 +97,60 @@ export function PlayerDetailPage() {
           phone: data.phone || data.mobile || prev.phone,
           gender: data.gender || prev.gender,
           dateOfBirth: data.date_of_birth || prev.dateOfBirth,
-          nationality: data.nationality?.name_en || prev.nationality,
+          nationality: data.nationality?.name_en || data.nationality || prev.nationality,
           status: (data.status === "active" ? "Active" : data.status === "locked" ? "Locked" : "Inactive") as PlayerStatus,
-          avatarUrl: data.avatar_url || prev.avatarUrl,
+          avatarUrl: data.avatar_url || data.profile_photo_url || prev.avatarUrl,
           bio: data.bio || prev.bio,
           createdAt: data.created_at ? new Date(data.created_at) : prev.createdAt,
-          lastActiveAt: data.last_active_at ? new Date(data.last_active_at) : prev.lastActiveAt,
+          lastActiveAt: data.last_login_at ? new Date(data.last_login_at) : prev.lastActiveAt,
           walletBalance: data.wallet_balance != null ? parseFloat(data.wallet_balance) : prev.walletBalance,
         }));
+
+        // Load dependants from API
+        if (data.dependants && Array.isArray(data.dependants) && data.dependants.length > 0) {
+          setDependents(data.dependants.map((d: Record<string, unknown>) => ({
+            id: String(d.id || ''),
+            firstName: String(d.first_name_en || ''),
+            lastName: String(d.last_name_en || ''),
+            relationship: String(d.relationship || d.relation_type_id || 'Child'),
+            dateOfBirth: String(d.dob || ''),
+            email: String(d.email || ''),
+            phone: String(d.phone || ''),
+            notes: String(d.notes || ''),
+            lastUpdated: d.updated_at ? new Date(String(d.updated_at)) : new Date(),
+          })));
+        }
+
+        // Load addresses from API
+        if (data.addresses && Array.isArray(data.addresses) && data.addresses.length > 0) {
+          setAddresses(data.addresses.map((a: Record<string, unknown>) => ({
+            id: String(a.id || ''),
+            addressType: String(a.label || 'home'),
+            addressLine1: `${a.building_number || ''} ${a.street_name || ''}`.trim(),
+            addressLine2: String(a.apartment_floor || ''),
+            city: String(a.city_name || ''),
+            state: '',
+            postalCode: '',
+            country: String(a.country_name || ''),
+            isDefault: Boolean(a.is_default),
+            lastUpdated: a.updated_at ? new Date(String(a.updated_at)) : new Date(),
+          })));
+        }
+
+        // Load audit trail from API
+        if (data.recent_audit_trail && Array.isArray(data.recent_audit_trail) && data.recent_audit_trail.length > 0) {
+          setAuditEvents(data.recent_audit_trail.map((a: Record<string, unknown>) => ({
+            id: String(a.id || ''),
+            timestamp: a.created_at ? new Date(String(a.created_at)) : new Date(),
+            actor: String(a.actor_name || 'System'),
+            actorRole: 'Admin',
+            module: 'Players',
+            action: String(a.action || ''),
+            target: String(a.description || ''),
+            result: 'Success' as const,
+            metadata: String(a.changes || ''),
+          })));
+        }
       } catch (err) {
         console.error("Failed to load player from API:", err);
       } finally {
@@ -170,6 +219,22 @@ export function PlayerDetailPage() {
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+
+  // Sync form data when player state updates from API
+  useEffect(() => {
+    if (!isLoadingApi) {
+      setFormData({
+        firstName: player.firstName,
+        lastName: player.lastName,
+        email: player.email,
+        phone: player.phone,
+        dateOfBirth: player.dateOfBirth,
+        gender: player.gender,
+        username: player.username,
+        notes: player.notes,
+      });
+    }
+  }, [isLoadingApi, player.firstName, player.lastName, player.email]); // eslint-disable-line
 
   const updateField = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
@@ -306,16 +371,32 @@ export function PlayerDetailPage() {
     return Object.keys(e).length === 0;
   };
 
-  const handleConfirmStatusChange = () => {
+  const handleConfirmStatusChange = async () => {
     if (!validateStatusChange()) return;
-    setPlayer(prev => ({
-      ...prev,
-      status: statusDraft,
-      lockedUntil: statusDraft === "Locked" && statusLockUntil
-        ? format(statusLockUntil, "yyyy-MM-dd") : undefined,
-    }));
-    setStatusModalOpen(false);
-    showBanner("success", `Status changed to ${statusDraft}.`);
+    try {
+      const payload: Record<string, unknown> = {
+        status: statusDraft.toLowerCase(),
+      };
+      if (statusDraft === "Locked") {
+        payload.is_locked = true;
+        payload.lock_reason = statusReason;
+      } else if (statusDraft === "Active" && player.status === "Locked") {
+        payload.is_locked = false;
+      }
+      await adminService.updatePlayer(id, payload);
+      setPlayer(prev => ({
+        ...prev,
+        status: statusDraft,
+        lockedUntil: statusDraft === "Locked" && statusLockUntil
+          ? format(statusLockUntil, "yyyy-MM-dd") : undefined,
+      }));
+      setStatusModalOpen(false);
+      showBanner("success", `Status changed to ${statusDraft}.`);
+    } catch (err: any) {
+      const msg = err?.response?.data?.message || "Failed to change status.";
+      showBanner("error", msg);
+      setStatusModalOpen(false);
+    }
   };
 
   // ── Unsaved changes guard ─────────────────────────────

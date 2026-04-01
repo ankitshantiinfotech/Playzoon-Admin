@@ -1,0 +1,17 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "dev",
+      "runtimeExecutable": "/opt/homebrew/bin/npx",
+      "runtimeArgs": ["vite", "--host"],
+      "port": 5173
+    },
+    {
+      "name": "flutter-preview",
+      "runtimeExecutable": "/opt/homebrew/bin/npx",
+      "runtimeArgs": ["serve", "/Users/rishabhjain/Documents/PROJECTS /NEW PROJECTS/Playzoon_final/Playzoon_Mobile_Flutter/preview", "-p", "3456", "--no-clipboard"],
+      "port": 3456
+    }
+  ]
+}

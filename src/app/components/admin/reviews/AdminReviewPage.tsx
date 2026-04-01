@@ -1,12 +1,13 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useCallback } from "react";
 import { ReviewTable } from "./ReviewTable";
-import { MOCK_REVIEWS } from "./mockData";
 import { Review } from "./types";
 import {
   MessageSquare,
   EyeOff,
   Flag,
 } from "lucide-react";
+import { adminService } from "@/services/admin.service";
+import { toast } from "sonner";
 
 interface StatCardProps {
   label: string;
@@ -29,8 +30,61 @@ function StatCard({ label, value, icon, iconBg, valueColor = "text-gray-900" }: 
 }
 
 export function AdminReviewPage() {
-  const [reviews, setReviews] = useState<Review[]>(MOCK_REVIEWS);
-  const handleUpdate = (reviewId: string, updates: Partial<Review>) => {
+  const [reviews, setReviews] = useState<Review[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  const mapReview = useCallback((r: Record<string, unknown>): Review => {
+    const typeMap: Record<string, Review["target"]["type"]> = {
+      facility: "Facility", training: "Training", coach: "Coach", tournament: "Tournament",
+    };
+    return {
+      id: String(r.id || ""),
+      reviewer: {
+        id: String(r.reviewer_id || ""),
+        name: String(r.reviewer_name || "Anonymous"),
+        photo: "",
+        email: "",
+      },
+      target: {
+        id: String(r.entity_id || ""),
+        name: String(r.entity_name || ""),
+        type: typeMap[String(r.entity_type || "facility")] || "Facility",
+      },
+      rating: Number(r.rating || 0),
+      text: String(r.review_text || ""),
+      submittedAt: String(r.created_at || new Date().toISOString()),
+      status: r.is_hidden ? "Hidden" : r.is_flagged ? "Flagged" : "Visible",
+      flaggedReason: String(r.flag_reason || ""),
+    };
+  }, []);
+
+  const fetchReviews = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await adminService.listReviews({ page: 1, limit: 100 });
+      const list = res?.reviews || res?.data?.reviews || [];
+      setReviews(Array.isArray(list) ? list.map(mapReview) : []);
+    } catch (err) {
+      console.error("Failed to load reviews:", err);
+      toast.error("Failed to load reviews.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mapReview]);
+
+  useEffect(() => { fetchReviews(); }, [fetchReviews]);
+
+  const handleUpdate = async (reviewId: string, updates: Partial<Review>) => {
+    try {
+      const apiUpdates: Record<string, unknown> = {};
+      if (updates.status === "Hidden") apiUpdates.action = "hide";
+      else if (updates.status === "Published") apiUpdates.action = "unhide";
+      if (Object.keys(apiUpdates).length > 0) {
+        await adminService.updateReview(reviewId, apiUpdates);
+      }
+    } catch (err) {
+      console.error("Review update API failed:", err);
+    }
     setReviews((prev) =>
       prev.map((r) => (r.id === reviewId ? { ...r, ...updates } : r))
     );

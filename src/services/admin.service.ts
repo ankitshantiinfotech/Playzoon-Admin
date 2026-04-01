@@ -44,6 +44,8 @@ export const adminService = {
     api.patch(`/admin/providers/${id}/onboarding`, data).then(r => r.data),
   bulkProviderAction: (data: P) =>
     api.post('/admin/providers/bulk-action', data).then(r => r.data),
+  createProvider: (data: P) =>
+    api.post('/admin/providers', data).then(r => r.data),
 
   // ── Country Modules (1) ──────────────────────────────────────────────
   getCountryModules: (params: P) =>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -45,9 +45,46 @@ export function EnquiryDetailPage() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
 
-  // Find the enquiry from mock data and manage local state
+  // Find enquiry: try API first, fallback to mock data
   const sourceEnquiry = INITIAL_ENQUIRIES.find((e) => e.id === id) ?? null;
   const [enquiry, setEnquiry] = useState<Enquiry | null>(sourceEnquiry);
+
+  useEffect(() => {
+    if (!id) return;
+    (async () => {
+      try {
+        const { adminService } = await import("@/services/admin.service");
+        const res = await adminService.getEnquiry(id);
+        const e = res?.enquiry || res?.data?.enquiry || res;
+        if (e && e.id) {
+          setEnquiry({
+            id: String(e.id),
+            submitterName: String(e.name || "Unknown"),
+            submitterEmail: String(e.email || ""),
+            submitterPhone: String(e.phone || ""),
+            accountType: String(e.user_type || "Player") as Enquiry["accountType"],
+            category: String(e.category || "General") as Enquiry["category"],
+            subject: String(e.subject || e.message_preview || ""),
+            message: String(e.message || e.message_preview || ""),
+            status: String(e.status) === "resolved" || String(e.status) === "closed" ? "Resolved" : "Open",
+            submittedAt: new Date(String(e.created_at || Date.now())),
+            lastUpdated: new Date(String(e.updated_at || Date.now())),
+            adminNotes: "",
+            statusHistory: Array.isArray(e.status_history) ? e.status_history : [],
+            thread: Array.isArray(e.comments) ? e.comments.map((c: Record<string, unknown>) => ({
+              id: String(c.id || ""),
+              sender: String(c.author_name || "Admin"),
+              senderRole: "admin" as const,
+              message: String(c.content || ""),
+              timestamp: new Date(String(c.created_at || Date.now())),
+            })) : [],
+          });
+        }
+      } catch {
+        // Keep mock data fallback
+      }
+    })();
+  }, [id]);
 
   const [replyText, setReplyText] = useState("");
 

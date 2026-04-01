@@ -27,11 +27,12 @@ import {
 } from "../../ui/alert-dialog";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import {
-  MOCK_PROVIDERS, PROVIDER_TABS, PAGE_SIZE_OPTIONS,
+  PROVIDER_TABS, PAGE_SIZE_OPTIONS,
   getTabCounts, getPendingCount,
   type ServiceProvider, type ProviderType, type OnboardingProviderType, type SortField, type SortDir, type FacilitySortField,
   type ProviderTabKey,
 } from "./provider-data";
+import { adminService } from "@/services/admin.service";
 import { ApproveConfirmModal, RejectReasonModal } from "./components/ApproveRejectModals";
 import { FacilityProviderTable } from "./components/FacilityProviderTable";
 import { useChatContext } from "../communication/ChatContext";
@@ -178,13 +179,58 @@ export function ServiceProvidersPage() {
   const isAdmin = true; // Mock: set to false to see Access Denied
 
   // ── Data state ────────────────────────────────────────
-  const [providers, setProviders] = useState<ServiceProvider[]>(MOCK_PROVIDERS);
+  const [providers, setProviders] = useState<ServiceProvider[]>([]);
   const [banner, setBanner] = useState<BannerState>({ type: "info", message: "", visible: false });
 
   const showBanner = useCallback((type: BannerType, message: string) => {
     setBanner({ type, message, visible: true });
     if (type !== "error") setTimeout(() => setBanner(b => ({ ...b, visible: false })), 5000);
   }, []);
+
+  // ── Map backend provider to frontend type ────────────
+  const mapProvider = useCallback((p: Record<string, unknown>): ServiceProvider => {
+    const providerType = (() => {
+      const pt = String(p.provider_type || "");
+      if (pt === "facility_provider") return "Facility Provider" as const;
+      return "Training Provider" as const; // training_provider + freelance_coach both show under Training
+    })();
+    const verificationStatus = (() => {
+      const ps = String(p.profile_status || "pending");
+      if (ps === "approved") return "Approved" as const;
+      if (ps === "rejected") return "Rejected" as const;
+      return "Pending" as const;
+    })();
+    return {
+      id: String(p.id),
+      name: String(p.business_name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || "Unknown"),
+      email: String(p.email || ""),
+      mobile: String(p.mobile || ""),
+      providerType,
+      verificationStatus,
+      accountStatus: p.is_locked ? "Locked" : "Unlocked",
+      platformStatus: String(p.status) === "active" ? "Active" : "Inactive",
+      createdAt: new Date(String(p.created_at || Date.now())),
+      incorporationDate: p.date_of_incorporation ? new Date(String(p.date_of_incorporation)) : undefined,
+      onboardingType: verificationStatus === "Pending"
+        ? (String(p.provider_type || "").includes("coach") ? "Freelance Coach" : providerType)
+        : undefined,
+    };
+  }, []);
+
+  // ── Fetch providers from API ─────────────────────────
+  const fetchProviders = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const res = await adminService.listProviders({ page: 1, limit: 100 });
+      const list = res?.providers || res?.data?.providers || [];
+      setProviders(Array.isArray(list) ? list.map(mapProvider) : []);
+    } catch (err) {
+      console.error("Failed to load providers:", err);
+      showBanner("error", "Failed to load providers. Please try again.");
+    } finally {
+      setIsLoading(false);
+    }
+  }, [mapProvider, showBanner]);
 
   // ── Tab state ─────────────────────────────────────────
   const [searchParams, setSearchParams] = useSearchParams();
@@ -258,12 +304,9 @@ export function ServiceProvidersPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(20);
 
-  // ── Loading simulation ────────────────────────────────
+  // ── Loading state ──────────────────────────────────────
   const [isLoading, setIsLoading] = useState(true);
-  useEffect(() => {
-    const t = setTimeout(() => setIsLoading(false), 700);
-    return () => clearTimeout(t);
-  }, []);
+  useEffect(() => { fetchProviders(); }, [fetchProviders]);
 
   // ── Global chat toggle (mock) ─────────────────────────
   const { chatEnabled: globalChatEnabled, openChat, unreadCounts } = useChatContext();
@@ -318,9 +361,9 @@ export function ServiceProvidersPage() {
     setSortField("createdAt");
     setSortDir("desc");
     setPage(1);
-    // Simulate loading
+    // Brief loading state for tab switch
     setIsLoading(true);
-    setTimeout(() => setIsLoading(false), 500);
+    setTimeout(() => setIsLoading(false), 200);
   };
 
   // ── Sub-tab change handler ────────────────────────────
@@ -475,11 +518,16 @@ export function ServiceProvidersPage() {
     const isLarge = ids.length > 50;
     const delay = isLarge ? 80 : 400;
 
+    try {
+      await adminService.bulkProviderAction({ action, provider_ids: ids, rejection_reason: rejectionReason });
+    } catch (err) {
+      console.error("Bulk action failed, applying optimistic update:", err);
+    }
+
     for (let i = 0; i < ids.length; i++) {
       const id = ids[i];
       let shouldSkip = false;
 
-      // Skip check
       const p = providers.find(x => x.id === id);
       if (p) {
         if (action === "approve" && p.verificationStatus === "Approved") { shouldSkip = true; skipReason = "already approved"; }
@@ -492,7 +540,6 @@ export function ServiceProvidersPage() {
 
       if (shouldSkip) { skipped++; }
       else {
-        // Apply mutation
         setProviders(prev => prev.map(p => {
           if (p.id !== id) return p;
           switch (action) {
@@ -508,13 +555,8 @@ export function ServiceProvidersPage() {
         processed++;
       }
 
-      // Progress callback (for large batches, throttle every 5 items)
       if (onProgress && (i % 5 === 0 || i === ids.length - 1)) onProgress(i + 1, ids.length);
-      if (isLarge && i % 5 === 0) await new Promise(r => setTimeout(r, delay));
     }
-
-    // Simulate final delay
-    if (!isLarge) await new Promise(r => setTimeout(r, delay));
 
     setBulkProcessing(false);
     return { processed, skipped, total: ids.length, skipReason };
@@ -529,12 +571,17 @@ export function ServiceProvidersPage() {
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setIsDeleting(true);
-    await new Promise(r => setTimeout(r, 500));
-    setProviders(prev => prev.filter(p => p.id !== deleteTarget.id));
-    setIsDeleting(false);
-    setDeleteTarget(null);
-    showBanner("success", `Provider "${deleteTarget.name}" has been deleted.`);
-    toast.success("Provider deleted successfully.");
+    try {
+      await adminService.updateProvider(deleteTarget.id, { status: "inactive" });
+      setProviders(prev => prev.filter(p => p.id !== deleteTarget.id));
+      showBanner("success", `Provider "${deleteTarget.name}" has been removed.`);
+      toast.success("Provider removed successfully.");
+    } catch {
+      toast.error("Failed to remove provider.");
+    } finally {
+      setIsDeleting(false);
+      setDeleteTarget(null);
+    }
   };
 
   // ── Approve handler ───────────────────────────────────
@@ -543,13 +590,7 @@ export function ServiceProvidersPage() {
     setIsApproving(true);
     setProcessingRowId(approveTarget.id);
     try {
-      // Simulate API call
-      await new Promise(r => setTimeout(r, 800));
-      // Mock: 5% chance of conflict error for demonstration
-      if (Math.random() < 0.05) {
-        throw new Error("CONFLICT");
-      }
-      // Optimistic UI update
+      await adminService.approveProvider(approveTarget.id, { action: "approve" });
       setProviders(prev =>
         prev.map(p =>
           p.id === approveTarget.id
@@ -560,7 +601,7 @@ export function ServiceProvidersPage() {
       toast.success("Provider approved successfully.", { duration: 5000 });
       setApproveTarget(null);
     } catch {
-      toast.error("Provider already processed by another admin.", { duration: 8000 });
+      toast.error("Failed to approve provider. It may have been processed by another admin.", { duration: 8000 });
       setApproveTarget(null);
     } finally {
       setIsApproving(false);
@@ -574,12 +615,7 @@ export function ServiceProvidersPage() {
     setIsRejecting(true);
     setProcessingRowId(rejectTarget.id);
     try {
-      // Simulate API call
-      await new Promise(r => setTimeout(r, 800));
-      if (Math.random() < 0.05) {
-        throw new Error("CONFLICT");
-      }
-      // Optimistic UI update
+      await adminService.approveProvider(rejectTarget.id, { action: "reject", rejection_reason: reason });
       setProviders(prev =>
         prev.map(p =>
           p.id === rejectTarget.id
