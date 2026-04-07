@@ -147,7 +147,7 @@ export function PlayerManagementPage() {
     firstName: p.first_name || p.first_name_en || "",
     lastName: p.last_name || p.last_name_en || "",
     email: p.email || "",
-    phone: p.phone || p.mobile || "",
+    phone: p.country_code ? `${p.country_code}${p.phone || p.mobile || ""}` : (p.phone || p.mobile || ""),
     gender: p.gender || "",
     status: (p.status === "active" ? "Active" : p.status === "locked" ? "Locked" : "Inactive") as PlayerStatus,
     dependents: p.dependants_count || 0,

@@ -61,37 +61,24 @@ export interface UploadedFile {
 
 // ─── Mock existing emails (for duplicate check) ──────────────
 
-const EXISTING_EMAILS = new Set([
-  "info@alhamrasports.ae",
-  "admin@dubaiarena.ae",
-  "contact@sharjahfitnesshub.ae",
-  "bookings@yassportsarena.ae",
-  "info@capitalsportsvillage.ae",
-  "admin@palmsports.ae",
-  "info@marinabay.ae",
-  "bookings@rakactive.ae",
-  "info@saharadome.ae",
-  "admin@khalifacity.ae",
-  "info@alwasl.ae",
-  "admin@jumeirah.ae",
-  "coach@academy.ae",
-  "info@elitetraining.ae",
-  "training@sportsuae.ae",
-  "admin@playzoon.ae",
-  "test@example.com",
-]);
-
 /**
- * Simulates an async email uniqueness check.
- * Returns true if the email is already registered.
+ * Check email uniqueness against the real backend API.
+ * Returns true if the email is already registered (duplicate).
  */
-export function checkEmailDuplicate(email: string): Promise<boolean> {
-  return new Promise((resolve) => {
-    const delay = 800 + Math.random() * 700; // 0.8–1.5s
-    setTimeout(() => {
-      resolve(EXISTING_EMAILS.has(email.trim().toLowerCase()));
-    }, delay);
-  });
+export async function checkEmailDuplicate(email: string): Promise<boolean> {
+  try {
+    const baseUrl = (import.meta as any).env?.VITE_API_BASE_URL || 'http://localhost:4000/api/v1';
+    const apiKey = (import.meta as any).env?.VITE_API_KEY || '';
+    const res = await fetch(`${baseUrl}/auth/check-unique`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+      body: JSON.stringify({ email: email.trim().toLowerCase() }),
+    });
+    const data = await res.json();
+    return !(data?.data?.email_available ?? true); // true = duplicate
+  } catch {
+    return false; // Fail open on network error
+  }
 }
 
 // ─── Validation helpers ──────────────────────────────────────

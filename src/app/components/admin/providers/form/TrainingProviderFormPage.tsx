@@ -201,69 +201,44 @@ export function TrainingProviderFormPage() {
   const initialFormRef = useRef<string>("");
   const emailCheckAbort = useRef<AbortController | null>(null);
 
-  // ── Load edit data ──────────────────────────────────────────
+  // ── Load edit data (wired to real API) ──────────────────────
   useEffect(() => {
     if (!isEditMode || !id) return;
-    const timer = setTimeout(() => {
-      const detail = getTrainingProviderDetail(id);
-      if (!detail) {
-        setNotFound(true);
+    let cancelled = false;
+    import("@/services/admin.service").then(({ adminService }) => {
+      adminService.getProvider(id).then((res: Record<string, unknown>) => {
+        if (cancelled) return;
+        const p = (res as Record<string, unknown>)?.data || (res as Record<string, unknown>)?.provider || res;
+        if (!p || !(p as Record<string, unknown>).id) {
+          setNotFound(true);
+          setLoading(false);
+          return;
+        }
+        const pr = p as Record<string, unknown>;
+        const mobile = String(pr.mobile || pr.phone || "");
+        const cc = String(pr.country_code || "+971");
+        const mobileNum = mobile.replace(cc, "").trim();
+
+        const formData: FormState = {
+          clubName: String(pr.business_name || pr.club_name || ""),
+          firstName: String(pr.first_name || pr.first_name_en || ""),
+          lastName: String(pr.last_name || pr.last_name_en || ""),
+          email: String(pr.email || ""),
+          countryCode: cc,
+          mobileNumber: mobileNum,
+          dateOfIncorporation: pr.date_of_incorporation ? new Date(String(pr.date_of_incorporation)) : null,
+          landline: String(pr.landline || ""),
+        };
+
+        setForm(formData);
+        initialFormRef.current = JSON.stringify(formData);
+        setEmailCheckState("unique");
         setLoading(false);
-        return;
-      }
-
-      const mobileMatch = detail.mobile.match(/^(\+\d+)\s+(.+)$/);
-      const countryCode = mobileMatch ? mobileMatch[1] : "+971";
-      const mobileNum = mobileMatch ? mobileMatch[2] : detail.mobile;
-
-      const formData: FormState = {
-        clubName: detail.clubName,
-        firstName: detail.firstName,
-        lastName: detail.lastName,
-        email: detail.email,
-        countryCode,
-        mobileNumber: mobileNum,
-        dateOfIncorporation: detail.dateOfIncorporation,
-        landline: detail.landline ?? "",
-      };
-
-      setForm(formData);
-      initialFormRef.current = JSON.stringify(formData);
-
-      // Pre-load documents
-      if (detail.documents.length > 0) {
-        setDocuments(
-          detail.documents.map(d => ({
-            id: d.id,
-            name: d.name,
-            size: d.sizeBytes,
-            type: d.fileType === "pdf" ? "application/pdf"
-              : d.fileType === "image" ? "image/jpeg"
-              : d.fileType === "xls" ? "application/vnd.ms-excel"
-              : "application/msword",
-            progress: 100,
-            status: "complete" as const,
-          }))
-        );
-      }
-
-      // Pre-load profile photo
-      if (detail.profilePhotoUrl) {
-        setProfilePhoto({
-          id: "profile-existing",
-          name: "profile-photo.jpg",
-          size: 0,
-          type: "image/jpeg",
-          progress: 100,
-          status: "complete",
-          previewUrl: detail.profilePhotoUrl,
-        });
-      }
-
-      setEmailCheckState("unique"); // Already existing = unique for this record
-      setLoading(false);
-    }, 600);
-    return () => clearTimeout(timer);
+      }).catch(() => {
+        if (!cancelled) { setNotFound(true); setLoading(false); }
+      });
+    });
+    return () => { cancelled = true; };
   }, [id, isEditMode]);
 
   // ── Track dirty state ───────────────────────────────────────
@@ -533,14 +508,14 @@ export function TrainingProviderFormPage() {
     if (isDirty) {
       setCancelDialogOpen(true);
     } else {
-      navigate(isEditMode ? `/providers/${id}` : "/providers");
+      navigate("/providers");
     }
   }, [isDirty, isEditMode, navigate, id]);
 
   const confirmCancel = useCallback(() => {
     setCancelDialogOpen(false);
     setIsDirty(false);
-    navigate(isEditMode ? `/providers/${id}` : "/providers");
+    navigate("/providers");
   }, [isEditMode, navigate, id]);
 
   // ═══════════════════════════════════════════════════════════

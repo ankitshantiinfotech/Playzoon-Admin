@@ -21,10 +21,9 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger,
 } from "../../ui/dropdown-menu";
 import {
-  MOCK_FREELANCER_COACHES, getCoachFullName,
   COACH_SPECIALIZATIONS,
-  type FreelancerCoach,
 } from "../providers/components/freelancer-coach-data";
+import { adminService } from "@/services/admin.service";
 
 // ─── Ops-specific extended mock data (adds fields SCR-ADM-027 needs) ────────
 
@@ -43,41 +42,27 @@ interface CoachOpsRow {
   registeredDate: Date;
 }
 
-function mapToOpsRow(c: FreelancerCoach): CoachOpsRow {
-  const statusMap: Record<string, "Active" | "Inactive" | "Locked"> = {
-    Active: "Active",
-    Inactive: "Inactive",
-  };
+function mapApiToOpsRow(p: Record<string, unknown>): CoachOpsRow {
+  const status = String(p.status || "inactive");
+  const verStatus = String(p.verification_status || p.provider_approval_status || "pending");
   const verMap: Record<string, "Verified" | "Unverified" | "Pending"> = {
-    Approved: "Verified",
-    Pending: "Pending",
-    Rejected: "Unverified",
+    approved: "Verified", pending: "Pending", rejected: "Unverified",
   };
-  // Seed some variety for mock data
-  const hash = c.id.charCodeAt(c.id.length - 1) + c.id.charCodeAt(c.id.length - 2);
-  const sports = [c.specialization];
-  if (hash % 3 === 0 && c.specialization !== "Fitness & Conditioning") sports.push("Fitness & Conditioning");
-  const specs = [c.specialization === "Football" ? "Tactical Coaching" : c.specialization === "Tennis" ? "Serve Improvement" : c.specialization === "Swimming" ? "Stroke Correction" : "General Training"];
-  if (hash % 4 === 0) specs.push("Youth Development");
-  if (hash % 5 === 0) specs.push("Competition Prep");
-
   return {
-    id: c.id,
-    firstName: c.firstName,
-    lastName: c.lastName,
-    avatar: undefined,
-    sports,
-    specialities: specs,
-    experience: Math.max(1, (hash % 15) + 1),
-    rating: c.verificationStatus === "Approved" ? Math.round((3.5 + (hash % 15) / 10) * 10) / 10 : 0,
-    reviewCount: c.verificationStatus === "Approved" ? hash % 50 + 1 : 0,
-    status: c.accountStatus === "Locked" ? "Locked" : (statusMap[c.platformStatus] ?? "Inactive"),
-    verificationStatus: verMap[c.verificationStatus] ?? "Unverified",
-    registeredDate: c.createdAt,
+    id: String(p.id || ""),
+    firstName: String(p.first_name || p.first_name_en || ""),
+    lastName: String(p.last_name || p.last_name_en || ""),
+    avatar: p.profile_photo_url ? String(p.profile_photo_url) : undefined,
+    sports: [],
+    specialities: [],
+    experience: 0,
+    rating: 0,
+    reviewCount: 0,
+    status: p.is_locked ? "Locked" : status === "active" ? "Active" : "Inactive",
+    verificationStatus: verMap[verStatus.toLowerCase()] ?? "Unverified",
+    registeredDate: p.created_at ? new Date(String(p.created_at)) : new Date(),
   };
 }
-
-const MOCK_OPS_COACHES: CoachOpsRow[] = MOCK_FREELANCER_COACHES.map(mapToOpsRow);
 
 // ─── Types ──────────────────────────────────────────────────────────────────
 
@@ -155,6 +140,28 @@ function AvatarInitials({ firstName, lastName }: { firstName: string; lastName: 
 
 export function FreelanceCoachListPage() {
   const navigate = useNavigate();
+  const [coaches, setCoaches] = useState<CoachOpsRow[]>([]);
+  const [isLoadingCoaches, setIsLoadingCoaches] = useState(true);
+
+  // Fetch coaches from real API
+  useEffect(() => {
+    setIsLoadingCoaches(true);
+    let cancelled = false;
+    adminService.listProviders({ provider_type: 'freelance_coach', page: 1, limit: 100 })
+      .then((res: any) => {
+        if (cancelled) return;
+        // Response shape: { success, data: { providers, pagination } } after .then(r => r.data)
+        const providers = res?.data?.providers || res?.providers || [];
+        setCoaches(Array.isArray(providers) ? providers.map((p: Record<string, unknown>) => mapApiToOpsRow(p)) : []);
+      })
+      .catch((err: unknown) => {
+        if (cancelled) return;
+        const msg = (err as any)?.response?.data?.message || 'Failed to load coaches';
+        toast.error(msg);
+      })
+      .finally(() => { if (!cancelled) setIsLoadingCoaches(false); });
+    return () => { cancelled = true; };
+  }, []);
 
   // ── Search ──────────────────────────────────────────
   const [searchInput, setSearchInput] = useState("");
@@ -208,7 +215,7 @@ export function FreelanceCoachListPage() {
 
   // ── Filtering + Sorting ─────────────────────────────
   const filtered = useMemo(() => {
-    let result = [...MOCK_OPS_COACHES];
+    let result = [...coaches];
 
     // Search
     if (debouncedSearch) {
@@ -267,7 +274,7 @@ export function FreelanceCoachListPage() {
     });
 
     return result;
-  }, [debouncedSearch, sportFilter, statusFilter, verificationFilter, ratingFilter, sortField, sortDir]);
+  }, [coaches, debouncedSearch, sportFilter, statusFilter, verificationFilter, ratingFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const safePage = Math.min(page, totalPages);
@@ -279,7 +286,18 @@ export function FreelanceCoachListPage() {
       toast.warning("No data to export. Please adjust your filters.");
       return;
     }
-    toast.success(`Export file downloaded successfully. (${fmt.toUpperCase()})`);
+    // Generate CSV from current filtered data
+    const headers = ["ID", "First Name", "Last Name", "Status", "Verification", "Registered Date"];
+    const rows = filtered.map(c => [c.id, c.firstName, c.lastName, c.status, c.verificationStatus, c.registeredDate.toISOString()]);
+    const csvContent = [headers.join(","), ...rows.map(r => r.join(","))].join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv" });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `coaches-export.${fmt === "csv" ? "csv" : fmt}`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success(`Exported ${filtered.length} coaches as ${fmt.toUpperCase()}.`);
   };
 
   // ── Sort icon ───────────────────────────────────────

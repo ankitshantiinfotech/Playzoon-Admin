@@ -650,23 +650,50 @@ export function FreelancerCoachFormPage() {
   const [professional, setProfessional] = useState<CoachProfessionalState>(createInitialProfessional());
   const [professionalErrors, setProfessionalErrors] = useState<ProfessionalErrors>({});
 
-  // ── Load edit data ────────────────────────────────────
+  // ── Load edit data (wired to real API) ────────────────
   useEffect(() => {
     if (!isEditMode || !id) return;
     setIsLoading(true);
-    const t = setTimeout(() => {
-      const detail = getCoachDetail(id);
-      if (detail) {
-        setForm(detail);
-        initialEmailRef.current = detail.email;
-        setProfessional(getMockProfessional(id));
-      } else {
-        toast.error("Coach not found");
-        navigate("/providers");
-      }
-      setIsLoading(false);
-    }, 600);
-    return () => clearTimeout(t);
+    let cancelled = false;
+    import("@/services/admin.service").then(({ adminService }) => {
+      adminService.getProvider(id).then((res: Record<string, unknown>) => {
+        if (cancelled) return;
+        const p = (res as Record<string, unknown>)?.data || (res as Record<string, unknown>)?.provider || res;
+        if (!p || !(p as Record<string, unknown>).id) {
+          toast.error("Coach not found");
+          navigate("/providers");
+          setIsLoading(false);
+          return;
+        }
+        const pr = p as Record<string, unknown>;
+        const mobile = String(pr.mobile || pr.phone || "");
+        const cc = String(pr.country_code || "+971");
+        const mobileNum = mobile.replace(cc, "").trim();
+
+        const formData: CoachFormState = {
+          firstName: String(pr.first_name || pr.first_name_en || ""),
+          lastName: String(pr.last_name || pr.last_name_en || ""),
+          email: String(pr.email || ""),
+          countryCode: cc,
+          mobile: mobileNum,
+          gender: String(pr.gender || ""),
+          dob: pr.date_of_birth ? String(pr.date_of_birth) : "",
+          nationality: String(pr.nationality || ""),
+          city: String(pr.city || ""),
+          aboutMe: String(pr.about || pr.bio || ""),
+        };
+        setForm(formData);
+        initialEmailRef.current = formData.email;
+        setIsLoading(false);
+      }).catch(() => {
+        if (!cancelled) {
+          toast.error("Failed to load coach data");
+          navigate("/providers");
+          setIsLoading(false);
+        }
+      });
+    });
+    return () => { cancelled = true; };
   }, [id, isEditMode, navigate]);
 
   // ── Field updater ─────────────────────────────────────

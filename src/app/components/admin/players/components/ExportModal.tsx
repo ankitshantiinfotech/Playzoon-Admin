@@ -57,20 +57,52 @@ export function ExportModal({ open, onOpenChange, selectedCount, totalFiltered, 
     return Object.keys(e).length === 0;
   };
 
-  const handleExport = () => {
+  const [isExporting, setIsExporting] = useState(false);
+
+  const handleExport = async () => {
     if (!validate()) return;
+    setIsExporting(true);
 
     const count =
       scope === "selected" ? selectedCount :
       scope === "current_view" ? totalFiltered :
       totalFiltered;
 
-    toast.success(
-      count > 500
-        ? `Export of ${count.toLocaleString()} players queued. We'll notify you when it's ready.`
-        : `Exporting ${count.toLocaleString()} players as ${exportFormat.toUpperCase()}…`
-    );
-    onOpenChange(false);
+    try {
+      const { adminService } = await import("@/services/admin.service");
+      const result = await adminService.exportPlayers({
+        format: exportFormat,
+        scope,
+        fields: selectedFields,
+        date_from: dateFrom?.toISOString() || undefined,
+        date_to: dateTo?.toISOString() || undefined,
+      });
+
+      // If backend returns a download URL or blob
+      if (result?.download_url) {
+        window.open(result.download_url, '_blank');
+        toast.success(`Export of ${count.toLocaleString()} players downloaded.`);
+      } else {
+        // Fallback: create file from response data
+        const blob = new Blob(
+          [typeof result === 'string' ? result : JSON.stringify(result, null, 2)],
+          { type: exportFormat === 'csv' ? 'text/csv' : exportFormat === 'json' ? 'application/json' : 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
+        );
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `players-export-${format(new Date(), 'yyyy-MM-dd')}.${exportFormat}`;
+        a.click();
+        window.URL.revokeObjectURL(url);
+        toast.success(`Exported ${count.toLocaleString()} players as ${exportFormat.toUpperCase()}.`);
+      }
+      onOpenChange(false);
+    } catch (err: unknown) {
+      const msg = (err as { response?: { data?: { message?: string } } })?.response?.data?.message || 'Export failed';
+      toast.error(msg);
+    } finally {
+      setIsExporting(false);
+    }
   };
 
   return (

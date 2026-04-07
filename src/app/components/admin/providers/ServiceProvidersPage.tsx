@@ -204,7 +204,7 @@ export function ServiceProvidersPage() {
       id: String(p.id),
       name: String(p.business_name || `${p.first_name || ""} ${p.last_name || ""}`.trim() || "Unknown"),
       email: String(p.email || ""),
-      mobile: String(p.mobile || ""),
+      mobile: p.country_code ? `${p.country_code}${p.mobile || ""}` : String(p.mobile || ""),
       providerType,
       verificationStatus,
       accountStatus: p.is_locked ? "Locked" : "Unlocked",

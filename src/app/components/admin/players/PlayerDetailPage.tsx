@@ -43,8 +43,6 @@ import { DependentsTab } from "./DependentsTab";
 import type { PlayerStatus } from "./player-data";
 import {
   getPlayerDetail, getPlayerAddresses, getPlayerDependents, getDetailAuditEvents,
-  getPlayerSavedCards, getPlayerBookings, getPlayerWalletTransactions,
-  getPlayerTournaments, getPlayerFriends,
   GENDER_OPTIONS, COUNTRIES,
   type PlayerDetail, type PlayerAddress, type PlayerDependent, type DetailAuditEvent,
   type SavedCard, type PlayerBooking, type WalletTransaction,
@@ -72,11 +70,11 @@ export function PlayerDetailPage() {
   const [addresses, setAddresses] = useState<PlayerAddress[]>(() => getPlayerAddresses(id));
   const [dependents, setDependents] = useState<PlayerDependent[]>(() => getPlayerDependents(id));
   const [auditEvents, setAuditEvents] = useState<DetailAuditEvent[]>(() => getDetailAuditEvents(id));
-  const [savedCards] = useState<SavedCard[]>(() => getPlayerSavedCards(id));
-  const [bookings] = useState<PlayerBooking[]>(() => getPlayerBookings(id));
-  const [walletTransactions] = useState<WalletTransaction[]>(() => getPlayerWalletTransactions(id));
-  const [tournaments] = useState<PlayerTournament[]>(() => getPlayerTournaments(id));
-  const [friends] = useState<PlayerFriend[]>(() => getPlayerFriends(id));
+  const [savedCards, setSavedCards] = useState<SavedCard[]>([]);
+  const [bookings, setBookings] = useState<PlayerBooking[]>([]);
+  const [walletTransactions, setWalletTransactions] = useState<WalletTransaction[]>([]);
+  const [tournaments, setTournaments] = useState<PlayerTournament[]>([]);
+  const [friends, setFriends] = useState<PlayerFriend[]>([]);
   const [isLoadingApi, setIsLoadingApi] = useState(true);
 
   // Fetch from real API and merge with detail data
@@ -94,7 +92,7 @@ export function PlayerDetailPage() {
           firstName: data.first_name || data.first_name_en || prev.firstName,
           lastName: data.last_name || data.last_name_en || prev.lastName,
           email: data.email || prev.email,
-          phone: data.phone || data.mobile || prev.phone,
+          phone: data.country_code ? `${data.country_code}${data.phone || data.mobile || ""}` : (data.phone || data.mobile || prev.phone),
           gender: data.gender || prev.gender,
           dateOfBirth: data.date_of_birth || prev.dateOfBirth,
           nationality: data.nationality?.name_en || data.nationality || prev.nationality,
@@ -150,6 +148,81 @@ export function PlayerDetailPage() {
             result: 'Success' as const,
             metadata: String(a.changes || ''),
           })));
+        }
+
+        // Sports interests from API
+        if (data.sports_interests && Array.isArray(data.sports_interests)) {
+          setPlayer((prev) => ({
+            ...prev,
+            interestedSports: data.sports_interests.map((s: Record<string, unknown>) => String(s.name_en || '')),
+          }));
+        }
+
+        // Saved cards from API
+        if (data.saved_cards && Array.isArray(data.saved_cards)) {
+          setSavedCards(data.saved_cards.map((c: Record<string, unknown>) => ({
+            id: String(c.id || ''),
+            brand: String(c.card_brand || 'Visa'),
+            last4: String(c.card_last_four || '****'),
+            expiry: `${String(c.expiry_month || '00').padStart(2, '0')}/${String(c.expiry_year || '00').slice(-2)}`,
+            isDefault: Boolean(c.is_default),
+            addedDate: c.created_at ? new Date(String(c.created_at)) : new Date(),
+          })));
+        }
+
+        // Recent bookings from API
+        if (data.recent_bookings && Array.isArray(data.recent_bookings)) {
+          setBookings(data.recent_bookings.map((b: Record<string, unknown>) => ({
+            id: String(b.id || ''),
+            type: (String(b.type || 'facility').charAt(0).toUpperCase() + String(b.type || 'facility').slice(1)) as 'Facility' | 'Training' | 'Coach' | 'Tournament',
+            entityName: String(b.entity_name || '—'),
+            dateTime: b.start_time ? new Date(String(b.start_time)) : new Date(),
+            status: String(b.status || 'pending'),
+            amount: Number(b.amount || 0),
+          })));
+        }
+
+        // Tournaments from API
+        if (data.tournaments && Array.isArray(data.tournaments)) {
+          setTournaments(data.tournaments.map((t: Record<string, unknown>) => ({
+            id: String(t.id || ''),
+            name: String(t.name || ''),
+            sport: String(t.sport || ''),
+            date: t.date ? new Date(String(t.date)) : new Date(),
+            status: String(t.status || 'upcoming'),
+            teamOrSolo: 'Solo' as const,
+            result: '—',
+          })));
+        }
+
+        // Friends from API
+        if (data.friends && Array.isArray(data.friends)) {
+          setFriends(data.friends.map((f: Record<string, unknown>) => ({
+            playerId: String(f.friend_user_id || ''),
+            name: String(f.friend_name || ''),
+            status: String(f.status || 'pending').charAt(0).toUpperCase() + String(f.status || 'pending').slice(1) as 'Accepted' | 'Pending',
+            addedDate: f.created_at ? new Date(String(f.created_at)) : new Date(),
+          })));
+        }
+
+        // Wallet transactions from API
+        if (data.wallet_transactions && Array.isArray(data.wallet_transactions)) {
+          setWalletTransactions(data.wallet_transactions.map((wt: Record<string, unknown>) => ({
+            id: String(wt.id || ''),
+            type: (Number(wt.amount || 0) >= 0 ? 'Credit' : 'Debit') as 'Credit' | 'Debit',
+            amount: Math.abs(Number(wt.amount || 0)),
+            description: String(wt.description || wt.reference_type || wt.type || ''),
+            date: wt.created_at ? new Date(String(wt.created_at)) : new Date(),
+            status: String(wt.status || 'completed'),
+          })));
+        }
+
+        // Wallet balance from summary
+        if (data.wallet_summary) {
+          setPlayer((prev) => ({
+            ...prev,
+            walletBalance: Number(data.wallet_summary.current_balance || 0),
+          }));
         }
       } catch (err) {
         console.error("Failed to load player from API:", err);

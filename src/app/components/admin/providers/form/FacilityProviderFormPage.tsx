@@ -521,7 +521,7 @@ export function FacilityProviderFormPage() {
           date_of_incorporation: form.incorporationDate?.toISOString() || null,
         });
         toast.success("Facility provider updated successfully.");
-        navigate(`/providers/facility/${id}`);
+        navigate("/providers");
       } else {
         await adminService.createProvider({
           first_name: form.personInCharge?.split(" ")[0] || form.facilityName,
@@ -564,14 +564,14 @@ export function FacilityProviderFormPage() {
     if (isDirty) {
       setCancelDialogOpen(true);
     } else {
-      navigate(isEditMode ? `/providers/facility/${id}` : "/providers");
+      navigate("/providers");
     }
   }, [isDirty, isEditMode, navigate, id]);
 
   const confirmCancel = useCallback(() => {
     setCancelDialogOpen(false);
     setIsDirty(false);
-    navigate(isEditMode ? `/providers/facility/${id}` : "/providers");
+    navigate("/providers");
   }, [isEditMode, navigate, id]);
 
   // ═══════════════════════════════════════════════════════════
