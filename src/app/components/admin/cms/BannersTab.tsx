@@ -210,7 +210,9 @@ export function BannersTab() {
     if (isNew) {
       setBanners((p) => [...p, editingBanner]);
     } else {
-      setBanners((p) => p.map((b) => (b.id === editingBanner.id ? editingBanner : b)));
+      setBanners((p) =>
+        p.map((b) => (b.id === editingBanner.id ? editingBanner : b)),
+      );
     }
     toast.success(isNew ? "Banner created" : "Banner updated");
     closeModal();
@@ -230,7 +232,7 @@ export function BannersTab() {
 
   const toggleStatus = (id: string) => {
     setBanners((p) =>
-      p.map((b) => (b.id === id ? { ...b, active: !b.active } : b))
+      p.map((b) => (b.id === id ? { ...b, active: !b.active } : b)),
     );
   };
 
@@ -267,7 +269,10 @@ export function BannersTab() {
             {banners.filter((b) => b.active).length} active
           </p>
         </div>
-        <Button onClick={openNew} className="bg-[#003B95] hover:bg-[#002a6b] gap-2">
+        <Button
+          onClick={openNew}
+          className="bg-[#003B95] hover:bg-[#002a6b] gap-2"
+        >
           <Plus className="h-4 w-4" />
           Add Banner
         </Button>
@@ -290,7 +295,7 @@ export function BannersTab() {
               "group relative rounded-lg border bg-white overflow-hidden transition-all cursor-pointer",
               dragOverIdx === idx && dragIdx !== idx && "ring-2 ring-[#003B95]",
               dragIdx === idx && "opacity-50",
-              !banner.active && "opacity-70"
+              !banner.active && "opacity-70",
             )}
             onClick={() => openEdit(banner)}
           >
@@ -367,7 +372,12 @@ export function BannersTab() {
         <div className="text-center py-16 border-2 border-dashed rounded-lg">
           <ImageIcon className="h-10 w-10 text-gray-300 mx-auto mb-3" />
           <p className="text-sm text-gray-500">No banners yet</p>
-          <Button onClick={openNew} variant="outline" className="mt-3 gap-2" size="sm">
+          <Button
+            onClick={openNew}
+            variant="outline"
+            className="mt-3 gap-2"
+            size="sm"
+          >
             <Plus className="h-3.5 w-3.5" />
             Add First Banner
           </Button>
@@ -412,7 +422,9 @@ export function BannersTab() {
                     onClick={() => fileInputRef.current?.click()}
                     className={cn(
                       "aspect-video rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-[#003B95] hover:bg-blue-50/30 transition-colors",
-                      formErrors.image ? "border-red-400 bg-red-50/30" : "border-gray-300"
+                      formErrors.image
+                        ? "border-red-400 bg-red-50/30"
+                        : "border-gray-300",
                     )}
                   >
                     <Upload className="h-8 w-8 text-gray-400 mb-2" />
@@ -496,7 +508,7 @@ export function BannersTab() {
               <div className="grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <div className="flex items-center gap-3 h-9">
+                  <div className="flex items-center gap-3 h-10">
                     <Switch
                       checked={editingBanner.active}
                       onCheckedChange={(v) => updateField("active", v)}

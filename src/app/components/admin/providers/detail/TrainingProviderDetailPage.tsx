@@ -11,11 +11,26 @@ import { useParams, useNavigate } from "react-router";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
-  ArrowLeft, Mail, Phone, PhoneCall, Calendar,
-  Building2, Users, FileText, ShieldCheck,
-  ChevronDown, ChevronRight, Maximize2,
-  FileSpreadsheet, File as FileIcon, ImageIcon,
-  User, Clock, ClipboardList, CreditCard, Inbox,
+  ArrowLeft,
+  Mail,
+  Phone,
+  PhoneCall,
+  Calendar,
+  Building2,
+  Users,
+  FileText,
+  ShieldCheck,
+  ChevronDown,
+  ChevronRight,
+  Maximize2,
+  FileSpreadsheet,
+  File as FileIcon,
+  ImageIcon,
+  User,
+  Clock,
+  ClipboardList,
+  CreditCard,
+  Inbox,
 } from "lucide-react";
 import { cn } from "../../../ui/utils";
 import { Button } from "../../../ui/button";
@@ -34,15 +49,35 @@ import { ProviderAuditTrailTable } from "../components/ProviderAuditTrailTable";
 // ─── Verification badge ──────────────────────────────────────
 
 const VERIFICATION_STYLES = {
-  Pending:  { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-400" },
-  Approved: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" },
-  Rejected: { bg: "bg-red-50", text: "text-red-600", border: "border-red-200", dot: "bg-red-500" },
+  Pending: {
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    dot: "bg-amber-400",
+  },
+  Approved: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    border: "border-emerald-200",
+    dot: "bg-emerald-500",
+  },
+  Rejected: {
+    bg: "bg-red-50",
+    text: "text-red-600",
+    border: "border-red-200",
+    dot: "bg-red-500",
+  },
 };
 
 function VerificationBadge({ status }: { status: string }) {
-  const s = VERIFICATION_STYLES[status as keyof typeof VERIFICATION_STYLES] || VERIFICATION_STYLES.Pending;
+  const s =
+    VERIFICATION_STYLES[status as keyof typeof VERIFICATION_STYLES] ||
+    VERIFICATION_STYLES.Pending;
   return (
-    <Badge variant="outline" className={cn("text-xs gap-1.5 border", s.bg, s.text, s.border)}>
+    <Badge
+      variant="outline"
+      className={cn("text-xs gap-1.5 border", s.bg, s.text, s.border)}
+    >
       <span className={cn("w-1.5 h-1.5 rounded-full", s.dot)} />
       {status}
     </Badge>
@@ -53,11 +88,16 @@ function VerificationBadge({ status }: { status: string }) {
 
 function DocIcon({ type, className }: { type: string; className?: string }) {
   switch (type) {
-    case "pdf":   return <FileText className={cn("text-red-500", className)} />;
-    case "image": return <ImageIcon className={cn("text-blue-500", className)} />;
-    case "xls":   return <FileSpreadsheet className={cn("text-emerald-500", className)} />;
-    case "doc":   return <FileIcon className={cn("text-blue-400", className)} />;
-    default:      return <FileIcon className={cn("text-gray-400", className)} />;
+    case "pdf":
+      return <FileText className={cn("text-red-500", className)} />;
+    case "image":
+      return <ImageIcon className={cn("text-blue-500", className)} />;
+    case "xls":
+      return <FileSpreadsheet className={cn("text-emerald-500", className)} />;
+    case "doc":
+      return <FileIcon className={cn("text-blue-400", className)} />;
+    default:
+      return <FileIcon className={cn("text-gray-400", className)} />;
   }
 }
 
@@ -90,9 +130,11 @@ function CollapsibleSection({
         </div>
         <span className="text-sm text-[#111827] flex-1">{title}</span>
         {badge}
-        {open
-          ? <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
-          : <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />}
+        {open ? (
+          <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+        ) : (
+          <ChevronRight className="h-4 w-4 text-gray-400 shrink-0" />
+        )}
       </button>
       {open && (
         <div className="px-5 pb-5 border-t border-gray-100">
@@ -136,7 +178,9 @@ function ProfileField({
     <div className="flex items-start gap-3 py-2.5">
       <Icon className="h-4 w-4 text-gray-400 mt-0.5 shrink-0" />
       <div className="min-w-0">
-        <p className="text-[11px] text-gray-400 uppercase tracking-wider">{label}</p>
+        <p className="text-[11px] text-gray-400 uppercase tracking-wider">
+          {label}
+        </p>
         {content}
       </div>
     </div>
@@ -149,7 +193,7 @@ function DetailSkeleton() {
   return (
     <div className="space-y-6 animate-pulse">
       <div className="flex items-center gap-3">
-        <Skeleton className="h-9 w-9 rounded-lg" />
+        <Skeleton className="h-10 w-9 rounded-lg" />
         <Skeleton className="h-6 w-64" />
       </div>
       <div className="bg-white border rounded-xl p-5 space-y-4">
@@ -182,9 +226,20 @@ function DetailSkeleton() {
 
 // ─── Detail Tab config (SCR-ADM-007) ────────────────────────
 
-type ProviderDetailTab = "profile" | "documents" | "account" | "bank" | "facilities" | "coaches" | "audit";
+type ProviderDetailTab =
+  | "profile"
+  | "documents"
+  | "account"
+  | "bank"
+  | "facilities"
+  | "coaches"
+  | "audit";
 
-const PROVIDER_DETAIL_TABS: { key: ProviderDetailTab; label: string; icon: React.ElementType }[] = [
+const PROVIDER_DETAIL_TABS: {
+  key: ProviderDetailTab;
+  label: string;
+  icon: React.ElementType;
+}[] = [
   { key: "profile", label: "Profile Information", icon: User },
   { key: "documents", label: "Documents", icon: FileText },
   { key: "account", label: "Account & Verification", icon: ShieldCheck },
@@ -200,7 +255,8 @@ export function TrainingProviderDetailPage() {
 
   const [loading, setLoading] = useState(true);
   const [provider, setProvider] = useState<TrainingProviderDetail | null>(null);
-  const [activeDetailTab, setActiveDetailTab] = useState<ProviderDetailTab>("profile");
+  const [activeDetailTab, setActiveDetailTab] =
+    useState<ProviderDetailTab>("profile");
 
   // Reset to profile tab if current tab is hidden for pending providers
   useEffect(() => {
@@ -231,7 +287,7 @@ export function TrainingProviderDetailPage() {
 
   // ── Facility handlers ────────────────────────
   const handleAssignFacility = useCallback((facility: AssignedFacility) => {
-    setProvider(prev => {
+    setProvider((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
@@ -241,52 +297,57 @@ export function TrainingProviderDetailPage() {
   }, []);
 
   const handleRemoveFacility = useCallback((facilityId: string) => {
-    setProvider(prev => {
+    setProvider((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
-        assignedFacilities: prev.assignedFacilities.filter(f => f.id !== facilityId),
-      };
-    });
-  }, []);
-
-  // ── Facility request handlers ─────────────────
-  const handleUpdateFacilityRequest = useCallback((updated: FacilityRequest) => {
-    setProvider(prev => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        facilityRequests: prev.facilityRequests.map(r =>
-          r.id === updated.id ? updated : r
+        assignedFacilities: prev.assignedFacilities.filter(
+          (f) => f.id !== facilityId,
         ),
       };
     });
   }, []);
 
+  // ── Facility request handlers ─────────────────
+  const handleUpdateFacilityRequest = useCallback(
+    (updated: FacilityRequest) => {
+      setProvider((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          facilityRequests: prev.facilityRequests.map((r) =>
+            r.id === updated.id ? updated : r,
+          ),
+        };
+      });
+    },
+    [],
+  );
+
   // ── Coach handlers ───────────────────────────
   const handleAddCoach = useCallback((coach: ProviderCoach) => {
-    setProvider(prev => {
+    setProvider((prev) => {
       if (!prev) return prev;
       return { ...prev, coaches: [...prev.coaches, coach] };
     });
   }, []);
 
   const handleUpdateCoach = useCallback((updated: ProviderCoach) => {
-    setProvider(prev => {
+    setProvider((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
-        coaches: prev.coaches.map(c => c.id === updated.id ? updated : c),
+        coaches: prev.coaches.map((c) => (c.id === updated.id ? updated : c)),
       };
     });
   }, []);
 
   const handleDeleteCoach = useCallback((coachId: string) => {
-    setProvider(prev => {
+    setProvider((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
-        coaches: prev.coaches.filter(c => c.id !== coachId),
+        coaches: prev.coaches.filter((c) => c.id !== coachId),
       };
     });
   }, []);
@@ -299,7 +360,7 @@ export function TrainingProviderDetailPage() {
 
   // ── Unlock handler ───────────────────────────
   const handleUnlock = () => {
-    setProvider(prev => {
+    setProvider((prev) => {
       if (!prev) return prev;
       return {
         ...prev,
@@ -326,7 +387,9 @@ export function TrainingProviderDetailPage() {
         <div className="flex flex-col items-center justify-center py-20">
           <Users className="h-16 w-16 text-gray-300 mb-4" />
           <p className="text-lg text-gray-500">Provider not found</p>
-          <p className="text-sm text-gray-400 mt-1">The provider with ID "{id}" does not exist.</p>
+          <p className="text-sm text-gray-400 mt-1">
+            The provider with ID "{id}" does not exist.
+          </p>
           <Button
             variant="outline"
             className="mt-6"
@@ -345,9 +408,13 @@ export function TrainingProviderDetailPage() {
   const isPending = provider.verificationStatus === "Pending";
 
   // Tabs hidden during onboarding (Pending status)
-  const ONBOARDING_HIDDEN_TABS: Set<ProviderDetailTab> = new Set(["bank", "facilities", "coaches"]);
+  const ONBOARDING_HIDDEN_TABS: Set<ProviderDetailTab> = new Set([
+    "bank",
+    "facilities",
+    "coaches",
+  ]);
   const visibleTabs = isPending
-    ? PROVIDER_DETAIL_TABS.filter(tab => !ONBOARDING_HIDDEN_TABS.has(tab.key))
+    ? PROVIDER_DETAIL_TABS.filter((tab) => !ONBOARDING_HIDDEN_TABS.has(tab.key))
     : PROVIDER_DETAIL_TABS;
 
   return (
@@ -357,7 +424,7 @@ export function TrainingProviderDetailPage() {
         <Button
           variant="ghost"
           size="icon"
-          className="h-9 w-9 shrink-0"
+          className="h-10 w-9 shrink-0"
           onClick={() => navigate("/providers")}
           aria-label="Back to providers list"
         >
@@ -378,20 +445,27 @@ export function TrainingProviderDetailPage() {
               )}
             </Tooltip>
             <VerificationBadge status={provider.verificationStatus} />
-            <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200">
+            <Badge
+              variant="outline"
+              className="text-[10px] text-gray-500 border-gray-200"
+            >
               {provider.id}
             </Badge>
           </div>
           <p className="text-xs text-gray-400 mt-0.5">
-            Training Provider &middot; Registered {format(provider.createdAt, "dd MMM yyyy")}
+            Training Provider &middot; Registered{" "}
+            {format(provider.createdAt, "dd MMM yyyy")}
           </p>
         </div>
       </div>
 
       {/* ── Tab Bar (SCR-ADM-007) ────────────────────── */}
       <div className="border-b border-gray-200 overflow-x-auto">
-        <nav className="-mb-px flex space-x-6 min-w-max" aria-label="Provider detail tabs">
-          {visibleTabs.map(tab => {
+        <nav
+          className="-mb-px flex space-x-6 min-w-max"
+          aria-label="Provider detail tabs"
+        >
+          {visibleTabs.map((tab) => {
             const isActive = activeDetailTab === tab.key;
             const Icon = tab.icon;
             return (
@@ -402,7 +476,7 @@ export function TrainingProviderDetailPage() {
                   "whitespace-nowrap py-3 px-1 border-b-2 font-medium text-sm transition-colors flex items-center gap-2",
                   isActive
                     ? "border-[#003B95] text-[#003B95]"
-                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300"
+                    : "border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -422,31 +496,69 @@ export function TrainingProviderDetailPage() {
             <div className="flex flex-col items-center gap-2 shrink-0">
               <Avatar className="h-20 w-20 rounded-2xl">
                 {provider.profilePhotoUrl ? (
-                  <AvatarImage src={provider.profilePhotoUrl} alt={provider.firstName} className="rounded-2xl" />
+                  <AvatarImage
+                    src={provider.profilePhotoUrl}
+                    alt={provider.firstName}
+                    className="rounded-2xl"
+                  />
                 ) : null}
                 <AvatarFallback className="rounded-2xl bg-[#003B95]/10 text-[#003B95] text-xl">
-                  {provider.firstName[0]}{provider.lastName[0] || ""}
+                  {provider.firstName[0]}
+                  {provider.lastName[0] || ""}
                 </AvatarFallback>
               </Avatar>
-              <Badge variant="outline" className={cn(
-                "text-[10px]",
-                provider.platformStatus === "Active"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-gray-100 text-gray-500 border-gray-200"
-              )}>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px]",
+                  provider.platformStatus === "Active"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-gray-100 text-gray-500 border-gray-200",
+                )}
+              >
                 {provider.platformStatus}
               </Badge>
             </div>
 
             {/* Fields Grid */}
             <div className="flex-1 grid grid-cols-1 sm:grid-cols-2 gap-x-8 gap-y-0 min-w-0">
-              <ProfileField icon={User} label="First Name" value={provider.firstName} />
-              <ProfileField icon={User} label="Last Name" value={provider.lastName} />
-              <ProfileField icon={Mail} label="Email" value={provider.email} href={`mailto:${provider.email}`} type="email" />
-              <ProfileField icon={Phone} label="Mobile Number" value={provider.mobile} href={`tel:${provider.mobile}`} type="phone" />
-              <ProfileField icon={Calendar} label="Date of Incorporation" value={format(provider.dateOfIncorporation, "dd/MM/yyyy")} />
+              <ProfileField
+                icon={User}
+                label="First Name"
+                value={provider.firstName}
+              />
+              <ProfileField
+                icon={User}
+                label="Last Name"
+                value={provider.lastName}
+              />
+              <ProfileField
+                icon={Mail}
+                label="Email"
+                value={provider.email}
+                href={`mailto:${provider.email}`}
+                type="email"
+              />
+              <ProfileField
+                icon={Phone}
+                label="Mobile Number"
+                value={provider.mobile}
+                href={`tel:${provider.mobile}`}
+                type="phone"
+              />
+              <ProfileField
+                icon={Calendar}
+                label="Date of Incorporation"
+                value={format(provider.dateOfIncorporation, "dd/MM/yyyy")}
+              />
               {hasLandline && (
-                <ProfileField icon={PhoneCall} label="Landline" value={provider.landline} href={`tel:${provider.landline}`} type="phone" />
+                <ProfileField
+                  icon={PhoneCall}
+                  label="Landline"
+                  value={provider.landline}
+                  href={`tel:${provider.landline}`}
+                  type="phone"
+                />
               )}
             </div>
           </div>
@@ -456,9 +568,15 @@ export function TrainingProviderDetailPage() {
       {activeDetailTab === "documents" && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-[#111827]">Official Documents</h3>
-            <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200">
-              {provider.documents.length} file{provider.documents.length !== 1 ? "s" : ""}
+            <h3 className="text-sm font-medium text-[#111827]">
+              Official Documents
+            </h3>
+            <Badge
+              variant="outline"
+              className="text-[10px] text-gray-500 border-gray-200"
+            >
+              {provider.documents.length} file
+              {provider.documents.length !== 1 ? "s" : ""}
             </Badge>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
@@ -467,12 +585,18 @@ export function TrainingProviderDetailPage() {
                 key={doc.id}
                 className="group relative flex items-start gap-3 p-3.5 rounded-lg border border-gray-200 hover:border-[#003B95]/30 hover:bg-[#003B95]/[0.02] transition-all"
               >
-                <div className={cn(
-                  "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-                  doc.fileType === "pdf" ? "bg-red-50" :
-                  doc.fileType === "image" ? "bg-blue-50" :
-                  doc.fileType === "xls" ? "bg-emerald-50" : "bg-gray-50"
-                )}>
+                <div
+                  className={cn(
+                    "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+                    doc.fileType === "pdf"
+                      ? "bg-red-50"
+                      : doc.fileType === "image"
+                        ? "bg-blue-50"
+                        : doc.fileType === "xls"
+                          ? "bg-emerald-50"
+                          : "bg-gray-50",
+                  )}
+                >
                   <DocIcon type={doc.fileType} className="h-5 w-5" />
                 </div>
                 <div className="min-w-0 flex-1">
@@ -500,7 +624,9 @@ export function TrainingProviderDetailPage() {
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div className="p-4 rounded-lg bg-gray-50/80 border border-gray-100">
-              <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">Verification Status</p>
+              <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">
+                Verification Status
+              </p>
               <VerificationBadge status={provider.verificationStatus} />
               {provider.verificationStatus === "Rejected" && (
                 <p className="text-xs text-red-500 mt-2">
@@ -518,19 +644,28 @@ export function TrainingProviderDetailPage() {
               onUnlock={handleUnlock}
             />
             <div className="p-4 rounded-lg bg-gray-50/80 border border-gray-100">
-              <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">Platform Status</p>
-              <Badge variant="outline" className={cn(
-                "text-xs",
-                provider.platformStatus === "Active"
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                  : "bg-gray-100 text-gray-500 border-gray-200"
-              )}>
+              <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">
+                Platform Status
+              </p>
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-xs",
+                  provider.platformStatus === "Active"
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                    : "bg-gray-100 text-gray-500 border-gray-200",
+                )}
+              >
                 {provider.platformStatus}
               </Badge>
             </div>
             <div className="p-4 rounded-lg bg-gray-50/80 border border-gray-100">
-              <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">Created</p>
-              <p className="text-sm text-[#111827]">{format(provider.createdAt, "dd MMM yyyy, HH:mm")}</p>
+              <p className="text-[11px] text-gray-400 uppercase tracking-wider mb-2">
+                Created
+              </p>
+              <p className="text-sm text-[#111827]">
+                {format(provider.createdAt, "dd MMM yyyy, HH:mm")}
+              </p>
             </div>
           </div>
         </div>
@@ -545,8 +680,13 @@ export function TrainingProviderDetailPage() {
           {/* Assigned Facilities */}
           <div className="bg-white border border-gray-200 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-sm font-medium text-[#111827]">Assigned Facilities</h3>
-              <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200">
+              <h3 className="text-sm font-medium text-[#111827]">
+                Assigned Facilities
+              </h3>
+              <Badge
+                variant="outline"
+                className="text-[10px] text-gray-500 border-gray-200"
+              >
                 {provider.assignedFacilities.length}
               </Badge>
             </div>
@@ -562,14 +702,28 @@ export function TrainingProviderDetailPage() {
           <div className="bg-white border border-gray-200 rounded-xl p-5">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-2">
-                <h3 className="text-sm font-medium text-[#111827]">Facility Requests</h3>
-                {provider.facilityRequests.filter(r => r.status === "Pending").length > 0 && (
-                  <Badge variant="outline" className="text-[10px] gap-1 bg-amber-50 text-amber-700 border-amber-200">
-                    {provider.facilityRequests.filter(r => r.status === "Pending").length} pending
+                <h3 className="text-sm font-medium text-[#111827]">
+                  Facility Requests
+                </h3>
+                {provider.facilityRequests.filter((r) => r.status === "Pending")
+                  .length > 0 && (
+                  <Badge
+                    variant="outline"
+                    className="text-[10px] gap-1 bg-amber-50 text-amber-700 border-amber-200"
+                  >
+                    {
+                      provider.facilityRequests.filter(
+                        (r) => r.status === "Pending",
+                      ).length
+                    }{" "}
+                    pending
                   </Badge>
                 )}
               </div>
-              <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200">
+              <Badge
+                variant="outline"
+                className="text-[10px] text-gray-500 border-gray-200"
+              >
                 {provider.facilityRequests.length}
               </Badge>
             </div>
@@ -584,8 +738,13 @@ export function TrainingProviderDetailPage() {
       {activeDetailTab === "coaches" && (
         <div className="bg-white border border-gray-200 rounded-xl p-5">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-sm font-medium text-[#111827]">Coach Profiles</h3>
-            <Badge variant="outline" className="text-[10px] text-gray-500 border-gray-200">
+            <h3 className="text-sm font-medium text-[#111827]">
+              Coach Profiles
+            </h3>
+            <Badge
+              variant="outline"
+              className="text-[10px] text-gray-500 border-gray-200"
+            >
               {provider.coaches.length}
             </Badge>
           </div>

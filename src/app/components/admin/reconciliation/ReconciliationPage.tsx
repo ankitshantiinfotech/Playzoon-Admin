@@ -117,13 +117,13 @@ function StatCard({
       aria-label={`${label}: ${count} mismatches. Click to filter.`}
       className={cn(
         "bg-white border rounded-xl p-4 flex items-center gap-3 transition-all hover:shadow-md cursor-pointer text-left w-full",
-        active && "ring-2 ring-[#003B95] ring-offset-1"
+        active && "ring-2 ring-[#003B95] ring-offset-1",
       )}
     >
       <div
         className={cn(
           "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
-          colorClass
+          colorClass,
         )}
       >
         <span className="text-base font-bold">{count}</span>
@@ -137,7 +137,8 @@ function StatCard({
 
 export function ReconciliationPage() {
   // ── State (mutable mock data) ──────────────────────────────────────────────
-  const [mismatches, setMismatches] = useState<ReconciliationMismatch[]>(MOCK_MISMATCHES);
+  const [mismatches, setMismatches] =
+    useState<ReconciliationMismatch[]>(MOCK_MISMATCHES);
 
   // ── Filters ────────────────────────────────────────────────────────────────
   const [search, setSearch] = useState("");
@@ -155,7 +156,8 @@ export function ReconciliationPage() {
   const [pageSize, setPageSize] = useState<number>(20);
 
   // ── Resolve Modal ──────────────────────────────────────────────────────────
-  const [resolveTarget, setResolveTarget] = useState<ReconciliationMismatch | null>(null);
+  const [resolveTarget, setResolveTarget] =
+    useState<ReconciliationMismatch | null>(null);
   const [resolveNotes, setResolveNotes] = useState("");
   const [resolveCategory, setResolveCategory] = useState<string>("");
   const [isResolving, setIsResolving] = useState(false);
@@ -172,8 +174,12 @@ export function ReconciliationPage() {
   // ── Summary counts ─────────────────────────────────────────────────────────
   const counts = useMemo(() => {
     const total = mismatches.length;
-    const unresolved = mismatches.filter((m) => m.status === "Unresolved").length;
-    const acknowledged = mismatches.filter((m) => m.status === "Acknowledged").length;
+    const unresolved = mismatches.filter(
+      (m) => m.status === "Unresolved",
+    ).length;
+    const acknowledged = mismatches.filter(
+      (m) => m.status === "Acknowledged",
+    ).length;
     const resolved = mismatches.filter((m) => m.status === "Resolved").length;
     return { total, unresolved, acknowledged, resolved };
   }, [mismatches]);
@@ -193,7 +199,11 @@ export function ReconciliationPage() {
         }
       }
       if (statusFilter !== "all" && entry.status !== statusFilter) return false;
-      if (mismatchTypeFilter !== "all" && entry.mismatchType !== mismatchTypeFilter) return false;
+      if (
+        mismatchTypeFilter !== "all" &&
+        entry.mismatchType !== mismatchTypeFilter
+      )
+        return false;
       if (dateFrom) {
         const d = new Date(dateFrom);
         d.setHours(0, 0, 0, 0);
@@ -299,17 +309,25 @@ export function ReconciliationPage() {
                 acknowledgedBy: "Current Admin",
                 acknowledgedAt: new Date(),
               }
-            : m
-        )
+            : m,
+        ),
       );
       setAcknowledgingId(null);
-      toast.success("Mismatch acknowledged. It remains in the list for resolution.");
+      toast.success(
+        "Mismatch acknowledged. It remains in the list for resolution.",
+      );
     }, 600);
   };
 
   // ── Resolve handler ────────────────────────────────────────────────────────
   const handleResolve = () => {
-    if (!resolveTarget || !resolveNotes || resolveNotes.length < 10 || !resolveCategory) return;
+    if (
+      !resolveTarget ||
+      !resolveNotes ||
+      resolveNotes.length < 10 ||
+      !resolveCategory
+    )
+      return;
     setIsResolving(true);
     // Simulate API call
     setTimeout(() => {
@@ -324,8 +342,8 @@ export function ReconciliationPage() {
                 resolvedBy: "Current Admin",
                 resolvedAt: new Date(),
               }
-            : m
-        )
+            : m,
+        ),
       );
       setIsResolving(false);
       setResolveTarget(null);
@@ -362,11 +380,18 @@ export function ReconciliationPage() {
       format(entry.detectedAt, "dd MMM yyyy, HH:mm") + " UTC",
       entry.status,
       entry.resolutionCategory || "",
-      entry.resolutionNotes ? `"${entry.resolutionNotes.replace(/"/g, '""')}"` : "",
+      entry.resolutionNotes
+        ? `"${entry.resolutionNotes.replace(/"/g, '""')}"`
+        : "",
       entry.resolvedBy || "",
-      entry.resolvedAt ? format(entry.resolvedAt, "dd MMM yyyy, HH:mm") + " UTC" : "",
+      entry.resolvedAt
+        ? format(entry.resolvedAt, "dd MMM yyyy, HH:mm") + " UTC"
+        : "",
     ]);
-    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((r) => r.join(",")),
+    ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -420,27 +445,28 @@ export function ReconciliationPage() {
             "rounded-xl border p-4 flex items-center gap-3",
             counts.unresolved > 10
               ? "bg-red-50 border-red-200"
-              : "bg-amber-50 border-amber-200"
+              : "bg-amber-50 border-amber-200",
           )}
         >
           <AlertTriangle
             className={cn(
               "h-5 w-5 shrink-0",
-              counts.unresolved > 10 ? "text-red-500" : "text-amber-500"
+              counts.unresolved > 10 ? "text-red-500" : "text-amber-500",
             )}
           />
           <div className="flex-1">
             <p
               className={cn(
                 "text-sm font-medium",
-                counts.unresolved > 10 ? "text-red-700" : "text-amber-700"
+                counts.unresolved > 10 ? "text-red-700" : "text-amber-700",
               )}
             >
-              {counts.unresolved} unresolved mismatch{counts.unresolved !== 1 ? "es" : ""} require
-              attention.
+              {counts.unresolved} unresolved mismatch
+              {counts.unresolved !== 1 ? "es" : ""} require attention.
             </p>
             <p className="text-xs text-[#6B7280] mt-0.5">
-              Last reconciliation run: {format(LAST_CRON_RUN, "dd MMM yyyy, HH:mm")} UTC
+              Last reconciliation run:{" "}
+              {format(LAST_CRON_RUN, "dd MMM yyyy, HH:mm")} UTC
             </p>
           </div>
         </div>
@@ -457,7 +483,8 @@ export function ReconciliationPage() {
                 All mismatches have been resolved.
               </p>
               <p className="text-xs text-[#6B7280] mt-0.5">
-                Last reconciliation run: {format(LAST_CRON_RUN, "dd MMM yyyy, HH:mm")} UTC
+                Last reconciliation run:{" "}
+                {format(LAST_CRON_RUN, "dd MMM yyyy, HH:mm")} UTC
               </p>
             </div>
             <button
@@ -545,7 +572,7 @@ export function ReconciliationPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9" aria-label="Filter by status">
+              <SelectTrigger className="h-10" aria-label="Filter by status">
                 <SelectValue placeholder="All Statuses" />
               </SelectTrigger>
               <SelectContent>
@@ -567,7 +594,10 @@ export function ReconciliationPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9" aria-label="Filter by mismatch type">
+              <SelectTrigger
+                className="h-10"
+                aria-label="Filter by mismatch type"
+              >
                 <SelectValue placeholder="All Types" />
               </SelectTrigger>
               <SelectContent>
@@ -589,8 +619,8 @@ export function ReconciliationPage() {
                 <Button
                   variant="outline"
                   className={cn(
-                    "h-9 gap-2 text-sm min-w-[130px] justify-start",
-                    !dateFrom && "text-muted-foreground"
+                    "h-10 gap-2 text-sm min-w-[130px] justify-start",
+                    !dateFrom && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="h-3.5 w-3.5" />
@@ -619,8 +649,8 @@ export function ReconciliationPage() {
                 <Button
                   variant="outline"
                   className={cn(
-                    "h-9 gap-2 text-sm min-w-[130px] justify-start",
-                    !dateTo && "text-muted-foreground"
+                    "h-10 gap-2 text-sm min-w-[130px] justify-start",
+                    !dateTo && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="h-3.5 w-3.5" />
@@ -647,7 +677,7 @@ export function ReconciliationPage() {
               variant="ghost"
               size="sm"
               onClick={clearFilters}
-              className="gap-1 text-xs text-red-500 hover:text-red-700 h-9"
+              className="gap-1 text-xs text-red-500 hover:text-red-700 h-10"
             >
               <X className="h-3.5 w-3.5" />
               Clear Filters
@@ -775,7 +805,7 @@ export function ReconciliationPage() {
                       className={cn(
                         "transition-colors",
                         isUnresolved && "border-l-2 border-l-red-400",
-                        idx % 2 === 0 ? "bg-white" : "bg-gray-50/40"
+                        idx % 2 === 0 ? "bg-white" : "bg-gray-50/40",
                       )}
                     >
                       {/* Booking ID */}
@@ -807,7 +837,9 @@ export function ReconciliationPage() {
                         <span
                           className={cn(
                             "text-xs tabular-nums font-medium",
-                            entry.difference !== 0 ? "text-red-600" : "text-[#6B7280]"
+                            entry.difference !== 0
+                              ? "text-red-600"
+                              : "text-[#6B7280]",
                           )}
                           aria-label={diffLabel}
                         >
@@ -837,7 +869,7 @@ export function ReconciliationPage() {
                           variant="secondary"
                           className={cn(
                             "text-[10px] font-medium",
-                            MISMATCH_TYPE_STYLES[entry.mismatchType]
+                            MISMATCH_TYPE_STYLES[entry.mismatchType],
                           )}
                           aria-label={`Mismatch type: ${entry.mismatchType}`}
                         >
@@ -858,7 +890,7 @@ export function ReconciliationPage() {
                           variant="secondary"
                           className={cn(
                             "text-[10px] font-medium",
-                            MISMATCH_STATUS_STYLES[entry.status]
+                            MISMATCH_STATUS_STYLES[entry.status],
                           )}
                         >
                           {entry.status}
@@ -929,39 +961,46 @@ export function ReconciliationPage() {
                                   View Resolution
                                 </Button>
                               </PopoverTrigger>
-                              <PopoverContent
-                                className="w-80 p-4"
-                                align="end"
-                              >
+                              <PopoverContent className="w-80 p-4" align="end">
                                 <div className="space-y-3">
                                   <h4 className="text-sm font-semibold text-[#111827]">
                                     Resolution Details
                                   </h4>
                                   <div className="space-y-2 text-xs">
                                     <div>
-                                      <span className="text-[#6B7280]">Category:</span>
+                                      <span className="text-[#6B7280]">
+                                        Category:
+                                      </span>
                                       <span className="ml-2 font-medium text-[#374151]">
                                         {entry.resolutionCategory}
                                       </span>
                                     </div>
                                     <div>
-                                      <span className="text-[#6B7280]">Notes:</span>
+                                      <span className="text-[#6B7280]">
+                                        Notes:
+                                      </span>
                                       <p className="mt-1 text-[#374151] leading-relaxed">
                                         {entry.resolutionNotes}
                                       </p>
                                     </div>
                                     <div>
-                                      <span className="text-[#6B7280]">Resolved By:</span>
+                                      <span className="text-[#6B7280]">
+                                        Resolved By:
+                                      </span>
                                       <span className="ml-2 font-medium text-[#374151]">
                                         {entry.resolvedBy}
                                       </span>
                                     </div>
                                     <div>
-                                      <span className="text-[#6B7280]">Resolved At:</span>
+                                      <span className="text-[#6B7280]">
+                                        Resolved At:
+                                      </span>
                                       <span className="ml-2 text-[#374151]">
                                         {entry.resolvedAt
-                                          ? format(entry.resolvedAt, "dd MMM yyyy, HH:mm") +
-                                            " UTC"
+                                          ? format(
+                                              entry.resolvedAt,
+                                              "dd MMM yyyy, HH:mm",
+                                            ) + " UTC"
                                           : "N/A"}
                                       </span>
                                     </div>
@@ -1056,12 +1095,12 @@ export function ReconciliationPage() {
                     onClick={() => setPage(p)}
                     className={cn(
                       "h-7 w-7 p-0 text-xs",
-                      p === safePage && "bg-[#003B95] hover:bg-[#002a6b]"
+                      p === safePage && "bg-[#003B95] hover:bg-[#002a6b]",
                     )}
                   >
                     {p}
                   </Button>
-                )
+                ),
               )}
               <Button
                 variant="outline"
@@ -1128,7 +1167,7 @@ export function ReconciliationPage() {
                       "font-medium",
                       resolveTarget.difference !== 0
                         ? "text-red-600"
-                        : "text-[#111827]"
+                        : "text-[#111827]",
                     )}
                   >
                     {resolveTarget.difference > 0 ? "+" : ""}
@@ -1141,7 +1180,7 @@ export function ReconciliationPage() {
                     variant="secondary"
                     className={cn(
                       "text-[10px]",
-                      MISMATCH_TYPE_STYLES[resolveTarget.mismatchType]
+                      MISMATCH_TYPE_STYLES[resolveTarget.mismatchType],
                     )}
                   >
                     {resolveTarget.mismatchType}
@@ -1244,9 +1283,7 @@ export function ReconciliationPage() {
             <Button
               onClick={handleResolve}
               disabled={
-                isResolving ||
-                !resolveCategory ||
-                resolveNotes.length < 10
+                isResolving || !resolveCategory || resolveNotes.length < 10
               }
               className="bg-[#003B95] hover:bg-[#002a6b]"
             >

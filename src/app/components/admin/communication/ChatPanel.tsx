@@ -12,7 +12,7 @@ function getInitials(name: string): string {
   return name
     .split(/\s+/)
     .slice(0, 2)
-    .map(w => w[0]?.toUpperCase() || "")
+    .map((w) => w[0]?.toUpperCase() || "")
     .join("");
 }
 
@@ -102,7 +102,8 @@ export function ChatPanel() {
   const providerType = activeChatProvider?.providerType || "";
 
   // ── Provider-side offline check ────────────────────
-  const showOfflineBanner = chatEnabled && !offlineMessagesEnabled && !isAdminOnline;
+  const showOfflineBanner =
+    chatEnabled && !offlineMessagesEnabled && !isAdminOnline;
 
   return (
     <>
@@ -110,7 +111,7 @@ export function ChatPanel() {
       <div
         className={cn(
           "fixed inset-0 z-40 bg-black/30 transition-opacity duration-300",
-          isChatPanelOpen ? "opacity-100" : "opacity-0 pointer-events-none"
+          isChatPanelOpen ? "opacity-100" : "opacity-0 pointer-events-none",
         )}
         aria-hidden="true"
       />
@@ -123,12 +124,12 @@ export function ChatPanel() {
         aria-modal="true"
         className={cn(
           "fixed top-0 right-0 z-50 h-full w-full sm:w-[420px] bg-white shadow-2xl flex flex-col transition-transform duration-300 ease-in-out",
-          isChatPanelOpen ? "translate-x-0" : "translate-x-full"
+          isChatPanelOpen ? "translate-x-0" : "translate-x-full",
         )}
       >
         {/* ── Header ──────────────────────────────────── */}
         <div className="flex items-center gap-3 px-4 py-3.5 border-b bg-white shrink-0">
-          <Avatar className="h-9 w-9">
+          <Avatar className="h-10 w-9">
             <AvatarImage src={providerAvatar} alt={providerName} />
             <AvatarFallback className="bg-[#003B95]/10 text-[#003B95] text-xs">
               {getInitials(providerName)}
@@ -136,17 +137,21 @@ export function ChatPanel() {
           </Avatar>
           <div className="flex-1 min-w-0">
             <div className="flex items-center gap-2">
-              <h3 className="text-sm text-[#111827] truncate">{providerName}</h3>
+              <h3 className="text-sm text-[#111827] truncate">
+                {providerName}
+              </h3>
               {/* Online status dot */}
               <span
                 className={cn(
                   "w-2 h-2 rounded-full shrink-0",
-                  isAdminOnline ? "bg-emerald-500" : "bg-gray-300"
+                  isAdminOnline ? "bg-emerald-500" : "bg-gray-300",
                 )}
                 title={isAdminOnline ? "Online" : "Offline"}
               />
             </div>
-            <p className="text-[11px] text-[#9CA3AF] truncate">{providerType}</p>
+            <p className="text-[11px] text-[#9CA3AF] truncate">
+              {providerType}
+            </p>
           </div>
           <Button
             variant="ghost"
@@ -188,7 +193,8 @@ export function ChatPanel() {
                 const prevMsg = idx > 0 ? messages[idx - 1] : null;
                 const showDateDivider =
                   !prevMsg ||
-                  format(msg.timestamp, "yyyy-MM-dd") !== format(prevMsg.timestamp, "yyyy-MM-dd");
+                  format(msg.timestamp, "yyyy-MM-dd") !==
+                    format(prevMsg.timestamp, "yyyy-MM-dd");
 
                 return (
                   <div key={msg.id}>
@@ -207,7 +213,7 @@ export function ChatPanel() {
                     <div
                       className={cn(
                         "flex",
-                        isAdmin ? "justify-end" : "justify-start"
+                        isAdmin ? "justify-end" : "justify-start",
                       )}
                     >
                       <div
@@ -215,7 +221,7 @@ export function ChatPanel() {
                           "max-w-[80%] rounded-2xl px-3.5 py-2 space-y-0.5",
                           isAdmin
                             ? "bg-[#003B95] text-white rounded-br-md"
-                            : "bg-white text-[#111827] border border-gray-200 rounded-bl-md shadow-sm"
+                            : "bg-white text-[#111827] border border-gray-200 rounded-bl-md shadow-sm",
                         )}
                       >
                         {!isAdmin && (
@@ -229,7 +235,7 @@ export function ChatPanel() {
                         <p
                           className={cn(
                             "text-[10px] text-right",
-                            isAdmin ? "text-white/60" : "text-[#9CA3AF]"
+                            isAdmin ? "text-white/60" : "text-[#9CA3AF]",
                           )}
                         >
                           {format(msg.timestamp, "HH:mm")}
@@ -268,7 +274,7 @@ export function ChatPanel() {
               <input
                 ref={inputRef}
                 value={inputValue}
-                onChange={e => setInputValue(e.target.value)}
+                onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type a message..."
                 className="flex-1 h-10 px-3.5 rounded-lg border border-gray-200 bg-gray-50 text-sm text-[#111827] placeholder:text-[#9CA3AF] outline-none focus:border-[#003B95] focus:ring-1 focus:ring-[#003B95]/30 transition-all"

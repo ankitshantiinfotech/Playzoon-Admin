@@ -70,10 +70,7 @@ import {
   DialogDescription,
   DialogFooter,
 } from "../../ui/dialog";
-import {
-  Card,
-  CardContent,
-} from "../../ui/card";
+import { Card, CardContent } from "../../ui/card";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -87,11 +84,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../../ui/collapsible";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "../../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type {
   EmailTemplate,
   TemplateCategory,
@@ -117,7 +110,10 @@ type PreviewWidth = "desktop" | "mobile";
 function replaceVariables(text: string, variables: DynamicVariable[]): string {
   let result = text;
   for (const v of variables) {
-    result = result.replace(new RegExp(`\\{\\{${v.name}\\}\\}`, "g"), v.sampleValue);
+    result = result.replace(
+      new RegExp(`\\{\\{${v.name}\\}\\}`, "g"),
+      v.sampleValue,
+    );
   }
   // Handle any remaining unmatched variables
   result = result.replace(/\{\{(\w+)\}\}/g, "[{{$1}}]");
@@ -131,7 +127,12 @@ function CategoryBadge({ category }: { category: TemplateCategory }) {
   return (
     <Badge
       variant="outline"
-      className={cn("text-[11px] font-medium", colors.bg, colors.text, colors.border)}
+      className={cn(
+        "text-[11px] font-medium",
+        colors.bg,
+        colors.text,
+        colors.border,
+      )}
     >
       {category}
     </Badge>
@@ -148,7 +149,7 @@ function StatusBadge({ status }: { status: TemplateStatus }) {
         "text-[11px] font-medium",
         status === "Active"
           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-          : "bg-gray-50 text-gray-500 border-gray-200"
+          : "bg-gray-50 text-gray-500 border-gray-200",
       )}
     >
       {status}
@@ -158,10 +159,19 @@ function StatusBadge({ status }: { status: TemplateStatus }) {
 
 // ─── Language Status Indicators ─────────────────────────────────────────────
 
-function LanguageIndicators({ hasEN, hasAR }: { hasEN: boolean; hasAR: boolean }) {
+function LanguageIndicators({
+  hasEN,
+  hasAR,
+}: {
+  hasEN: boolean;
+  hasAR: boolean;
+}) {
   return (
     <div className="flex items-center gap-3">
-      <div className="flex items-center gap-1" aria-label={`English template: ${hasEN ? "available" : "missing"}`}>
+      <div
+        className="flex items-center gap-1"
+        aria-label={`English template: ${hasEN ? "available" : "missing"}`}
+      >
         <span className="text-xs font-medium text-gray-500">EN</span>
         {hasEN ? (
           <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -169,7 +179,10 @@ function LanguageIndicators({ hasEN, hasAR }: { hasEN: boolean; hasAR: boolean }
           <AlertTriangle className="h-3.5 w-3.5 text-amber-500" />
         )}
       </div>
-      <div className="flex items-center gap-1" aria-label={`Arabic template: ${hasAR ? "available" : "missing"}`}>
+      <div
+        className="flex items-center gap-1"
+        aria-label={`Arabic template: ${hasAR ? "available" : "missing"}`}
+      >
         <span className="text-xs font-medium text-gray-500">AR</span>
         {hasAR ? (
           <Check className="h-3.5 w-3.5 text-emerald-500" />
@@ -224,7 +237,7 @@ function ToolbarBtn({
           onClick={onClick}
           className={cn(
             "p-1.5 rounded-md hover:bg-gray-100 transition-colors",
-            active && "bg-[#003B95]/10 text-[#003B95]"
+            active && "bg-[#003B95]/10 text-[#003B95]",
           )}
         >
           <Icon className="h-4 w-4" />
@@ -243,15 +256,20 @@ function ToolbarBtn({
 
 export function EmailTemplatesPage() {
   // ─── State ──────────────────────────────────────────────────────────────────
-  const [templates, setTemplates] = useState<EmailTemplate[]>(MOCK_EMAIL_TEMPLATES);
+  const [templates, setTemplates] =
+    useState<EmailTemplate[]>(MOCK_EMAIL_TEMPLATES);
   const [viewMode, setViewMode] = useState<ViewMode>("list");
-  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(null);
+  const [editingTemplate, setEditingTemplate] = useState<EmailTemplate | null>(
+    null,
+  );
 
   // List view state
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState<string>("All");
   const [statusFilter, setStatusFilter] = useState<string>("All");
-  const [sortField, setSortField] = useState<"eventType" | "lastModified">("lastModified");
+  const [sortField, setSortField] = useState<"eventType" | "lastModified">(
+    "lastModified",
+  );
   const [sortDir, setSortDir] = useState<"asc" | "desc">("desc");
   const [currentPage, setCurrentPage] = useState(1);
   const [isLoading] = useState(false);
@@ -294,7 +312,7 @@ export function EmailTemplatesPage() {
       result = result.filter(
         (t) =>
           t.eventType.toLowerCase().includes(q) ||
-          t.subjectEN.toLowerCase().includes(q)
+          t.subjectEN.toLowerCase().includes(q),
       );
     }
 
@@ -316,17 +334,22 @@ export function EmailTemplatesPage() {
           : b.eventType.localeCompare(a.eventType);
       }
       return sortDir === "asc"
-        ? new Date(a.lastModified).getTime() - new Date(b.lastModified).getTime()
-        : new Date(b.lastModified).getTime() - new Date(a.lastModified).getTime();
+        ? new Date(a.lastModified).getTime() -
+            new Date(b.lastModified).getTime()
+        : new Date(b.lastModified).getTime() -
+            new Date(a.lastModified).getTime();
     });
 
     return result;
   }, [templates, search, categoryFilter, statusFilter, sortField, sortDir]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredTemplates.length / ROWS_PER_PAGE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredTemplates.length / ROWS_PER_PAGE),
+  );
   const pagedTemplates = filteredTemplates.slice(
     (currentPage - 1) * ROWS_PER_PAGE,
-    currentPage * ROWS_PER_PAGE
+    currentPage * ROWS_PER_PAGE,
   );
 
   // ─── Handlers ───────────────────────────────────────────────────────────────
@@ -388,7 +411,7 @@ export function EmailTemplatesPage() {
         setHasUnsavedAR(true);
       }
     },
-    [activeTab]
+    [activeTab],
   );
 
   const handleBodyChange = useCallback(
@@ -401,7 +424,7 @@ export function EmailTemplatesPage() {
         setHasUnsavedAR(true);
       }
     },
-    [activeTab]
+    [activeTab],
   );
 
   const handleSave = useCallback(() => {
@@ -443,7 +466,7 @@ export function EmailTemplatesPage() {
             lastModified: new Date().toISOString(),
             modifiedBy: "Current Admin",
           };
-        })
+        }),
       );
       if (activeTab === "EN") setHasUnsavedEN(false);
       else setHasUnsavedAR(false);
@@ -451,7 +474,7 @@ export function EmailTemplatesPage() {
       toast.success(
         activeTab === "EN"
           ? "English template saved successfully."
-          : "Arabic template saved successfully."
+          : "Arabic template saved successfully.",
       );
     }, 800);
   }, [editingTemplate, activeTab, subjectEN, subjectAR, bodyEN, bodyAR]);
@@ -509,7 +532,7 @@ export function EmailTemplatesPage() {
         setActiveTab(newTab);
       }
     },
-    [activeTab, hasUnsavedEN, hasUnsavedAR, editingTemplate, handleSave]
+    [activeTab, hasUnsavedEN, hasUnsavedAR, editingTemplate, handleSave],
   );
 
   const handleInsertVariable = useCallback(
@@ -523,7 +546,7 @@ export function EmailTemplatesPage() {
         setHasUnsavedAR(true);
       }
     },
-    [activeTab]
+    [activeTab],
   );
 
   // ─── Preview HTML ─────────────────────────────────────────────────────────
@@ -600,7 +623,7 @@ export function EmailTemplatesPage() {
                 setSearch(e.target.value);
                 setCurrentPage(1);
               }}
-              className="pl-9 h-9 bg-white"
+              className="pl-9 h-10 bg-white"
             />
             {search && (
               <button
@@ -623,7 +646,7 @@ export function EmailTemplatesPage() {
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[150px] h-9 bg-white">
+            <SelectTrigger className="w-[150px] h-10 bg-white">
               <SelectValue placeholder="Category" />
             </SelectTrigger>
             <SelectContent>
@@ -643,7 +666,7 @@ export function EmailTemplatesPage() {
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-[130px] h-9 bg-white">
+            <SelectTrigger className="w-[130px] h-10 bg-white">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -717,7 +740,7 @@ export function EmailTemplatesPage() {
                       key={template.id}
                       className={cn(
                         "cursor-pointer hover:bg-blue-50/40 transition-colors",
-                        idx % 2 === 1 && "bg-gray-50/30"
+                        idx % 2 === 1 && "bg-gray-50/30",
                       )}
                       onClick={() => openEditor(template)}
                     >
@@ -739,7 +762,11 @@ export function EmailTemplatesPage() {
                         />
                       </TableCell>
                       <TableCell className="text-xs text-gray-500">
-                        {format(parseISO(template.lastModified), "MMM d, yyyy HH:mm")} UTC
+                        {format(
+                          parseISO(template.lastModified),
+                          "MMM d, yyyy HH:mm",
+                        )}{" "}
+                        UTC
                       </TableCell>
                       <TableCell className="text-sm text-gray-600">
                         {template.modifiedBy}
@@ -779,8 +806,11 @@ export function EmailTemplatesPage() {
             <p className="text-xs text-gray-500">
               Showing {(currentPage - 1) * ROWS_PER_PAGE + 1}
               {"\u2013"}
-              {Math.min(currentPage * ROWS_PER_PAGE, filteredTemplates.length)} of{" "}
-              {filteredTemplates.length} templates
+              {Math.min(
+                currentPage * ROWS_PER_PAGE,
+                filteredTemplates.length,
+              )}{" "}
+              of {filteredTemplates.length} templates
             </p>
             <div className="flex items-center gap-1">
               <Button
@@ -799,7 +829,7 @@ export function EmailTemplatesPage() {
                   size="sm"
                   className={cn(
                     "h-8 w-8 p-0 text-xs",
-                    currentPage === i + 1 && "bg-[#003B95] text-white"
+                    currentPage === i + 1 && "bg-[#003B95] text-white",
                   )}
                   onClick={() => setCurrentPage(i + 1)}
                 >
@@ -853,7 +883,10 @@ export function EmailTemplatesPage() {
             <CategoryBadge category={editingTemplate.category} />
             <StatusBadge status={editingTemplate.status} />
             {anyUnsaved && (
-              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200 text-[11px]">
+              <Badge
+                variant="outline"
+                className="bg-amber-50 text-amber-700 border-amber-200 text-[11px]"
+              >
                 Unsaved changes
               </Badge>
             )}
@@ -895,7 +928,10 @@ export function EmailTemplatesPage() {
       </div>
 
       {/* Language Tabs */}
-      <div className="flex items-center gap-0 border-b border-gray-200" role="tablist">
+      <div
+        className="flex items-center gap-0 border-b border-gray-200"
+        role="tablist"
+      >
         <button
           role="tab"
           aria-selected={activeTab === "EN"}
@@ -904,7 +940,7 @@ export function EmailTemplatesPage() {
             "px-5 py-2.5 text-sm font-medium border-b-2 transition-colors relative",
             activeTab === "EN"
               ? "border-[#003B95] text-[#003B95]"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              : "border-transparent text-gray-500 hover:text-gray-700",
           )}
         >
           English (EN)
@@ -920,7 +956,7 @@ export function EmailTemplatesPage() {
             "px-5 py-2.5 text-sm font-medium border-b-2 transition-colors relative",
             activeTab === "AR"
               ? "border-[#003B95] text-[#003B95]"
-              : "border-transparent text-gray-500 hover:text-gray-700"
+              : "border-transparent text-gray-500 hover:text-gray-700",
           )}
         >
           Arabic (AR)
@@ -932,7 +968,10 @@ export function EmailTemplatesPage() {
 
       {/* Subject Line */}
       <div className="space-y-1.5">
-        <Label htmlFor="email-subject" className="text-sm font-medium text-[#111827]">
+        <Label
+          htmlFor="email-subject"
+          className="text-sm font-medium text-[#111827]"
+        >
           Email Subject
         </Label>
         <div className="relative">
@@ -962,13 +1001,20 @@ export function EmailTemplatesPage() {
               {/* Variable Insert */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant="outline" size="sm" className="gap-1.5 h-8 text-xs">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="gap-1.5 h-8 text-xs"
+                  >
                     <Variable className="h-3.5 w-3.5" />
                     Insert Variable
                     <ChevronDown className="h-3 w-3" />
                   </Button>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className="w-72 max-h-64 overflow-auto" align="end">
+                <DropdownMenuContent
+                  className="w-72 max-h-64 overflow-auto"
+                  align="end"
+                >
                   <DropdownMenuLabel className="text-xs text-gray-500">
                     Available Variables
                   </DropdownMenuLabel>
@@ -1047,7 +1093,7 @@ export function EmailTemplatesPage() {
               isSourceView
                 ? "font-mono text-xs rounded-lg"
                 : "rounded-t-none rounded-b-lg",
-              "focus:ring-[#003B95] focus:border-[#003B95]"
+              "focus:ring-[#003B95] focus:border-[#003B95]",
             )}
             aria-label="Email body editor"
             aria-multiline="true"
@@ -1061,8 +1107,8 @@ export function EmailTemplatesPage() {
                 bodyCharError
                   ? "text-red-600 font-medium"
                   : bodyCharWarning
-                  ? "text-amber-600"
-                  : "text-gray-400"
+                    ? "text-amber-600"
+                    : "text-gray-400",
               )}
             >
               {bodyCharCount.toLocaleString()} / 50,000 characters
@@ -1088,7 +1134,7 @@ export function EmailTemplatesPage() {
                   "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors",
                   previewWidth === "desktop"
                     ? "bg-[#003B95] text-white"
-                    : "text-gray-500 hover:text-gray-700"
+                    : "text-gray-500 hover:text-gray-700",
                 )}
               >
                 <Monitor className="h-3.5 w-3.5" />
@@ -1103,7 +1149,7 @@ export function EmailTemplatesPage() {
                   "flex items-center gap-1.5 px-3 py-1 rounded-md text-xs font-medium transition-colors",
                   previewWidth === "mobile"
                     ? "bg-[#003B95] text-white"
-                    : "text-gray-500 hover:text-gray-700"
+                    : "text-gray-500 hover:text-gray-700",
                 )}
               >
                 <Smartphone className="h-3.5 w-3.5" />
@@ -1162,7 +1208,7 @@ export function EmailTemplatesPage() {
               <ChevronDown
                 className={cn(
                   "h-4 w-4 text-gray-500 transition-transform",
-                  variablesOpen && "rotate-180"
+                  variablesOpen && "rotate-180",
                 )}
               />
             </button>
@@ -1223,7 +1269,7 @@ export function EmailTemplatesPage() {
               <ChevronDown
                 className={cn(
                   "h-4 w-4 text-gray-500 transition-transform",
-                  testSendOpen && "rotate-180"
+                  testSendOpen && "rotate-180",
                 )}
               />
             </button>
@@ -1244,7 +1290,7 @@ export function EmailTemplatesPage() {
                     placeholder="Enter email to receive test"
                     value={testEmail}
                     onChange={(e) => setTestEmail(e.target.value)}
-                    className="h-9 bg-white max-w-md"
+                    className="h-10 bg-white max-w-md"
                   />
                 </div>
                 <Button
@@ -1252,7 +1298,7 @@ export function EmailTemplatesPage() {
                   size="sm"
                   onClick={handleSendTest}
                   disabled={isSendingTest || !testEmail.trim()}
-                  className="gap-1.5 h-9"
+                  className="gap-1.5 h-10"
                   aria-label="Send test email"
                 >
                   {isSendingTest ? (
@@ -1264,8 +1310,8 @@ export function EmailTemplatesPage() {
                 </Button>
               </div>
               <p className="text-[11px] text-gray-400 mt-2">
-                Sends the current {activeTab === "EN" ? "English" : "Arabic"} template
-                with sample data to the specified email address.
+                Sends the current {activeTab === "EN" ? "English" : "Arabic"}{" "}
+                template with sample data to the specified email address.
               </p>
             </CardContent>
           </CollapsibleContent>

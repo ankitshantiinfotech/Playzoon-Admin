@@ -53,7 +53,7 @@ import {
   DATE_PRESETS,
   COUNTRY_OPTIONS,
 } from "./types";
-import { PlayerReportTab }  from "./PlayerReportTab";
+import { PlayerReportTab } from "./PlayerReportTab";
 import { BookingReportTab } from "./BookingReportTab";
 import { PaymentReportTab } from "./PaymentReportTab";
 import { EarningsReportTab } from "./EarningsReportTab";
@@ -63,16 +63,47 @@ import { EarningsReportTab } from "./EarningsReportTab";
 type ReportTab = "player" | "booking" | "payment" | "earnings";
 
 const TABS: {
-  id: ReportTab; label: string; icon: React.ElementType; color: string; bg: string;
+  id: ReportTab;
+  label: string;
+  icon: React.ElementType;
+  color: string;
+  bg: string;
 }[] = [
-  { id: "player",   label: "Player Report",   icon: Users,       color: "text-[#003B95]",  bg: "bg-blue-50"   },
-  { id: "booking",  label: "Booking Report",  icon: Calendar,    color: "text-violet-600", bg: "bg-violet-50" },
-  { id: "payment",  label: "Payment Report",  icon: CreditCard,  color: "text-emerald-600",bg: "bg-emerald-50"},
-  { id: "earnings", label: "Earnings Report", icon: Banknote,    color: "text-amber-600",  bg: "bg-amber-50"  },
+  {
+    id: "player",
+    label: "Player Report",
+    icon: Users,
+    color: "text-[#003B95]",
+    bg: "bg-blue-50",
+  },
+  {
+    id: "booking",
+    label: "Booking Report",
+    icon: Calendar,
+    color: "text-violet-600",
+    bg: "bg-violet-50",
+  },
+  {
+    id: "payment",
+    label: "Payment Report",
+    icon: CreditCard,
+    color: "text-emerald-600",
+    bg: "bg-emerald-50",
+  },
+  {
+    id: "earnings",
+    label: "Earnings Report",
+    icon: Banknote,
+    color: "text-amber-600",
+    bg: "bg-amber-50",
+  },
 ];
 
 const TAB_LABELS: Record<ReportTab, string> = {
-  player: "Player", booking: "Booking", payment: "Payment", earnings: "Earnings",
+  player: "Player",
+  booking: "Booking",
+  payment: "Payment",
+  earnings: "Earnings",
 };
 
 // ─── Date range picker helper ─────────────────────────────────────────────────
@@ -80,20 +111,31 @@ const TAB_LABELS: Record<ReportTab, string> = {
 function makeDateRange(preset: DatePreset): { from: Date; to: Date } {
   const to = new Date();
   switch (preset) {
-    case "7d":  return { from: subDays(to, 7),   to };
-    case "30d": return { from: subDays(to, 30),  to };
-    case "3m":  return { from: subDays(to, 90),  to };
-    case "12m": return { from: subDays(to, 365), to };
-    default:    return { from: subDays(to, 30),  to };
+    case "7d":
+      return { from: subDays(to, 7), to };
+    case "30d":
+      return { from: subDays(to, 30), to };
+    case "3m":
+      return { from: subDays(to, 90), to };
+    case "12m":
+      return { from: subDays(to, 365), to };
+    default:
+      return { from: subDays(to, 30), to };
   }
 }
 
 // ─── BR-004 Async Export Dialog ───────────────────────────────────────────────
 
 function AsyncExportDialog({
-  open, format: exportFmt, report, onClose,
+  open,
+  format: exportFmt,
+  report,
+  onClose,
 }: {
-  open: boolean; format: "CSV" | "PDF"; report: string; onClose: () => void;
+  open: boolean;
+  format: "CSV" | "PDF";
+  report: string;
+  onClose: () => void;
 }) {
   const [sent, setSent] = useState(false);
   const [sending, setSending] = useState(false);
@@ -113,42 +155,59 @@ function AsyncExportDialog({
   };
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) handleClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) handleClose();
+      }}
+    >
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
-            <div className={cn(
-              "flex items-center justify-center h-8 w-8 rounded-lg",
-              sent ? "bg-emerald-100" : "bg-blue-50",
-            )}>
-              {sent ? <CheckCircle className="h-4 w-4 text-emerald-600" /> : <Mail className="h-4 w-4 text-[#003B95]" />}
+            <div
+              className={cn(
+                "flex items-center justify-center h-8 w-8 rounded-lg",
+                sent ? "bg-emerald-100" : "bg-blue-50",
+              )}
+            >
+              {sent ? (
+                <CheckCircle className="h-4 w-4 text-emerald-600" />
+              ) : (
+                <Mail className="h-4 w-4 text-[#003B95]" />
+              )}
             </div>
             {sent ? "Export Queued" : "Large Export — BR-004"}
           </DialogTitle>
           <DialogDescription className="text-xs text-gray-500">
             {sent
               ? "Your export has been queued. You'll receive an email with a download link within 5 minutes."
-              : `The selected date range produces more than 100,000 rows. This ${exportFmt} export for the ${report} Report will be processed asynchronously and delivered to your registered admin email as a download link.`
-            }
+              : `The selected date range produces more than 100,000 rows. This ${exportFmt} export for the ${report} Report will be processed asynchronously and delivered to your registered admin email as a download link.`}
           </DialogDescription>
         </DialogHeader>
 
         {!sent && (
           <div className="flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-xs text-blue-700">
             <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-            Estimated delivery: within 5 minutes. Large exports are logged in the Audit Trail.
+            Estimated delivery: within 5 minutes. Large exports are logged in
+            the Audit Trail.
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={handleClose}>{sent ? "Close" : "Cancel"}</Button>
+          <Button variant="outline" onClick={handleClose}>
+            {sent ? "Close" : "Cancel"}
+          </Button>
           {!sent && (
             <Button
               onClick={handleConfirm}
               disabled={sending}
               className="bg-[#003B95] hover:bg-[#002d73] text-white min-w-[120px]"
             >
-              {sending ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Send Link via Email"}
+              {sending ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                "Send Link via Email"
+              )}
             </Button>
           )}
         </DialogFooter>
@@ -160,13 +219,17 @@ function AsyncExportDialog({
 // ─── Custom Date Range Popover ────────────────────────────────────────────────
 
 function CustomDatePicker({
-  from, to, onChange,
+  from,
+  to,
+  onChange,
 }: {
-  from: Date; to: Date; onChange: (from: Date, to: Date) => void;
+  from: Date;
+  to: Date;
+  onChange: (from: Date, to: Date) => void;
 }) {
   const [open, setOpen] = useState(false);
   const [selFrom, setSelFrom] = useState<Date | undefined>(from);
-  const [selTo,   setSelTo]   = useState<Date | undefined>(to);
+  const [selTo, setSelTo] = useState<Date | undefined>(to);
 
   const handleApply = () => {
     if (selFrom && selTo) {
@@ -178,14 +241,16 @@ function CustomDatePicker({
   return (
     <Popover open={open} onOpenChange={setOpen}>
       <PopoverTrigger asChild>
-        <button className={cn(
-          "flex items-center gap-2 h-9 px-3 rounded-lg border text-xs transition-all",
-          "border-gray-200 text-gray-600 bg-white hover:border-gray-300",
-        )}>
+        <Button
+          variant="outline"
+          className={cn(
+            "flex items-center gap-2 justify-start font-normal text-xs transition-all",
+          )}
+        >
           <CalendarIcon className="h-3.5 w-3.5 text-gray-400" />
           {format(from, "MMM d")} – {format(to, "MMM d, yyyy")}
-          <ChevronDown className="h-3 w-3 text-gray-400" />
-        </button>
+          <ChevronDown className="h-3 w-3 text-gray-400 ml-auto" />
+        </Button>
       </PopoverTrigger>
       <PopoverContent align="start" className="p-4 w-auto">
         <div className="flex gap-4">
@@ -195,7 +260,7 @@ function CustomDatePicker({
               mode="single"
               selected={selFrom}
               onSelect={setSelFrom}
-              disabled={(d) => selTo ? d > selTo : false}
+              disabled={(d) => (selTo ? d > selTo : false)}
             />
           </div>
           <div>
@@ -204,12 +269,14 @@ function CustomDatePicker({
               mode="single"
               selected={selTo}
               onSelect={setSelTo}
-              disabled={(d) => selFrom ? d < selFrom : false}
+              disabled={(d) => (selFrom ? d < selFrom : false)}
             />
           </div>
         </div>
         <div className="flex justify-end gap-2 mt-3 border-t pt-3">
-          <Button variant="outline" size="sm" onClick={() => setOpen(false)}>Cancel</Button>
+          <Button variant="outline" size="sm" onClick={() => setOpen(false)}>
+            Cancel
+          </Button>
           <Button
             size="sm"
             onClick={handleApply}
@@ -227,16 +294,22 @@ function CustomDatePicker({
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 
 export function AdminReportsPage() {
-  const [activeTab, setActiveTab]       = useState<ReportTab>("player");
-  const [preset, setPreset]             = useState<DatePreset>("30d");
-  const [customFrom, setCustomFrom]     = useState<Date>(subDays(new Date(), 30));
-  const [customTo,   setCustomTo]       = useState<Date>(new Date());
-  const [country, setCountry]           = useState<CountryCode>("all");
-  const [isExporting, setIsExporting]   = useState(false);
-  const [asyncDialog, setAsyncDialog]   = useState<{ open: boolean; format: "CSV" | "PDF" }>({ open: false, format: "CSV" });
+  const [activeTab, setActiveTab] = useState<ReportTab>("player");
+  const [preset, setPreset] = useState<DatePreset>("30d");
+  const [customFrom, setCustomFrom] = useState<Date>(subDays(new Date(), 30));
+  const [customTo, setCustomTo] = useState<Date>(new Date());
+  const [country, setCountry] = useState<CountryCode>("all");
+  const [isExporting, setIsExporting] = useState(false);
+  const [asyncDialog, setAsyncDialog] = useState<{
+    open: boolean;
+    format: "CSV" | "PDF";
+  }>({ open: false, format: "CSV" });
 
   const filters: ReportFilters = useMemo(() => {
-    const range = preset === "custom" ? { from: customFrom, to: customTo } : makeDateRange(preset);
+    const range =
+      preset === "custom"
+        ? { from: customFrom, to: customTo }
+        : makeDateRange(preset);
     return { preset, from: range.from, to: range.to, country };
   }, [preset, customFrom, customTo, country]);
 
@@ -245,26 +318,30 @@ export function AdminReportsPage() {
     return days > 90;
   }, [filters]);
 
-  const handleExport = useCallback(async (fmt: "CSV" | "PDF") => {
-    // BR-004: large exports go async
-    if (isLargeExport) {
-      setAsyncDialog({ open: true, format: fmt });
-      return;
-    }
+  const handleExport = useCallback(
+    async (fmt: "CSV" | "PDF") => {
+      // BR-004: large exports go async
+      if (isLargeExport) {
+        setAsyncDialog({ open: true, format: fmt });
+        return;
+      }
 
-    setIsExporting(true);
-    await new Promise((r) => setTimeout(r, 1200));
+      setIsExporting(true);
+      await new Promise((r) => setTimeout(r, 1200));
 
-    // Simulate file download
-    const filename = `playzoon-${TAB_LABELS[activeTab].toLowerCase()}-report-${format(filters.from, "yyyy-MM-dd")}-to-${format(filters.to, "yyyy-MM-dd")}.${fmt.toLowerCase()}`;
-    toast.success(
-      `${TAB_LABELS[activeTab]} Report exported as ${fmt}`,
-      { description: filename, duration: 4000 },
-    );
-    setIsExporting(false);
-  }, [activeTab, filters, isLargeExport]);
+      // Simulate file download
+      const filename = `playzoon-${TAB_LABELS[activeTab].toLowerCase()}-report-${format(filters.from, "yyyy-MM-dd")}-to-${format(filters.to, "yyyy-MM-dd")}.${fmt.toLowerCase()}`;
+      toast.success(`${TAB_LABELS[activeTab]} Report exported as ${fmt}`, {
+        description: filename,
+        duration: 4000,
+      });
+      setIsExporting(false);
+    },
+    [activeTab, filters, isLargeExport],
+  );
 
-  const countryLabel = COUNTRY_OPTIONS.find((c) => c.value === country)?.label ?? "All Countries";
+  const countryLabel =
+    COUNTRY_OPTIONS.find((c) => c.value === country)?.label ?? "All Countries";
 
   return (
     <div className="space-y-0 flex flex-col h-full">
@@ -273,13 +350,14 @@ export function AdminReportsPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-xl text-gray-900 flex items-center gap-2.5">
-              <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[#003B95]/10">
+              <div className="flex items-center justify-center h-10 w-9 rounded-lg bg-[#003B95]/10">
                 <BarChart2 className="h-5 w-5 text-[#003B95]" />
               </div>
               Platform Reports
             </h1>
             <p className="text-sm text-gray-500 mt-1 max-w-xl">
-              Detailed analytics across player activity, bookings, payments, and platform earnings. BR-003: read-only, near-real-time data.
+              Detailed analytics across player activity, bookings, payments, and
+              platform earnings. BR-003: read-only, near-real-time data.
             </p>
           </div>
 
@@ -292,7 +370,11 @@ export function AdminReportsPage() {
               disabled={isExporting}
               className="gap-1.5 text-xs h-8"
             >
-              {isExporting ? <Loader2 className="h-3 w-3 animate-spin" /> : <Download className="h-3 w-3" />}
+              {isExporting ? (
+                <Loader2 className="h-3 w-3 animate-spin" />
+              ) : (
+                <Download className="h-3 w-3" />
+              )}
               CSV
             </Button>
             <Button
@@ -325,17 +407,40 @@ export function AdminReportsPage() {
                   : "border-gray-200 text-gray-400 bg-white hover:border-gray-300 hover:text-gray-600",
               )}
             >
-              <div className={cn(
-                "flex items-center justify-center h-9 w-9 rounded-lg shrink-0 transition-colors",
-                active ? tab.bg : "bg-gray-100",
-              )}>
-                <Icon className={cn("h-4 w-4", active ? tab.color : "text-gray-400")} />
+              <div
+                className={cn(
+                  "flex items-center justify-center h-10 w-9 rounded-lg shrink-0 transition-colors",
+                  active ? tab.bg : "bg-gray-100",
+                )}
+              >
+                <Icon
+                  className={cn(
+                    "h-4 w-4",
+                    active ? tab.color : "text-gray-400",
+                  )}
+                />
               </div>
               <div className="min-w-0">
-                <p className={cn("text-xs leading-none mb-0.5", active ? tab.color : "text-gray-400")}>
-                  {tab.id === "player" ? "Player" : tab.id === "booking" ? "Booking" : tab.id === "payment" ? "Payment" : "Earnings"}
+                <p
+                  className={cn(
+                    "text-xs leading-none mb-0.5",
+                    active ? tab.color : "text-gray-400",
+                  )}
+                >
+                  {tab.id === "player"
+                    ? "Player"
+                    : tab.id === "booking"
+                      ? "Booking"
+                      : tab.id === "payment"
+                        ? "Payment"
+                        : "Earnings"}
                 </p>
-                <p className={cn("text-sm leading-none", active ? "text-gray-900" : "text-gray-500")}>
+                <p
+                  className={cn(
+                    "text-sm leading-none",
+                    active ? "text-gray-900" : "text-gray-500",
+                  )}
+                >
                   Report
                 </p>
               </div>
@@ -381,27 +486,36 @@ export function AdminReportsPage() {
             <CustomDatePicker
               from={customFrom}
               to={customTo}
-              onChange={(f, t) => { setCustomFrom(f); setCustomTo(t); }}
+              onChange={(f, t) => {
+                setCustomFrom(f);
+                setCustomTo(t);
+              }}
             />
           )}
 
           {/* Period display when not custom */}
           {preset !== "custom" && (
-            <span className="flex items-center gap-1.5 text-xs text-gray-400 border border-gray-200 bg-white rounded-lg h-9 px-3">
-              <CalendarIcon className="h-3 w-3" />
-              {format(filters.from, "MMM d")} – {format(filters.to, "MMM d, yyyy")}
+            <span className="flex items-center gap-1.5 text-xs text-muted-foreground border border-input bg-background rounded-md h-10 px-3 transition-all">
+              <CalendarIcon className="h-3.5 w-3.5" />
+              {format(filters.from, "MMM d")} –{" "}
+              {format(filters.to, "MMM d, yyyy")}
             </span>
           )}
 
           {/* Country filter */}
-          <Select value={country} onValueChange={(v) => setCountry(v as CountryCode)}>
-            <SelectTrigger className="h-9 w-[160px] text-xs">
+          <Select
+            value={country}
+            onValueChange={(v) => setCountry(v as CountryCode)}
+          >
+            <SelectTrigger className="h-10 w-[160px] text-xs">
               <Filter className="h-3 w-3 text-gray-400 mr-1" />
               <SelectValue placeholder="All Countries" />
             </SelectTrigger>
             <SelectContent>
               {COUNTRY_OPTIONS.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                <SelectItem key={opt.value} value={opt.value}>
+                  {opt.label}
+                </SelectItem>
               ))}
             </SelectContent>
           </Select>
@@ -418,7 +532,10 @@ export function AdminReportsPage() {
               </Badge>
             )}
             {isLargeExport && (
-              <Badge variant="outline" className="text-[11px] gap-1 border-amber-200 bg-amber-50 text-amber-700">
+              <Badge
+                variant="outline"
+                className="text-[11px] gap-1 border-amber-200 bg-amber-50 text-amber-700"
+              >
                 <Info className="h-3 w-3" /> Large range — async export
               </Badge>
             )}
@@ -431,10 +548,10 @@ export function AdminReportsPage() {
       </div>
 
       {/* ── Active tab content ────────────────────────────────────────────── */}
-      <div className="flex-1 pb-8">
-        {activeTab === "player"   && <PlayerReportTab   filters={filters} />}
-        {activeTab === "booking"  && <BookingReportTab  filters={filters} />}
-        {activeTab === "payment"  && <PaymentReportTab  filters={filters} />}
+      <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
+        {activeTab === "player" && <PlayerReportTab filters={filters} />}
+        {activeTab === "booking" && <BookingReportTab filters={filters} />}
+        {activeTab === "payment" && <PaymentReportTab filters={filters} />}
         {activeTab === "earnings" && <EarningsReportTab filters={filters} />}
       </div>
 

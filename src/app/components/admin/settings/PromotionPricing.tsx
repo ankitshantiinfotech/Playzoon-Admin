@@ -13,7 +13,13 @@ import {
   TableRow,
 } from "../../ui/table";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -31,7 +37,10 @@ const DURATIONS = ["1 Day", "1 Week", "1 Month", "3 Months"] as const;
 
 // Create a schema that validates a price for each combination
 const pricingSchema = z.object({
-  prices: z.record(z.string(), z.record(z.string(), z.coerce.number().min(0, "Price must be positive"))),
+  prices: z.record(
+    z.string(),
+    z.record(z.string(), z.coerce.number().min(0, "Price must be positive")),
+  ),
 });
 
 type PricingValues = z.infer<typeof pricingSchema>;
@@ -44,9 +53,24 @@ export function PromotionPricing() {
     resolver: zodResolver(pricingSchema),
     defaultValues: {
       prices: {
-        Featured: { "1 Day": 100, "1 Week": 500, "1 Month": 1500, "3 Months": 4000 },
-        "Top Listed": { "1 Day": 80, "1 Week": 400, "1 Month": 1200, "3 Months": 3000 },
-        Highlighted: { "1 Day": 50, "1 Week": 250, "1 Month": 800, "3 Months": 2000 },
+        Featured: {
+          "1 Day": 100,
+          "1 Week": 500,
+          "1 Month": 1500,
+          "3 Months": 4000,
+        },
+        "Top Listed": {
+          "1 Day": 80,
+          "1 Week": 400,
+          "1 Month": 1200,
+          "3 Months": 3000,
+        },
+        Highlighted: {
+          "1 Day": 50,
+          "1 Week": 250,
+          "1 Month": 800,
+          "3 Months": 2000,
+        },
       },
     },
   });
@@ -66,16 +90,21 @@ export function PromotionPricing() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Promotion Pricing</h2>
-        <p className="text-muted-foreground">Set pricing for different promotion tiers and durations.</p>
+        <p className="text-muted-foreground">
+          Set pricing for different promotion tiers and durations.
+        </p>
       </div>
 
       <Card>
         <CardHeader>
           <CardTitle>Pricing Grid (SAR)</CardTitle>
-          <CardDescription>Enter the price in SAR for each promotion type and duration combination.</CardDescription>
+          <CardDescription>
+            Enter the price in SAR for each promotion type and duration
+            combination.
+          </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
@@ -83,9 +112,14 @@ export function PromotionPricing() {
               <Table>
                 <TableHeader>
                   <TableRow>
-                    <TableHead className="w-[200px] font-bold bg-gray-50">Promotion Type</TableHead>
+                    <TableHead className="w-[200px] font-bold bg-gray-50">
+                      Promotion Type
+                    </TableHead>
                     {DURATIONS.map((duration) => (
-                      <TableHead key={duration} className="text-center font-bold bg-gray-50 min-w-[100px]">
+                      <TableHead
+                        key={duration}
+                        className="text-center font-bold bg-gray-50 min-w-[100px]"
+                      >
                         {duration}
                       </TableHead>
                     ))}
@@ -94,15 +128,21 @@ export function PromotionPricing() {
                 <TableBody>
                   {PROMO_TYPES.map((type) => (
                     <TableRow key={type}>
-                      <TableCell className="font-medium bg-gray-50/50">{type}</TableCell>
+                      <TableCell className="font-medium bg-gray-50/50">
+                        {type}
+                      </TableCell>
                       {DURATIONS.map((duration) => (
                         <TableCell key={`${type}-${duration}`} className="p-2">
                           <div className="relative">
-                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">SAR</span>
+                            <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500 text-sm">
+                              SAR
+                            </span>
                             <Input
                               type="number"
                               className="pl-12 text-right"
-                              {...form.register(`prices.${type}.${duration}` as const)}
+                              {...form.register(
+                                `prices.${type}.${duration}` as const,
+                              )}
                             />
                           </div>
                         </TableCell>
@@ -130,7 +170,12 @@ export function PromotionPricing() {
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmSave} className="bg-[#003B95] hover:bg-[#002a6b]">Confirm</AlertDialogAction>
+                <AlertDialogAction
+                  onClick={handleConfirmSave}
+                  className="bg-[#003B95] hover:bg-[#002a6b]"
+                >
+                  Confirm
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

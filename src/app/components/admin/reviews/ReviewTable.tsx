@@ -14,7 +14,13 @@ import {
   X,
   RotateCcw,
 } from "lucide-react";
-import { format, isWithinInterval, parseISO, startOfDay, endOfDay } from "date-fns";
+import {
+  format,
+  isWithinInterval,
+  parseISO,
+  startOfDay,
+  endOfDay,
+} from "date-fns";
 import { ViewReviewModal, UnflagModal, HideModal, UnhideModal } from "./Modals";
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
@@ -43,7 +49,12 @@ function StarRow({ rating }: { rating: number }) {
       {Array.from({ length: 5 }).map((_, i) => (
         <Star
           key={i}
-          className={cn("w-3.5 h-3.5", i < rating ? "fill-amber-400 text-amber-400" : "fill-gray-100 text-gray-200")}
+          className={cn(
+            "w-3.5 h-3.5",
+            i < rating
+              ? "fill-amber-400 text-amber-400"
+              : "fill-gray-100 text-gray-200",
+          )}
         />
       ))}
     </div>
@@ -104,17 +115,39 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
         }
       }
 
-      return matchesKeyword && matchesType && matchesStatus && matchesRating && matchesDate;
+      return (
+        matchesKeyword &&
+        matchesType &&
+        matchesStatus &&
+        matchesRating &&
+        matchesDate
+      );
     });
-  }, [reviews, keyword, typeFilter, statusFilter, ratingFilter, dateFrom, dateTo]);
+  }, [
+    reviews,
+    keyword,
+    typeFilter,
+    statusFilter,
+    ratingFilter,
+    dateFrom,
+    dateTo,
+  ]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / ITEMS_PER_PAGE));
-  const paginated = filtered.slice((currentPage - 1) * ITEMS_PER_PAGE, currentPage * ITEMS_PER_PAGE);
+  const paginated = filtered.slice(
+    (currentPage - 1) * ITEMS_PER_PAGE,
+    currentPage * ITEMS_PER_PAGE,
+  );
 
-  const goToPage = (p: number) => setCurrentPage(Math.max(1, Math.min(totalPages, p)));
+  const goToPage = (p: number) =>
+    setCurrentPage(Math.max(1, Math.min(totalPages, p)));
 
   const hasActiveFilters =
-    typeFilter !== "All" || statusFilter !== "All" || ratingFilter !== "All" || dateFrom || dateTo;
+    typeFilter !== "All" ||
+    statusFilter !== "All" ||
+    ratingFilter !== "All" ||
+    dateFrom ||
+    dateTo;
 
   const clearFilters = () => {
     setTypeFilter("All");
@@ -176,7 +209,10 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
                 placeholder="Search by reviewer, target, or review text…"
                 className="w-full pl-10 pr-4 py-2.5 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                 value={keyword}
-                onChange={(e) => { setKeyword(e.target.value); setCurrentPage(1); }}
+                onChange={(e) => {
+                  setKeyword(e.target.value);
+                  setCurrentPage(1);
+                }}
               />
             </div>
 
@@ -187,14 +223,21 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
                   "flex items-center gap-2 px-3 py-2.5 border rounded-lg text-sm font-medium transition-colors",
                   showFilters || hasActiveFilters
                     ? "border-blue-500 bg-blue-50 text-blue-700"
-                    : "border-gray-300 text-gray-700 hover:bg-gray-50"
+                    : "border-gray-300 text-gray-700 hover:bg-gray-50",
                 )}
               >
                 <SlidersHorizontal className="w-4 h-4" />
                 Filters
                 {hasActiveFilters && (
                   <span className="w-5 h-5 bg-blue-600 text-white text-xs rounded-full flex items-center justify-center">
-                    {[typeFilter !== "All", statusFilter !== "All", ratingFilter !== "All", !!dateFrom || !!dateTo].filter(Boolean).length}
+                    {
+                      [
+                        typeFilter !== "All",
+                        statusFilter !== "All",
+                        ratingFilter !== "All",
+                        !!dateFrom || !!dateTo,
+                      ].filter(Boolean).length
+                    }
                   </span>
                 )}
               </button>
@@ -213,11 +256,16 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
 
           {/* Status filter chips */}
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-xs font-medium text-gray-500 mr-1">Status:</span>
+            <span className="text-xs font-medium text-gray-500 mr-1">
+              Status:
+            </span>
             {(["All", "Visible", "Flagged", "Hidden"] as const).map((s) => (
               <button
                 key={s}
-                onClick={() => { setStatusFilter(s === "All" ? "All" : s); setCurrentPage(1); }}
+                onClick={() => {
+                  setStatusFilter(s === "All" ? "All" : s);
+                  setCurrentPage(1);
+                }}
                 className={cn(
                   "px-3 py-1.5 rounded-full text-xs font-semibold border transition-colors",
                   statusFilter === s || (s === "All" && statusFilter === "All")
@@ -228,70 +276,108 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
                         : s === "Visible"
                           ? "bg-green-100 text-green-700 border-green-300"
                           : "bg-blue-100 text-blue-700 border-blue-300"
-                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50"
+                    : "bg-white text-gray-600 border-gray-200 hover:bg-gray-50",
                 )}
               >
                 {s === "Visible" ? "Normal (Visible)" : s}
               </button>
-            ))}</div>
+            ))}
+          </div>
 
           {/* Expandable filter row */}
           {showFilters && (
             <div className="grid grid-cols-2 md:grid-cols-4 gap-3 pt-1 pb-0.5">
               {/* Type */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Type</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Type
+                </label>
                 <select
                   value={typeFilter}
-                  onChange={(e) => { setTypeFilter(e.target.value as ReviewType | "All"); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setTypeFilter(e.target.value as ReviewType | "All");
+                    setCurrentPage(1);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
                   <option value="All">All Types</option>
-                  {ALL_TYPES.map((t) => <option key={t} value={t}>{t}</option>)}
+                  {ALL_TYPES.map((t) => (
+                    <option key={t} value={t}>
+                      {t}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               {/* Status */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Status</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Status
+                </label>
                 <select
                   value={statusFilter}
-                  onChange={(e) => { setStatusFilter(e.target.value as ReviewStatus | "All"); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setStatusFilter(e.target.value as ReviewStatus | "All");
+                    setCurrentPage(1);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
                   <option value="All">All Statuses</option>
-                  {ALL_STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                  {ALL_STATUSES.map((s) => (
+                    <option key={s} value={s}>
+                      {s}
+                    </option>
+                  ))}
                 </select>
               </div>
 
               {/* Rating */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Rating</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Rating
+                </label>
                 <select
                   value={ratingFilter}
-                  onChange={(e) => { setRatingFilter(e.target.value === "All" ? "All" : Number(e.target.value)); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setRatingFilter(
+                      e.target.value === "All" ? "All" : Number(e.target.value),
+                    );
+                    setCurrentPage(1);
+                  }}
                   className="w-full px-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                 >
                   <option value="All">All Ratings</option>
-                  {[5, 4, 3, 2, 1].map((n) => <option key={n} value={n}>{n} ★</option>)}
+                  {[5, 4, 3, 2, 1].map((n) => (
+                    <option key={n} value={n}>
+                      {n} ★
+                    </option>
+                  ))}
                 </select>
               </div>
 
               {/* Date range */}
               <div>
-                <label className="block text-xs font-medium text-gray-500 mb-1">Date Range</label>
+                <label className="block text-xs font-medium text-gray-500 mb-1">
+                  Date Range
+                </label>
                 <div className="flex items-center gap-1">
                   <input
                     type="date"
                     value={dateFrom}
-                    onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
+                    onChange={(e) => {
+                      setDateFrom(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="flex-1 min-w-0 px-2 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   />
                   <span className="text-gray-400 text-xs shrink-0">–</span>
                   <input
                     type="date"
                     value={dateTo}
-                    onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
+                    onChange={(e) => {
+                      setDateTo(e.target.value);
+                      setCurrentPage(1);
+                    }}
                     className="flex-1 min-w-0 px-2 py-2 border border-gray-300 rounded-lg text-xs focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
                   />
                 </div>
@@ -317,10 +403,17 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
             <tbody className="divide-y divide-gray-100">
               {paginated.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="px-5 py-16 text-center text-gray-400">
+                  <td
+                    colSpan={7}
+                    className="px-5 py-16 text-center text-gray-400"
+                  >
                     <Search className="w-8 h-8 mx-auto mb-3 text-gray-300" />
-                    <p className="font-medium text-gray-500">No reviews found</p>
-                    <p className="text-xs mt-1">Try adjusting your filters or search term.</p>
+                    <p className="font-medium text-gray-500">
+                      No reviews found
+                    </p>
+                    <p className="text-xs mt-1">
+                      Try adjusting your filters or search term.
+                    </p>
                   </td>
                 </tr>
               ) : (
@@ -330,7 +423,7 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
                     onClick={() => navigate(`/reviews/${review.id}`)}
                     className={cn(
                       "hover:bg-gray-50/70 transition-colors group cursor-pointer",
-                      review.status === "Flagged" && "bg-red-50/30"
+                      review.status === "Flagged" && "bg-red-50/30",
                     )}
                   >
                     {/* Reviewer */}
@@ -339,11 +432,13 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
                         <img
                           src={review.reviewer.photo}
                           alt={review.reviewer.name}
-                          className="w-9 h-9 rounded-full object-cover ring-1 ring-gray-100 shrink-0"
+                          className="w-9 h-10 rounded-full object-cover ring-1 ring-gray-100 shrink-0"
                         />
                         <div className="min-w-0">
                           <div className="flex items-center gap-1.5">
-                            <span className="font-medium text-gray-900 truncate max-w-[120px]">{review.reviewer.name}</span>
+                            <span className="font-medium text-gray-900 truncate max-w-[120px]">
+                              {review.reviewer.name}
+                            </span>
                             {review.status === "Flagged" && (
                               <Flag className="w-3.5 h-3.5 text-red-500 shrink-0" />
                             )}
@@ -351,17 +446,27 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
                               <EyeOff className="w-3.5 h-3.5 text-gray-400 shrink-0" />
                             )}
                           </div>
-                          <div className="text-xs text-gray-400 truncate max-w-[120px]">{review.reviewer.email}</div>
+                          <div className="text-xs text-gray-400 truncate max-w-[120px]">
+                            {review.reviewer.email}
+                          </div>
                         </div>
                       </div>
                     </td>
 
                     {/* Target */}
                     <td className="px-5 py-3.5">
-                      <div className="font-medium text-gray-800 truncate max-w-[140px]" title={review.target.name}>
+                      <div
+                        className="font-medium text-gray-800 truncate max-w-[140px]"
+                        title={review.target.name}
+                      >
                         {review.target.name}
                       </div>
-                      <span className={cn("text-xs font-medium px-1.5 py-0.5 rounded mt-0.5 inline-block", TYPE_STYLES[review.target.type])}>
+                      <span
+                        className={cn(
+                          "text-xs font-medium px-1.5 py-0.5 rounded mt-0.5 inline-block",
+                          TYPE_STYLES[review.target.type],
+                        )}
+                      >
                         {review.target.type}
                       </span>
                     </td>
@@ -370,13 +475,18 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
                     <td className="px-5 py-3.5">
                       <div className="flex flex-col gap-0.5">
                         <StarRow rating={review.rating} />
-                        <span className="text-xs text-gray-500">{review.rating}.0 / 5</span>
+                        <span className="text-xs text-gray-500">
+                          {review.rating}.0 / 5
+                        </span>
                       </div>
                     </td>
 
                     {/* Review text */}
                     <td className="px-5 py-3.5 max-w-[220px]">
-                      <p className="text-gray-600 text-xs line-clamp-2 italic" title={review.text}>
+                      <p
+                        className="text-gray-600 text-xs line-clamp-2 italic"
+                        title={review.text}
+                      >
                         &ldquo;{review.text}&rdquo;
                       </p>
                     </td>
@@ -391,13 +501,21 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
 
                     {/* Status */}
                     <td className="px-5 py-3.5 text-center">
-                      <span className={cn("text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap", STATUS_STYLES[review.status])}>
+                      <span
+                        className={cn(
+                          "text-xs font-semibold px-2.5 py-1 rounded-full border whitespace-nowrap",
+                          STATUS_STYLES[review.status],
+                        )}
+                      >
                         {review.status}
                       </span>
                     </td>
 
                     {/* Actions */}
-                    <td className="px-5 py-3.5" onClick={(e) => e.stopPropagation()}>
+                    <td
+                      className="px-5 py-3.5"
+                      onClick={(e) => e.stopPropagation()}
+                    >
                       <div className="flex items-center justify-end gap-1">
                         {/* View */}
                         <button
@@ -458,9 +576,14 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
               <>
                 Showing{" "}
                 <span className="font-semibold text-gray-700">
-                  {(currentPage - 1) * ITEMS_PER_PAGE + 1}–{Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)}
+                  {(currentPage - 1) * ITEMS_PER_PAGE + 1}–
+                  {Math.min(currentPage * ITEMS_PER_PAGE, filtered.length)}
                 </span>{" "}
-                of <span className="font-semibold text-gray-700">{filtered.length}</span> reviews
+                of{" "}
+                <span className="font-semibold text-gray-700">
+                  {filtered.length}
+                </span>{" "}
+                reviews
               </>
             )}
           </p>
@@ -484,7 +607,7 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
                     "w-8 h-8 rounded-lg border text-sm font-medium transition-colors",
                     p === currentPage
                       ? "border-blue-500 bg-blue-500 text-white"
-                      : "border-gray-300 text-gray-600 hover:bg-white hover:text-gray-900"
+                      : "border-gray-300 text-gray-600 hover:bg-white hover:text-gray-900",
                   )}
                 >
                   {p}
@@ -506,8 +629,14 @@ export function ReviewTable({ reviews, onUpdate }: ReviewTableProps) {
       <ViewReviewModal
         review={viewReview}
         onClose={() => setViewReview(null)}
-        onUnflag={(r) => { setViewReview(null); setUnflagReview(r); }}
-        onHide={(r) => { setViewReview(null); setHideReview(r); }}
+        onUnflag={(r) => {
+          setViewReview(null);
+          setUnflagReview(r);
+        }}
+        onHide={(r) => {
+          setViewReview(null);
+          setHideReview(r);
+        }}
       />
       <UnflagModal
         review={unflagReview}

@@ -7,10 +7,24 @@ import { useState, useRef, useCallback, useMemo, useEffect } from "react";
 import { format } from "date-fns";
 import { toast } from "sonner";
 import {
-  Briefcase, Plus, Trash2, ChevronDown, ChevronUp,
-  GraduationCap, MapPin, Building2, Clock, Search,
-  CalendarIcon, X, FileText, AlertTriangle, CheckCircle2,
-  Target, Crosshair, Award,
+  Briefcase,
+  Plus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
+  GraduationCap,
+  MapPin,
+  Building2,
+  Clock,
+  Search,
+  CalendarIcon,
+  X,
+  FileText,
+  AlertTriangle,
+  CheckCircle2,
+  Target,
+  Crosshair,
+  Award,
 } from "lucide-react";
 import { cn } from "../../../ui/utils";
 import { Button } from "../../../ui/button";
@@ -60,14 +74,35 @@ export interface CoachProfessionalState {
 // ═══════════════════════════════════════════════════════════════
 
 export const SPECIALIZATIONS = [
-  "Personal Training", "Strength & Conditioning", "Yoga",
-  "Pilates", "CrossFit", "Swimming", "Football", "Basketball",
-  "Tennis", "Martial Arts", "Boxing", "Running & Athletics",
-  "Cycling", "Dance Fitness", "HIIT", "Calisthenics",
-  "Nutrition Coaching", "Weight Loss", "Bodybuilding",
-  "Rehabilitation", "Kids Fitness", "Senior Fitness",
-  "Prenatal/Postnatal", "Sports Psychology", "Golf",
-  "Padel", "Cricket", "Volleyball", "Table Tennis",
+  "Personal Training",
+  "Strength & Conditioning",
+  "Yoga",
+  "Pilates",
+  "CrossFit",
+  "Swimming",
+  "Football",
+  "Basketball",
+  "Tennis",
+  "Martial Arts",
+  "Boxing",
+  "Running & Athletics",
+  "Cycling",
+  "Dance Fitness",
+  "HIIT",
+  "Calisthenics",
+  "Nutrition Coaching",
+  "Weight Loss",
+  "Bodybuilding",
+  "Rehabilitation",
+  "Kids Fitness",
+  "Senior Fitness",
+  "Prenatal/Postnatal",
+  "Sports Psychology",
+  "Golf",
+  "Padel",
+  "Cricket",
+  "Volleyball",
+  "Table Tennis",
 ] as const;
 
 export const MOCK_FACILITIES = [
@@ -77,11 +112,15 @@ export const MOCK_FACILITIES = [
   { id: "fac-004", name: "Abu Dhabi Aquatics Club", status: "Active" as const },
   { id: "fac-005", name: "Sharjah Tennis Academy", status: "Active" as const },
   { id: "fac-006", name: "RAK Community Gym", status: "Inactive" as const },
-  { id: "fac-007", name: "Ajman Multi-Sport Center", status: "Active" as const },
+  {
+    id: "fac-007",
+    name: "Ajman Multi-Sport Center",
+    status: "Active" as const,
+  },
   { id: "fac-008", name: "Al Ain Football Club", status: "Active" as const },
 ];
 
-const ACTIVE_FACILITIES = MOCK_FACILITIES.filter(f => f.status === "Active");
+const ACTIVE_FACILITIES = MOCK_FACILITIES.filter((f) => f.status === "Active");
 
 export const CERTIFICATION_OPTIONS = [
   "NASM Certified Personal Trainer",
@@ -139,7 +178,8 @@ export function getMockProfessional(id: string): CoachProfessionalState {
           startDate: new Date(2019, 0, 1),
           endDate: null,
           isPresent: true,
-          description: "Leading personal training programs, managing a team of 5 junior trainers, and developing customized fitness plans for 30+ clients.",
+          description:
+            "Leading personal training programs, managing a team of 5 junior trainers, and developing customized fitness plans for 30+ clients.",
           collapsed: false,
         },
         {
@@ -149,12 +189,22 @@ export function getMockProfessional(id: string): CoachProfessionalState {
           startDate: new Date(2016, 5, 1),
           endDate: new Date(2018, 11, 31),
           isPresent: false,
-          description: "Provided one-on-one training sessions, group fitness classes, and nutritional guidance.",
+          description:
+            "Provided one-on-one training sessions, group fitness classes, and nutritional guidance.",
           collapsed: true,
         },
       ],
-      certificationNames: ["NASM Certified Personal Trainer", "CrossFit Level 1 Trainer", "First Aid / CPR Certified"],
-      serviceArea: { latitude: "25.2048", longitude: "55.2708", radiusKm: 20, locationName: "Dubai, UAE" },
+      certificationNames: [
+        "NASM Certified Personal Trainer",
+        "CrossFit Level 1 Trainer",
+        "First Aid / CPR Certified",
+      ],
+      serviceArea: {
+        latitude: "25.2048",
+        longitude: "55.2708",
+        radiusKm: 20,
+        locationName: "Dubai, UAE",
+      },
       preferredFacilities: ["fac-001", "fac-002"],
       minCoachingHours: 2,
     };
@@ -172,12 +222,21 @@ export function getMockProfessional(id: string): CoachProfessionalState {
           startDate: new Date(2021, 2, 1),
           endDate: null,
           isPresent: true,
-          description: "Teaching daily yoga classes, workshops, and teacher training programs.",
+          description:
+            "Teaching daily yoga classes, workshops, and teacher training programs.",
           collapsed: false,
         },
       ],
-      certificationNames: ["Yoga Alliance RYT-500", "Pilates Method Alliance Certified"],
-      serviceArea: { latitude: "25.2048", longitude: "55.2708", radiusKm: 10, locationName: "Dubai Marina" },
+      certificationNames: [
+        "Yoga Alliance RYT-500",
+        "Pilates Method Alliance Certified",
+      ],
+      serviceArea: {
+        latitude: "25.2048",
+        longitude: "55.2708",
+        radiusKm: 10,
+        locationName: "Dubai Marina",
+      },
       preferredFacilities: ["fac-003"],
       minCoachingHours: 1,
     };
@@ -191,21 +250,37 @@ export function getMockProfessional(id: string): CoachProfessionalState {
 
 export type ProfessionalErrors = Partial<Record<string, string>>;
 
-export function validateProfessional(state: CoachProfessionalState): ProfessionalErrors {
+export function validateProfessional(
+  state: CoachProfessionalState,
+): ProfessionalErrors {
   const errors: ProfessionalErrors = {};
-  if (state.specializations.length === 0) errors.specializations = "At least one specialization is required";
-  if (!state.yearsOfExperience.trim()) errors.yearsOfExperience = "Years of experience is required";
-  else if (isNaN(Number(state.yearsOfExperience)) || Number(state.yearsOfExperience) < 0) errors.yearsOfExperience = "Must be a valid number";
+  if (state.specializations.length === 0)
+    errors.specializations = "At least one specialization is required";
+  if (!state.yearsOfExperience.trim())
+    errors.yearsOfExperience = "Years of experience is required";
+  else if (
+    isNaN(Number(state.yearsOfExperience)) ||
+    Number(state.yearsOfExperience) < 0
+  )
+    errors.yearsOfExperience = "Must be a valid number";
   if (!state.bio.trim()) errors.bio = "Bio is required";
-  else if (state.bio.trim().length < 20) errors.bio = "Bio must be at least 20 characters";
+  else if (state.bio.trim().length < 20)
+    errors.bio = "Bio must be at least 20 characters";
 
   // Experience cross-validation
   state.experiences.forEach((exp, i) => {
-    if (!exp.organization.trim()) errors[`exp-${i}-org`] = "Organization is required";
+    if (!exp.organization.trim())
+      errors[`exp-${i}-org`] = "Organization is required";
     if (!exp.role.trim()) errors[`exp-${i}-role`] = "Role is required";
     if (!exp.startDate) errors[`exp-${i}-start`] = "Start date is required";
-    if (!exp.isPresent && !exp.endDate) errors[`exp-${i}-end`] = "End date is required";
-    if (exp.startDate && exp.endDate && !exp.isPresent && exp.endDate < exp.startDate) {
+    if (!exp.isPresent && !exp.endDate)
+      errors[`exp-${i}-end`] = "End date is required";
+    if (
+      exp.startDate &&
+      exp.endDate &&
+      !exp.isPresent &&
+      exp.endDate < exp.startDate
+    ) {
       errors[`exp-${i}-end`] = "End date must be after start date";
     }
   });
@@ -251,13 +326,15 @@ function TagMultiSelect({
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return options.filter(
-      o => (!search.trim() || o.toLowerCase().includes(q)) && !values.includes(o),
+      (o) =>
+        (!search.trim() || o.toLowerCase().includes(q)) && !values.includes(o),
     );
   }, [search, options, values]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
@@ -285,7 +362,7 @@ function TagMultiSelect({
       {error && <p className="text-xs text-red-500">{error}</p>}
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {values.map(v => (
+          {values.map((v) => (
             <Badge
               key={v}
               variant="outline"
@@ -294,7 +371,7 @@ function TagMultiSelect({
               {v}
               <button
                 type="button"
-                onClick={() => onChange(values.filter(x => x !== v))}
+                onClick={() => onChange(values.filter((x) => x !== v))}
                 className="hover:bg-blue-100 rounded-full p-0.5 -mr-1"
                 aria-label={`Remove ${v}`}
               >
@@ -313,18 +390,21 @@ function TagMultiSelect({
                 type="text"
                 placeholder={`Search ${label.toLowerCase()}...`}
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="w-full h-8 pl-8 pr-2 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-[#003B95]/30"
                 autoFocus
               />
             </div>
           </div>
           <div className="overflow-y-auto max-h-44">
-            {filtered.map(opt => (
+            {filtered.map((opt) => (
               <button
                 key={opt}
                 type="button"
-                onClick={() => { onChange([...values, opt]); setSearch(""); }}
+                onClick={() => {
+                  onChange([...values, opt]);
+                  setSearch("");
+                }}
                 className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 transition-colors"
               >
                 {opt}
@@ -332,7 +412,9 @@ function TagMultiSelect({
             ))}
             {filtered.length === 0 && (
               <p className="text-xs text-gray-400 text-center py-4">
-                {values.length === options.length ? "All options selected" : "No results found"}
+                {values.length === options.length
+                  ? "All options selected"
+                  : "No results found"}
               </p>
             )}
           </div>
@@ -360,20 +442,21 @@ function FacilityMultiSelect({
   const filtered = useMemo(() => {
     const q = search.toLowerCase();
     return ACTIVE_FACILITIES.filter(
-      f => (!search.trim() || f.name.toLowerCase().includes(q)),
+      (f) => !search.trim() || f.name.toLowerCase().includes(q),
     );
   }, [search]);
 
   useEffect(() => {
     function handleClick(e: MouseEvent) {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+      if (ref.current && !ref.current.contains(e.target as Node))
+        setOpen(false);
     }
     document.addEventListener("mousedown", handleClick);
     return () => document.removeEventListener("mousedown", handleClick);
   }, []);
 
   const toggle = (id: string) => {
-    if (values.includes(id)) onChange(values.filter(v => v !== id));
+    if (values.includes(id)) onChange(values.filter((v) => v !== id));
     else onChange([...values, id]);
   };
 
@@ -391,14 +474,16 @@ function FacilityMultiSelect({
         )}
       >
         <span className={values.length ? "text-[#111827]" : "text-[#9CA3AF]"}>
-          {values.length ? `${values.length} facilit${values.length === 1 ? "y" : "ies"} selected` : "Select active facilities"}
+          {values.length
+            ? `${values.length} facilit${values.length === 1 ? "y" : "ies"} selected`
+            : "Select active facilities"}
         </span>
         <ChevronDown className="h-3.5 w-3.5 text-gray-400 shrink-0" />
       </button>
       {values.length > 0 && (
         <div className="flex flex-wrap gap-1.5">
-          {values.map(id => {
-            const fac = ACTIVE_FACILITIES.find(f => f.id === id);
+          {values.map((id) => {
+            const fac = ACTIVE_FACILITIES.find((f) => f.id === id);
             return fac ? (
               <Badge
                 key={id}
@@ -409,7 +494,7 @@ function FacilityMultiSelect({
                 {fac.name}
                 <button
                   type="button"
-                  onClick={() => onChange(values.filter(v => v !== id))}
+                  onClick={() => onChange(values.filter((v) => v !== id))}
                   className="hover:bg-indigo-100 rounded-full p-0.5 -mr-1"
                   aria-label={`Remove ${fac.name}`}
                 >
@@ -420,7 +505,9 @@ function FacilityMultiSelect({
           })}
         </div>
       )}
-      <p className="text-[10px] text-[#9CA3AF]">Only active facilities are shown.</p>
+      <p className="text-[10px] text-[#9CA3AF]">
+        Only active facilities are shown.
+      </p>
       {open && (
         <div className="absolute z-50 top-[calc(100%-32px)] left-0 right-0 mt-1 bg-white border rounded-lg shadow-lg max-h-60 overflow-hidden">
           <div className="p-2 border-b">
@@ -430,14 +517,14 @@ function FacilityMultiSelect({
                 type="text"
                 placeholder="Search facilities..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="w-full h-8 pl-8 pr-2 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-[#003B95]/30"
                 autoFocus
               />
             </div>
           </div>
           <div className="overflow-y-auto max-h-44">
-            {filtered.map(fac => (
+            {filtered.map((fac) => (
               <button
                 key={fac.id}
                 type="button"
@@ -454,13 +541,18 @@ function FacilityMultiSelect({
                 />
                 <Building2 className="h-3.5 w-3.5 text-gray-400 shrink-0" />
                 <span className="flex-1 text-left">{fac.name}</span>
-                <Badge variant="outline" className="text-[9px] px-1 py-0 bg-emerald-50 text-emerald-600 border-emerald-200">
+                <Badge
+                  variant="outline"
+                  className="text-[9px] px-1 py-0 bg-emerald-50 text-emerald-600 border-emerald-200"
+                >
                   Active
                 </Badge>
               </button>
             ))}
             {filtered.length === 0 && (
-              <p className="text-xs text-gray-400 text-center py-4">No facilities found</p>
+              <p className="text-xs text-gray-400 text-center py-4">
+                No facilities found
+              </p>
             )}
           </div>
         </div>
@@ -499,10 +591,12 @@ function ExperienceCard({
   ].some(Boolean);
 
   return (
-    <div className={cn(
-      "border rounded-lg overflow-hidden transition-colors",
-      hasErrors ? "border-red-200" : "border-gray-200",
-    )}>
+    <div
+      className={cn(
+        "border rounded-lg overflow-hidden transition-colors",
+        hasErrors ? "border-red-200" : "border-gray-200",
+      )}
+    >
       {/* Collapse header */}
       <div
         className={cn(
@@ -512,11 +606,18 @@ function ExperienceCard({
         onClick={() => onToggleCollapse(entry.id)}
       >
         <div className="flex items-center gap-2 min-w-0">
-          <div className={cn(
-            "flex items-center justify-center h-7 w-7 rounded-md shrink-0",
-            hasErrors ? "bg-red-100" : "bg-blue-50",
-          )}>
-            <Briefcase className={cn("h-3.5 w-3.5", hasErrors ? "text-red-500" : "text-blue-500")} />
+          <div
+            className={cn(
+              "flex items-center justify-center h-7 w-7 rounded-md shrink-0",
+              hasErrors ? "bg-red-100" : "bg-blue-50",
+            )}
+          >
+            <Briefcase
+              className={cn(
+                "h-3.5 w-3.5",
+                hasErrors ? "text-red-500" : "text-blue-500",
+              )}
+            />
           </div>
           <div className="min-w-0">
             <p className="text-sm text-[#111827] truncate">
@@ -525,8 +626,13 @@ function ExperienceCard({
                 : `Experience ${index + 1}`}
             </p>
             <p className="text-[10px] text-[#9CA3AF]">
-              {entry.startDate ? format(entry.startDate, "MMM yyyy") : "Start"} –{" "}
-              {entry.isPresent ? "Present" : entry.endDate ? format(entry.endDate, "MMM yyyy") : "End"}
+              {entry.startDate ? format(entry.startDate, "MMM yyyy") : "Start"}{" "}
+              –{" "}
+              {entry.isPresent
+                ? "Present"
+                : entry.endDate
+                  ? format(entry.endDate, "MMM yyyy")
+                  : "End"}
             </p>
           </div>
         </div>
@@ -534,7 +640,10 @@ function ExperienceCard({
           {hasErrors && <AlertTriangle className="h-3.5 w-3.5 text-red-400" />}
           <button
             type="button"
-            onClick={(e) => { e.stopPropagation(); onRemove(entry.id); }}
+            onClick={(e) => {
+              e.stopPropagation();
+              onRemove(entry.id);
+            }}
             className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-500 transition-colors"
             aria-label="Remove experience"
           >
@@ -559,12 +668,20 @@ function ExperienceCard({
               </Label>
               <Input
                 value={entry.organization}
-                onChange={e => onUpdate(entry.id, { organization: e.target.value })}
+                onChange={(e) =>
+                  onUpdate(entry.id, { organization: e.target.value })
+                }
                 placeholder="Company / Organization name"
-                className={cn("h-9", errors[`exp-${index}-org`] && "border-red-300 ring-1 ring-red-200")}
+                className={cn(
+                  "h-10",
+                  errors[`exp-${index}-org`] &&
+                    "border-red-300 ring-1 ring-red-200",
+                )}
               />
               {errors[`exp-${index}-org`] && (
-                <p className="text-xs text-red-500">{errors[`exp-${index}-org`]}</p>
+                <p className="text-xs text-red-500">
+                  {errors[`exp-${index}-org`]}
+                </p>
               )}
             </div>
             {/* Role */}
@@ -574,12 +691,18 @@ function ExperienceCard({
               </Label>
               <Input
                 value={entry.role}
-                onChange={e => onUpdate(entry.id, { role: e.target.value })}
+                onChange={(e) => onUpdate(entry.id, { role: e.target.value })}
                 placeholder="e.g., Personal Trainer"
-                className={cn("h-9", errors[`exp-${index}-role`] && "border-red-300 ring-1 ring-red-200")}
+                className={cn(
+                  "h-10",
+                  errors[`exp-${index}-role`] &&
+                    "border-red-300 ring-1 ring-red-200",
+                )}
               />
               {errors[`exp-${index}-role`] && (
-                <p className="text-xs text-red-500">{errors[`exp-${index}-role`]}</p>
+                <p className="text-xs text-red-500">
+                  {errors[`exp-${index}-role`]}
+                </p>
               )}
             </div>
           </div>
@@ -597,24 +720,27 @@ function ExperienceCard({
                     type="button"
                     variant="outline"
                     className={cn(
-                      "w-full h-9 justify-start text-left text-sm",
+                      "w-full h-10 justify-start text-left text-sm",
                       !entry.startDate && "text-[#9CA3AF]",
-                      errors[`exp-${index}-start`] && "border-red-300 ring-1 ring-red-200",
+                      errors[`exp-${index}-start`] &&
+                        "border-red-300 ring-1 ring-red-200",
                     )}
                   >
                     <CalendarIcon className="h-3.5 w-3.5 mr-2 text-gray-400" />
-                    {entry.startDate ? format(entry.startDate, "MMM yyyy") : "Select start date"}
+                    {entry.startDate
+                      ? format(entry.startDate, "MMM yyyy")
+                      : "Select start date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={entry.startDate ?? undefined}
-                    onSelect={date => {
+                    onSelect={(date) => {
                       onUpdate(entry.id, { startDate: date ?? null });
                       setStartOpen(false);
                     }}
-                    disabled={date => date > new Date()}
+                    disabled={(date) => date > new Date()}
                     defaultMonth={entry.startDate ?? new Date(2020, 0, 1)}
                     captionLayout="dropdown-buttons"
                     fromYear={1990}
@@ -623,14 +749,17 @@ function ExperienceCard({
                 </PopoverContent>
               </Popover>
               {errors[`exp-${index}-start`] && (
-                <p className="text-xs text-red-500">{errors[`exp-${index}-start`]}</p>
+                <p className="text-xs text-red-500">
+                  {errors[`exp-${index}-start`]}
+                </p>
               )}
             </div>
 
             {/* End Date */}
             <div className="space-y-1.5">
               <Label className="text-sm text-[#374151]">
-                End Date {!entry.isPresent && <span className="text-red-500">*</span>}
+                End Date{" "}
+                {!entry.isPresent && <span className="text-red-500">*</span>}
               </Label>
               <Popover open={endOpen} onOpenChange={setEndOpen}>
                 <PopoverTrigger asChild>
@@ -639,25 +768,33 @@ function ExperienceCard({
                     variant="outline"
                     disabled={entry.isPresent}
                     className={cn(
-                      "w-full h-9 justify-start text-left text-sm",
+                      "w-full h-10 justify-start text-left text-sm",
                       entry.isPresent && "opacity-50",
                       !entry.endDate && !entry.isPresent && "text-[#9CA3AF]",
-                      errors[`exp-${index}-end`] && "border-red-300 ring-1 ring-red-200",
+                      errors[`exp-${index}-end`] &&
+                        "border-red-300 ring-1 ring-red-200",
                     )}
                   >
                     <CalendarIcon className="h-3.5 w-3.5 mr-2 text-gray-400" />
-                    {entry.isPresent ? "Present" : entry.endDate ? format(entry.endDate, "MMM yyyy") : "Select end date"}
+                    {entry.isPresent
+                      ? "Present"
+                      : entry.endDate
+                        ? format(entry.endDate, "MMM yyyy")
+                        : "Select end date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
                   <Calendar
                     mode="single"
                     selected={entry.endDate ?? undefined}
-                    onSelect={date => {
+                    onSelect={(date) => {
                       onUpdate(entry.id, { endDate: date ?? null });
                       setEndOpen(false);
                     }}
-                    disabled={date => date > new Date() || (entry.startDate ? date < entry.startDate : false)}
+                    disabled={(date) =>
+                      date > new Date() ||
+                      (entry.startDate ? date < entry.startDate : false)
+                    }
                     defaultMonth={entry.endDate ?? new Date()}
                     captionLayout="dropdown-buttons"
                     fromYear={1990}
@@ -666,7 +803,9 @@ function ExperienceCard({
                 </PopoverContent>
               </Popover>
               {errors[`exp-${index}-end`] && (
-                <p className="text-xs text-red-500">{errors[`exp-${index}-end`]}</p>
+                <p className="text-xs text-red-500">
+                  {errors[`exp-${index}-end`]}
+                </p>
               )}
               {/* Present checkbox */}
               <div className="flex items-center gap-2 mt-1">
@@ -681,7 +820,10 @@ function ExperienceCard({
                   }}
                   className="h-3.5 w-3.5"
                 />
-                <label htmlFor={`present-${entry.id}`} className="text-xs text-[#6B7280] cursor-pointer">
+                <label
+                  htmlFor={`present-${entry.id}`}
+                  className="text-xs text-[#6B7280] cursor-pointer"
+                >
                   I currently work here
                 </label>
               </div>
@@ -693,7 +835,9 @@ function ExperienceCard({
             <Label className="text-sm text-[#374151]">Description</Label>
             <textarea
               value={entry.description}
-              onChange={e => onUpdate(entry.id, { description: e.target.value })}
+              onChange={(e) =>
+                onUpdate(entry.id, { description: e.target.value })
+              }
               placeholder="Describe responsibilities and achievements..."
               rows={3}
               className="w-full px-3 py-2 text-sm border rounded-md resize-none focus:outline-none focus:ring-2 focus:ring-[#003B95]/20 focus:border-[#003B95]"
@@ -726,10 +870,14 @@ function ServiceAreaPicker({
       <div className="relative rounded-lg border overflow-hidden bg-gradient-to-br from-blue-50 via-green-50 to-yellow-50 h-48">
         {/* Grid overlay */}
         <div className="absolute inset-0 opacity-20">
-          <div className="w-full h-full" style={{
-            backgroundImage: "linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)",
-            backgroundSize: "40px 40px",
-          }} />
+          <div
+            className="w-full h-full"
+            style={{
+              backgroundImage:
+                "linear-gradient(rgba(0,0,0,0.1) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.1) 1px, transparent 1px)",
+              backgroundSize: "40px 40px",
+            }}
+          />
         </div>
         {/* Center pin */}
         <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 flex flex-col items-center z-10">
@@ -763,7 +911,7 @@ function ServiceAreaPicker({
           <Label className="text-xs text-[#6B7280]">Location Name</Label>
           <Input
             value={area.locationName}
-            onChange={e => onChange({ locationName: e.target.value })}
+            onChange={(e) => onChange({ locationName: e.target.value })}
             placeholder="e.g., Dubai Marina"
             className="h-8 text-xs"
           />
@@ -773,7 +921,9 @@ function ServiceAreaPicker({
           <Label className="text-xs text-[#6B7280]">Latitude</Label>
           <Input
             value={area.latitude}
-            onChange={e => onChange({ latitude: e.target.value.replace(/[^0-9.\-]/g, "") })}
+            onChange={(e) =>
+              onChange({ latitude: e.target.value.replace(/[^0-9.\-]/g, "") })
+            }
             placeholder="25.2048"
             className="h-8 text-xs font-mono"
           />
@@ -783,7 +933,9 @@ function ServiceAreaPicker({
           <Label className="text-xs text-[#6B7280]">Longitude</Label>
           <Input
             value={area.longitude}
-            onChange={e => onChange({ longitude: e.target.value.replace(/[^0-9.\-]/g, "") })}
+            onChange={(e) =>
+              onChange({ longitude: e.target.value.replace(/[^0-9.\-]/g, "") })
+            }
             placeholder="55.2708"
             className="h-8 text-xs font-mono"
           />
@@ -796,7 +948,10 @@ function ServiceAreaPicker({
           <Label className="text-xs text-[#6B7280] flex items-center gap-1">
             <Crosshair className="h-3 w-3" /> Service Radius
           </Label>
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-[#003B95]">
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 text-[#003B95]"
+          >
             {area.radiusKm} km
           </Badge>
         </div>
@@ -834,7 +989,7 @@ export function CoachProfessionalSection({
 }) {
   // ── Experience handlers ───────────────────────────────
   const addExperience = useCallback(() => {
-    setProfessional(prev => ({
+    setProfessional((prev) => ({
       ...prev,
       experiences: [
         ...prev.experiences,
@@ -853,40 +1008,54 @@ export function CoachProfessionalSection({
     onDirty();
   }, [setProfessional, onDirty]);
 
-  const updateExperience = useCallback((id: string, updates: Partial<ExperienceEntry>) => {
-    setProfessional(prev => ({
-      ...prev,
-      experiences: prev.experiences.map(e => e.id === id ? { ...e, ...updates } : e),
-    }));
-    onDirty();
-  }, [setProfessional, onDirty]);
+  const updateExperience = useCallback(
+    (id: string, updates: Partial<ExperienceEntry>) => {
+      setProfessional((prev) => ({
+        ...prev,
+        experiences: prev.experiences.map((e) =>
+          e.id === id ? { ...e, ...updates } : e,
+        ),
+      }));
+      onDirty();
+    },
+    [setProfessional, onDirty],
+  );
 
-  const removeExperience = useCallback((id: string) => {
-    setProfessional(prev => ({
-      ...prev,
-      experiences: prev.experiences.filter(e => e.id !== id),
-    }));
-    onDirty();
-    toast.success("Experience entry removed.");
-  }, [setProfessional, onDirty]);
+  const removeExperience = useCallback(
+    (id: string) => {
+      setProfessional((prev) => ({
+        ...prev,
+        experiences: prev.experiences.filter((e) => e.id !== id),
+      }));
+      onDirty();
+      toast.success("Experience entry removed.");
+    },
+    [setProfessional, onDirty],
+  );
 
-  const toggleCollapse = useCallback((id: string) => {
-    setProfessional(prev => ({
-      ...prev,
-      experiences: prev.experiences.map(e =>
-        e.id === id ? { ...e, collapsed: !e.collapsed } : e,
-      ),
-    }));
-  }, [setProfessional]);
+  const toggleCollapse = useCallback(
+    (id: string) => {
+      setProfessional((prev) => ({
+        ...prev,
+        experiences: prev.experiences.map((e) =>
+          e.id === id ? { ...e, collapsed: !e.collapsed } : e,
+        ),
+      }));
+    },
+    [setProfessional],
+  );
 
   // ── Field updater ─────────────────────────────────────
-  const update = useCallback(<K extends keyof CoachProfessionalState>(
-    field: K,
-    value: CoachProfessionalState[K],
-  ) => {
-    setProfessional(prev => ({ ...prev, [field]: value }));
-    onDirty();
-  }, [setProfessional, onDirty]);
+  const update = useCallback(
+    <K extends keyof CoachProfessionalState>(
+      field: K,
+      value: CoachProfessionalState[K],
+    ) => {
+      setProfessional((prev) => ({ ...prev, [field]: value }));
+      onDirty();
+    },
+    [setProfessional, onDirty],
+  );
 
   const bioCharCount = professional.bio.length;
 
@@ -911,7 +1080,7 @@ export function CoachProfessionalSection({
           values={professional.specializations}
           options={SPECIALIZATIONS}
           placeholder="Select specializations"
-          onChange={v => update("specializations", v)}
+          onChange={(v) => update("specializations", v)}
           error={errors.specializations}
           required
         />
@@ -924,13 +1093,17 @@ export function CoachProfessionalSection({
             </Label>
             <Input
               value={professional.yearsOfExperience}
-              onChange={e => {
+              onChange={(e) => {
                 const v = e.target.value.replace(/[^0-9]/g, "");
                 update("yearsOfExperience", v);
               }}
               placeholder="e.g., 5"
               maxLength={3}
-              className={cn("h-9", errors.yearsOfExperience && "border-red-300 ring-1 ring-red-200")}
+              className={cn(
+                "h-10",
+                errors.yearsOfExperience &&
+                  "border-red-300 ring-1 ring-red-200",
+              )}
             />
             {errors.yearsOfExperience && (
               <p className="text-xs text-red-500">{errors.yearsOfExperience}</p>
@@ -942,16 +1115,18 @@ export function CoachProfessionalSection({
               <Label className="text-sm text-[#374151]">
                 Bio / About <span className="text-red-500">*</span>
               </Label>
-              <span className={cn(
-                "text-[10px]",
-                bioCharCount < 20 ? "text-red-400" : "text-[#9CA3AF]",
-              )}>
+              <span
+                className={cn(
+                  "text-[10px]",
+                  bioCharCount < 20 ? "text-red-400" : "text-[#9CA3AF]",
+                )}
+              >
                 {bioCharCount} chars
               </span>
             </div>
             <textarea
               value={professional.bio}
-              onChange={e => update("bio", e.target.value)}
+              onChange={(e) => update("bio", e.target.value)}
               placeholder="Write a brief professional bio about the coach..."
               rows={3}
               className={cn(
@@ -971,16 +1146,24 @@ export function CoachProfessionalSection({
             <Label className="text-sm text-[#374151] flex items-center gap-1.5">
               <Briefcase className="h-4 w-4 text-blue-500" /> Work Experience
             </Label>
-            <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-gray-500">
-              {professional.experiences.length} entr{professional.experiences.length === 1 ? "y" : "ies"}
+            <Badge
+              variant="outline"
+              className="text-[10px] px-1.5 py-0 text-gray-500"
+            >
+              {professional.experiences.length} entr
+              {professional.experiences.length === 1 ? "y" : "ies"}
             </Badge>
           </div>
 
           {professional.experiences.length === 0 && (
             <div className="border-2 border-dashed rounded-lg p-6 text-center">
               <Briefcase className="h-6 w-6 text-gray-300 mx-auto mb-2" />
-              <p className="text-xs text-[#9CA3AF]">No experience entries yet.</p>
-              <p className="text-[10px] text-[#9CA3AF] mt-0.5">Click the button below to add work experience.</p>
+              <p className="text-xs text-[#9CA3AF]">
+                No experience entries yet.
+              </p>
+              <p className="text-[10px] text-[#9CA3AF] mt-0.5">
+                Click the button below to add work experience.
+              </p>
             </div>
           )}
 
@@ -1016,7 +1199,7 @@ export function CoachProfessionalSection({
           values={professional.certificationNames}
           options={CERTIFICATION_OPTIONS}
           placeholder="Select certifications"
-          onChange={v => update("certificationNames", v)}
+          onChange={(v) => update("certificationNames", v)}
         />
 
         <hr className="border-gray-100" />
@@ -1024,8 +1207,8 @@ export function CoachProfessionalSection({
         {/* ── Service Area ────────────────────────────── */}
         <ServiceAreaPicker
           area={professional.serviceArea}
-          onChange={updates => {
-            setProfessional(prev => ({
+          onChange={(updates) => {
+            setProfessional((prev) => ({
               ...prev,
               serviceArea: { ...prev.serviceArea, ...updates },
             }));
@@ -1038,7 +1221,7 @@ export function CoachProfessionalSection({
         {/* ── Preferred Facilities ─────────────────────── */}
         <FacilityMultiSelect
           values={professional.preferredFacilities}
-          onChange={v => update("preferredFacilities", v)}
+          onChange={(v) => update("preferredFacilities", v)}
         />
 
         <hr className="border-gray-100" />
@@ -1051,10 +1234,12 @@ export function CoachProfessionalSection({
           <div className="relative">
             <select
               value={professional.minCoachingHours}
-              onChange={e => update("minCoachingHours", Number(e.target.value))}
-              className="w-full h-9 pl-3 pr-8 text-sm border rounded-md bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-[#003B95]/20 focus:border-[#003B95] cursor-pointer"
+              onChange={(e) =>
+                update("minCoachingHours", Number(e.target.value))
+              }
+              className="w-full h-10 pl-3 pr-8 text-sm border rounded-md bg-white appearance-none focus:outline-none focus:ring-2 focus:ring-[#003B95]/20 focus:border-[#003B95] cursor-pointer"
             >
-              {MIN_HOURS_OPTIONS.map(h => (
+              {MIN_HOURS_OPTIONS.map((h) => (
                 <option key={h} value={h}>
                   {h} hour{h !== 1 ? "s" : ""}
                 </option>

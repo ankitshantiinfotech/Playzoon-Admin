@@ -1,7 +1,10 @@
 import { useState, useMemo, useCallback } from "react";
 import { toast } from "sonner";
 import {
-  MessageCircle, ChevronRight, RefreshCw, AlertTriangle,
+  MessageCircle,
+  ChevronRight,
+  RefreshCw,
+  AlertTriangle,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { Conversation, ChatMessage } from "./types";
@@ -21,7 +24,7 @@ function ChatSkeleton() {
     <div className="flex flex-1 gap-4 min-h-0">
       {/* Left panel skeleton */}
       <div className="w-[340px] shrink-0 bg-white border border-gray-200 rounded-xl p-3 space-y-3">
-        <Skeleton className="h-9 w-full rounded-lg" />
+        <Skeleton className="h-10 w-full rounded-lg" />
         <Skeleton className="h-8 w-full rounded-lg" />
         <div className="space-y-2 mt-3">
           {Array.from({ length: 6 }).map((_, i) => (
@@ -47,8 +50,19 @@ function ChatSkeleton() {
         </div>
         <div className="space-y-3 mt-8">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className={cn("flex", i % 2 === 0 ? "justify-start" : "justify-end")}>
-              <Skeleton className={cn("h-12 rounded-2xl", i % 2 === 0 ? "w-[60%]" : "w-[45%]")} />
+            <div
+              key={i}
+              className={cn(
+                "flex",
+                i % 2 === 0 ? "justify-start" : "justify-end",
+              )}
+            >
+              <Skeleton
+                className={cn(
+                  "h-12 rounded-2xl",
+                  i % 2 === 0 ? "w-[60%]" : "w-[45%]",
+                )}
+              />
             </div>
           ))}
         </div>
@@ -63,7 +77,9 @@ function ErrorState({ onRetry }: { onRetry: () => void }) {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center bg-white border border-gray-200 rounded-xl px-8 py-16">
       <AlertTriangle className="w-12 h-12 text-red-300 mb-4" />
-      <p className="text-base font-semibold text-gray-700">Unable to load chat data.</p>
+      <p className="text-base font-semibold text-gray-700">
+        Unable to load chat data.
+      </p>
       <p className="text-sm text-gray-500 mt-1">Please try again.</p>
       <button
         onClick={onRetry}
@@ -81,9 +97,12 @@ function EmptyMessageState() {
   return (
     <div className="flex-1 flex flex-col items-center justify-center text-center bg-white border border-gray-200 rounded-xl shadow-sm px-8 py-16">
       <MessageCircle className="w-12 h-12 text-gray-200 mb-4" />
-      <p className="text-base font-semibold text-gray-500">Select a conversation to view messages.</p>
+      <p className="text-base font-semibold text-gray-500">
+        Select a conversation to view messages.
+      </p>
       <p className="text-sm text-gray-400 mt-1.5 max-w-xs">
-        Click any conversation from the list to view the full message thread and respond.
+        Click any conversation from the list to view the full message thread and
+        respond.
       </p>
     </div>
   );
@@ -93,12 +112,13 @@ function EmptyMessageState() {
 
 export function AdminChatPage() {
   const [screenState, setScreenState] = useState<ScreenState>("ready");
-  const [conversations, setConversations] = useState<Conversation[]>(MOCK_CONVERSATIONS);
+  const [conversations, setConversations] =
+    useState<Conversation[]>(MOCK_CONVERSATIONS);
   const [selectedConvId, setSelectedConvId] = useState<string | null>(null);
 
   const selectedConv = useMemo(
     () => conversations.find((c) => c.id === selectedConvId) ?? null,
-    [conversations, selectedConvId]
+    [conversations, selectedConvId],
   );
 
   // ── Simulate loading (for demo) ────────────────────────────
@@ -114,7 +134,7 @@ export function AdminChatPage() {
     setSelectedConvId(conv.id);
     // Clear unread count
     setConversations((prev) =>
-      prev.map((c) => c.id === conv.id ? { ...c, unreadCount: 0 } : c)
+      prev.map((c) => (c.id === conv.id ? { ...c, unreadCount: 0 } : c)),
     );
   }, []);
 
@@ -135,8 +155,8 @@ export function AdminChatPage() {
       prev.map((c) =>
         c.id !== convId
           ? c
-          : { ...c, messages: [...c.messages, newMsg], updatedAt: new Date() }
-      )
+          : { ...c, messages: [...c.messages, newMsg], updatedAt: new Date() },
+      ),
     );
     toast.success("Message sent.");
   }, []);
@@ -151,10 +171,16 @@ export function AdminChatPage() {
           : {
               ...c,
               messages: c.messages.map((m) =>
-                m.id !== msgId ? m : { ...m, isFlagged: true, flagReason: "Flagged by admin for review" }
+                m.id !== msgId
+                  ? m
+                  : {
+                      ...m,
+                      isFlagged: true,
+                      flagReason: "Flagged by admin for review",
+                    },
               ),
-            }
-      )
+            },
+      ),
     );
     toast.success("Message flagged as inappropriate.");
   }, []);
@@ -169,10 +195,10 @@ export function AdminChatPage() {
           : {
               ...c,
               messages: c.messages.map((m) =>
-                m.id !== msgId ? m : { ...m, isDeleted: true }
+                m.id !== msgId ? m : { ...m, isDeleted: true },
               ),
-            }
-      )
+            },
+      ),
     );
   }, []);
 
@@ -183,9 +209,9 @@ export function AdminChatPage() {
       prev.map((c) => ({
         ...c,
         participants: c.participants.map((p) =>
-          p.id !== userId ? p : { ...p, isBlocked: true }
+          p.id !== userId ? p : { ...p, isBlocked: true },
         ),
-      }))
+      })),
     );
   }, []);
 
@@ -202,7 +228,8 @@ export function AdminChatPage() {
           <MessageCircle className="w-6 h-6 text-[#003B95]" /> Chat Management
         </h1>
         <p className="text-sm text-gray-500 mt-1">
-          Monitor conversations, provide admin support, and moderate chat content.
+          Monitor conversations, provide admin support, and moderate chat
+          content.
         </p>
       </div>
 

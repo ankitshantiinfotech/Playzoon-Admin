@@ -36,12 +36,7 @@ import { Input } from "../../ui/input";
 import { Badge } from "../../ui/badge";
 import { Label } from "../../ui/label";
 import { Textarea } from "../../ui/textarea";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import {
   Dialog,
   DialogContent,
@@ -58,11 +53,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "../../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type {
   PayoutDetail,
   PayoutStatus,
@@ -83,14 +74,42 @@ const STATUS_CONFIG: Record<
   PayoutStatus,
   { bg: string; text: string; border: string; dot: string }
 > = {
-  Pending: { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500" },
-  Processing: { bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200", dot: "bg-blue-500" },
-  "Partially Paid": { bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200", dot: "bg-amber-500" },
-  Settled: { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500" },
-  Rejected: { bg: "bg-red-50", text: "text-red-700", border: "border-red-200", dot: "bg-red-500" },
+  Pending: {
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    dot: "bg-amber-500",
+  },
+  Processing: {
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    border: "border-blue-200",
+    dot: "bg-blue-500",
+  },
+  "Partially Paid": {
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    dot: "bg-amber-500",
+  },
+  Settled: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    border: "border-emerald-200",
+    dot: "bg-emerald-500",
+  },
+  Rejected: {
+    bg: "bg-red-50",
+    text: "text-red-700",
+    border: "border-red-200",
+    dot: "bg-red-500",
+  },
 };
 
-const TIMELINE_ICONS: Record<string, { icon: typeof CheckCircle; color: string }> = {
+const TIMELINE_ICONS: Record<
+  string,
+  { icon: typeof CheckCircle; color: string }
+> = {
   Pending: { icon: Clock, color: "text-amber-500" },
   Processing: { icon: Loader2, color: "text-blue-500" },
   "Partially Paid": { icon: CreditCard, color: "text-amber-500" },
@@ -104,9 +123,24 @@ const PROVIDER_CONFIG: Record<
   PayoutProviderType,
   { icon: typeof Building2; bg: string; text: string; border: string }
 > = {
-  "Facility Provider": { icon: Building2, bg: "bg-blue-50", text: "text-blue-700", border: "border-blue-200" },
-  "Training Provider": { icon: GraduationCap, bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200" },
-  Coach: { icon: Users, bg: "bg-amber-50", text: "text-amber-700", border: "border-amber-200" },
+  "Facility Provider": {
+    icon: Building2,
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    border: "border-blue-200",
+  },
+  "Training Provider": {
+    icon: GraduationCap,
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    border: "border-purple-200",
+  },
+  Coach: {
+    icon: Users,
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+  },
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
@@ -142,7 +176,10 @@ function ProviderTypeBadge({ type }: { type: PayoutProviderType }) {
   const cfg = PROVIDER_CONFIG[type];
   const Icon = cfg.icon;
   return (
-    <Badge variant="outline" className={cn("text-[11px] gap-1 border", cfg.bg, cfg.text, cfg.border)}>
+    <Badge
+      variant="outline"
+      className={cn("text-[11px] gap-1 border", cfg.bg, cfg.text, cfg.border)}
+    >
       <Icon className="h-2.5 w-2.5" />
       {type}
     </Badge>
@@ -156,13 +193,22 @@ function BankStatusBadge({ status }: { status: BankAccountStatus }) {
     Revoked: "bg-gray-100 text-gray-500 border-gray-200",
   };
   return (
-    <Badge variant="outline" className={cn("text-[11px] border", colors[status])}>
+    <Badge
+      variant="outline"
+      className={cn("text-[11px] border", colors[status])}
+    >
       {status}
     </Badge>
   );
 }
 
-function InfoRow({ label, children }: { label: string; children: React.ReactNode }) {
+function InfoRow({
+  label,
+  children,
+}: {
+  label: string;
+  children: React.ReactNode;
+}) {
   return (
     <div className="flex justify-between items-start gap-2">
       <span className="text-sm text-gray-500 shrink-0">{label}</span>
@@ -271,9 +317,11 @@ export function PayoutDetailPage() {
                 ...prev.timeline,
               ],
             }
-          : prev
+          : prev,
       );
-      toast.success("Payout approved and moved to Processing. Provider has been notified.");
+      toast.success(
+        "Payout approved and moved to Processing. Provider has been notified.",
+      );
       setIsProcessing(false);
       setShowApproveConfirm(false);
       setInternalNotes("");
@@ -304,9 +352,11 @@ export function PayoutDetailPage() {
                 ...prev.timeline,
               ],
             }
-          : prev
+          : prev,
       );
-      toast.success("Payout rejected. Provider has been notified with the rejection reason.");
+      toast.success(
+        "Payout rejected. Provider has been notified with the rejection reason.",
+      );
       setIsProcessing(false);
       setShowRejectForm(false);
       setRejectReason("");
@@ -320,14 +370,17 @@ export function PayoutDetailPage() {
       return;
     }
     if (amount > remainingAmount) {
-      setPartialError(`Amount cannot exceed remaining balance of ${fmtCurrency(remainingAmount)}.`);
+      setPartialError(
+        `Amount cannot exceed remaining balance of ${fmtCurrency(remainingAmount)}.`,
+      );
       return;
     }
 
     setIsProcessing(true);
     setTimeout(() => {
       const newRemaining = remainingAmount - amount;
-      const newStatus: PayoutStatus = newRemaining <= 0 ? "Settled" : "Partially Paid";
+      const newStatus: PayoutStatus =
+        newRemaining <= 0 ? "Settled" : "Partially Paid";
       const newPayment: PartialPayment = {
         id: `pp-${Date.now()}`,
         date: new Date().toISOString(),
@@ -354,13 +407,15 @@ export function PayoutDetailPage() {
                 ...prev.timeline,
               ],
             }
-          : prev
+          : prev,
       );
 
       if (newRemaining <= 0) {
         toast.success("Payout marked as settled. Locked balance released.");
       } else {
-        toast.success(`Partial payment of ${fmtCurrency(amount)} recorded. Remaining: ${fmtCurrency(newRemaining)}.`);
+        toast.success(
+          `Partial payment of ${fmtCurrency(amount)} recorded. Remaining: ${fmtCurrency(newRemaining)}.`,
+        );
       }
       setIsProcessing(false);
       setShowPartialForm(false);
@@ -383,12 +438,14 @@ export function PayoutDetailPage() {
                   status: "Settled",
                   timestamp: new Date().toISOString(),
                   actor: "Admin",
-                  notes: internalNotes || "Payout marked as settled. Bank transfer confirmed.",
+                  notes:
+                    internalNotes ||
+                    "Payout marked as settled. Bank transfer confirmed.",
                 },
                 ...prev.timeline,
               ],
             }
-          : prev
+          : prev,
       );
       toast.success("Payout marked as settled. Locked balance released.");
       setIsProcessing(false);
@@ -400,15 +457,25 @@ export function PayoutDetailPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Breadcrumb + Header */}
       <div>
         <nav className="text-xs text-gray-500 mb-1 flex items-center gap-1.5">
-          <button onClick={() => navigate("/")} className="hover:text-[#003B95] cursor-pointer">Admin</button>
+          <button
+            onClick={() => navigate("/")}
+            className="hover:text-[#003B95] cursor-pointer"
+          >
+            Admin
+          </button>
           <span>/</span>
           <span className="text-gray-400">Financial</span>
           <span>/</span>
-          <button onClick={() => navigate("/payouts")} className="hover:text-[#003B95] cursor-pointer">Payouts</button>
+          <button
+            onClick={() => navigate("/payouts")}
+            className="hover:text-[#003B95] cursor-pointer"
+          >
+            Payouts
+          </button>
           <span>/</span>
           <span className="text-gray-900">{detail.id}</span>
         </nav>
@@ -460,8 +527,8 @@ export function PayoutDetailPage() {
         >
           <AlertTriangle className="h-5 w-5 shrink-0 mt-0.5 text-amber-500" />
           <div className="flex-1">
-            This payout request ({fmtCurrency(detail.requestedAmount)}) is
-            below the minimum payout threshold ({MIN_PAYOUT_THRESHOLD} SAR).
+            This payout request ({fmtCurrency(detail.requestedAmount)}) is below
+            the minimum payout threshold ({MIN_PAYOUT_THRESHOLD} SAR).
           </div>
         </div>
       )}
@@ -503,7 +570,7 @@ export function PayoutDetailPage() {
                     "text-[11px] border",
                     detail.provider.status === "Active"
                       ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                      : "bg-gray-100 text-gray-500 border-gray-200"
+                      : "bg-gray-100 text-gray-500 border-gray-200",
                   )}
                 >
                   {detail.provider.status}
@@ -521,10 +588,14 @@ export function PayoutDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <InfoRow label="Account Holder">{detail.bankAccount.holderName}</InfoRow>
+              <InfoRow label="Account Holder">
+                {detail.bankAccount.holderName}
+              </InfoRow>
               <InfoRow label="Bank Name">{detail.bankAccount.bankName}</InfoRow>
               <InfoRow label="IBAN (Masked)">
-                <span aria-label={`IBAN ending in ${detail.bankAccount.ibanMasked.slice(-4)}`}>
+                <span
+                  aria-label={`IBAN ending in ${detail.bankAccount.ibanMasked.slice(-4)}`}
+                >
                   {detail.bankAccount.ibanMasked}
                 </span>
               </InfoRow>
@@ -552,7 +623,9 @@ export function PayoutDetailPage() {
             </CardHeader>
             <CardContent className="space-y-3">
               <InfoRow label="Available Balance">
-                <span className="tabular-nums font-medium">{fmtCurrency(detail.wallet.availableBalance)}</span>
+                <span className="tabular-nums font-medium">
+                  {fmtCurrency(detail.wallet.availableBalance)}
+                </span>
               </InfoRow>
               <InfoRow label="Locked Balance">
                 <span className="tabular-nums font-medium text-amber-700">
@@ -560,7 +633,9 @@ export function PayoutDetailPage() {
                 </span>
               </InfoRow>
               <InfoRow label="Lifetime Earnings">
-                <span className="tabular-nums">{fmtCurrency(detail.wallet.lifetimeEarnings)}</span>
+                <span className="tabular-nums">
+                  {fmtCurrency(detail.wallet.lifetimeEarnings)}
+                </span>
               </InfoRow>
             </CardContent>
           </Card>
@@ -574,13 +649,20 @@ export function PayoutDetailPage() {
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-3">
-              <InfoRow label="Cycle Duration">{detail.cycle.cycleDuration}</InfoRow>
-              <InfoRow label="Current Cycle">
-                {fmtDate(detail.cycle.currentCycleStart)} - {fmtDate(detail.cycle.currentCycleEnd)}
+              <InfoRow label="Cycle Duration">
+                {detail.cycle.cycleDuration}
               </InfoRow>
-              <InfoRow label="Next Payout Date">{fmtDate(detail.cycle.nextPayoutDate)}</InfoRow>
+              <InfoRow label="Current Cycle">
+                {fmtDate(detail.cycle.currentCycleStart)} -{" "}
+                {fmtDate(detail.cycle.currentCycleEnd)}
+              </InfoRow>
+              <InfoRow label="Next Payout Date">
+                {fmtDate(detail.cycle.nextPayoutDate)}
+              </InfoRow>
               <InfoRow label="Amount Paid (this cycle)">
-                <span className="tabular-nums">{fmtCurrency(detail.cycle.amountPaidThisCycle)}</span>
+                <span className="tabular-nums">
+                  {fmtCurrency(detail.cycle.amountPaidThisCycle)}
+                </span>
               </InfoRow>
               <InfoRow label="Amount Remaining (this cycle)">
                 <span className="tabular-nums font-medium">
@@ -611,19 +693,27 @@ export function PayoutDetailPage() {
                   {fmtCurrency(detail.requestedAmount)}
                 </span>
               </div>
-              <InfoRow label="Request Date">{fmtDateTime(detail.requestDate)}</InfoRow>
+              <InfoRow label="Request Date">
+                {fmtDateTime(detail.requestDate)}
+              </InfoRow>
               <InfoRow label="Current Status">
                 <StatusBadge status={detail.status} />
               </InfoRow>
               {detail.rejectionReason && (
                 <div className="bg-red-50 border border-red-200 rounded-lg p-3 space-y-1">
-                  <span className="text-xs font-medium text-red-700">Rejection Reason</span>
-                  <p className="text-sm text-red-800">{detail.rejectionReason}</p>
+                  <span className="text-xs font-medium text-red-700">
+                    Rejection Reason
+                  </span>
+                  <p className="text-sm text-red-800">
+                    {detail.rejectionReason}
+                  </p>
                 </div>
               )}
               {detail.adminNotes && (
                 <div className="bg-gray-50 border rounded-lg p-3 space-y-1">
-                  <span className="text-xs font-medium text-gray-500">Admin Notes</span>
+                  <span className="text-xs font-medium text-gray-500">
+                    Admin Notes
+                  </span>
                   <p className="text-sm text-gray-700">{detail.adminNotes}</p>
                 </div>
               )}
@@ -644,21 +734,41 @@ export function PayoutDetailPage() {
                   <Table>
                     <TableHeader>
                       <TableRow className="bg-gray-50">
-                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Date</TableHead>
-                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Amount Paid</TableHead>
-                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Remaining</TableHead>
-                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Admin</TableHead>
-                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">Notes</TableHead>
+                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          Date
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          Amount Paid
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          Remaining
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          Admin
+                        </TableHead>
+                        <TableHead className="text-[10px] font-semibold uppercase tracking-wider text-gray-500">
+                          Notes
+                        </TableHead>
                       </TableRow>
                     </TableHeader>
                     <TableBody>
                       {detail.partialPayments.map((pp) => (
                         <TableRow key={pp.id} className="text-xs">
-                          <TableCell className="text-gray-600">{fmtDateTime(pp.date)}</TableCell>
-                          <TableCell className="tabular-nums text-gray-900 font-medium">{fmtCurrency(pp.amountPaid)}</TableCell>
-                          <TableCell className="tabular-nums text-gray-600">{fmtCurrency(pp.remainingAfter)}</TableCell>
-                          <TableCell className="text-gray-700">{pp.adminUser}</TableCell>
-                          <TableCell className="text-gray-500">{pp.notes || "—"}</TableCell>
+                          <TableCell className="text-gray-600">
+                            {fmtDateTime(pp.date)}
+                          </TableCell>
+                          <TableCell className="tabular-nums text-gray-900 font-medium">
+                            {fmtCurrency(pp.amountPaid)}
+                          </TableCell>
+                          <TableCell className="tabular-nums text-gray-600">
+                            {fmtCurrency(pp.remainingAfter)}
+                          </TableCell>
+                          <TableCell className="text-gray-700">
+                            {pp.adminUser}
+                          </TableCell>
+                          <TableCell className="text-gray-500">
+                            {pp.notes || "—"}
+                          </TableCell>
                         </TableRow>
                       ))}
                     </TableBody>
@@ -698,7 +808,8 @@ export function PayoutDetailPage() {
                         </TooltipTrigger>
                         {!bankApproved && (
                           <TooltipContent>
-                            Cannot approve -- provider's bank account is not verified.
+                            Cannot approve -- provider's bank account is not
+                            verified.
                           </TooltipContent>
                         )}
                       </Tooltip>
@@ -730,9 +841,13 @@ export function PayoutDetailPage() {
                         aria-required="true"
                       />
                       {rejectReasonError && (
-                        <p className="text-xs text-red-500">{rejectReasonError}</p>
+                        <p className="text-xs text-red-500">
+                          {rejectReasonError}
+                        </p>
                       )}
-                      <p className="text-xs text-gray-400 text-right">{rejectReason.length}/500</p>
+                      <p className="text-xs text-gray-400 text-right">
+                        {rejectReason.length}/500
+                      </p>
                       <div className="flex items-center gap-2">
                         <Button
                           variant="destructive"
@@ -740,7 +855,9 @@ export function PayoutDetailPage() {
                           onClick={handleRejectSubmit}
                           disabled={isProcessing}
                         >
-                          {isProcessing && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
+                          {isProcessing && (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                          )}
                           Confirm Rejection
                         </Button>
                         <Button
@@ -762,7 +879,9 @@ export function PayoutDetailPage() {
                   {/* Internal notes for approve */}
                   {!showRejectForm && (
                     <div className="space-y-1.5">
-                      <Label className="text-xs text-gray-500">Internal Notes (optional)</Label>
+                      <Label className="text-xs text-gray-500">
+                        Internal Notes (optional)
+                      </Label>
                       <Textarea
                         value={internalNotes}
                         onChange={(e) => setInternalNotes(e.target.value)}
@@ -815,13 +934,19 @@ export function PayoutDetailPage() {
                           placeholder="0.00"
                           className="pr-12"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">SAR</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                          SAR
+                        </span>
                       </div>
-                      {partialError && <p className="text-xs text-red-500">{partialError}</p>}
+                      {partialError && (
+                        <p className="text-xs text-red-500">{partialError}</p>
+                      )}
                       <p className="text-xs text-gray-400">
                         Maximum: {fmtCurrency(remainingAmount)}
                       </p>
-                      <Label className="text-xs text-gray-500">Payment Notes (optional)</Label>
+                      <Label className="text-xs text-gray-500">
+                        Payment Notes (optional)
+                      </Label>
                       <Textarea
                         value={partialNotes}
                         onChange={(e) => setPartialNotes(e.target.value)}
@@ -836,7 +961,9 @@ export function PayoutDetailPage() {
                           onClick={handlePartialPaymentSubmit}
                           disabled={isProcessing}
                         >
-                          {isProcessing && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
+                          {isProcessing && (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                          )}
                           Confirm Partial Payment
                         </Button>
                         <Button
@@ -898,13 +1025,19 @@ export function PayoutDetailPage() {
                           placeholder="0.00"
                           className="pr-12"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">SAR</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 text-sm">
+                          SAR
+                        </span>
                       </div>
-                      {partialError && <p className="text-xs text-red-500">{partialError}</p>}
+                      {partialError && (
+                        <p className="text-xs text-red-500">{partialError}</p>
+                      )}
                       <p className="text-xs text-gray-400">
                         Maximum: {fmtCurrency(remainingAmount)}
                       </p>
-                      <Label className="text-xs text-gray-500">Payment Notes (optional)</Label>
+                      <Label className="text-xs text-gray-500">
+                        Payment Notes (optional)
+                      </Label>
                       <Textarea
                         value={partialNotes}
                         onChange={(e) => setPartialNotes(e.target.value)}
@@ -919,7 +1052,9 @@ export function PayoutDetailPage() {
                           onClick={handlePartialPaymentSubmit}
                           disabled={isProcessing}
                         >
-                          {isProcessing && <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />}
+                          {isProcessing && (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                          )}
                           Confirm Partial Payment
                         </Button>
                         <Button
@@ -942,9 +1077,11 @@ export function PayoutDetailPage() {
               )}
 
               {/* Settled / Rejected — no actions */}
-              {(detail.status === "Settled" || detail.status === "Rejected") && (
+              {(detail.status === "Settled" ||
+                detail.status === "Rejected") && (
                 <p className="text-sm text-gray-500 italic">
-                  This payout has been {detail.status.toLowerCase()}. No further actions available.
+                  This payout has been {detail.status.toLowerCase()}. No further
+                  actions available.
                 </p>
               )}
             </CardContent>
@@ -969,21 +1106,15 @@ export function PayoutDetailPage() {
                   const isFirst = idx === 0;
 
                   return (
-                    <div
-                      key={entry.id}
-                      role="listitem"
-                      className="flex gap-3"
-                    >
+                    <div key={entry.id} role="listitem" className="flex gap-3">
                       <div className="flex flex-col items-center">
                         <div
                           className={cn(
                             "flex items-center justify-center h-7 w-7 rounded-full shrink-0",
-                            isFirst ? "bg-gray-100" : "bg-gray-50"
+                            isFirst ? "bg-gray-100" : "bg-gray-50",
                           )}
                         >
-                          <Icon
-                            className={cn("h-3.5 w-3.5", iconCfg.color)}
-                          />
+                          <Icon className={cn("h-3.5 w-3.5", iconCfg.color)} />
                         </div>
                         {idx < detail.timeline.length - 1 && (
                           <div className="w-px flex-1 bg-gray-200 mt-1" />
@@ -994,7 +1125,7 @@ export function PayoutDetailPage() {
                           <span
                             className={cn(
                               "text-sm font-medium",
-                              isFirst ? "text-gray-900" : "text-gray-600"
+                              isFirst ? "text-gray-900" : "text-gray-600",
                             )}
                           >
                             {entry.status}
@@ -1030,12 +1161,17 @@ export function PayoutDetailPage() {
               ) : (
                 <div className="space-y-3">
                   {detail.auditHistory.slice(0, 10).map((entry) => (
-                    <div key={entry.id} className="flex items-start gap-3 text-xs">
+                    <div
+                      key={entry.id}
+                      className="flex items-start gap-3 text-xs"
+                    >
                       <span className="text-gray-400 shrink-0 w-[140px]">
                         {fmtDateTime(entry.timestamp)}
                       </span>
                       <div className="flex-1">
-                        <span className="text-gray-700 font-medium">{entry.admin}</span>
+                        <span className="text-gray-700 font-medium">
+                          {entry.admin}
+                        </span>
                         <span className="text-gray-500"> — {entry.action}</span>
                         {entry.amount && (
                           <span className="text-gray-600 ml-1 tabular-nums">
@@ -1074,7 +1210,10 @@ export function PayoutDetailPage() {
           }
         }}
       >
-        <DialogContent className="max-w-sm" aria-label="Re-authenticate to approve payout">
+        <DialogContent
+          className="max-w-sm"
+          aria-label="Re-authenticate to approve payout"
+        >
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-base">
               <div className="flex items-center justify-center h-8 w-8 rounded-lg bg-blue-100">
@@ -1164,7 +1303,9 @@ export function PayoutDetailPage() {
               onClick={handleApproveConfirm}
               disabled={isProcessing}
             >
-              {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              {isProcessing && (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              )}
               Approve
             </Button>
           </DialogFooter>
@@ -1188,13 +1329,15 @@ export function PayoutDetailPage() {
             </DialogTitle>
             <DialogDescription className="text-xs text-gray-500">
               This confirms the bank transfer of{" "}
-              {fmtCurrency(detail.requestedAmount)} to{" "}
-              {detail.provider.name} has been completed outside the platform.
-              Locked balance will be released. Confirm?
+              {fmtCurrency(detail.requestedAmount)} to {detail.provider.name}{" "}
+              has been completed outside the platform. Locked balance will be
+              released. Confirm?
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-1.5">
-            <Label className="text-xs text-gray-500">Internal Notes (optional)</Label>
+            <Label className="text-xs text-gray-500">
+              Internal Notes (optional)
+            </Label>
             <Textarea
               value={internalNotes}
               onChange={(e) => setInternalNotes(e.target.value)}
@@ -1216,7 +1359,9 @@ export function PayoutDetailPage() {
               onClick={handleSettleConfirm}
               disabled={isProcessing}
             >
-              {isProcessing && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
+              {isProcessing && (
+                <Loader2 className="h-4 w-4 animate-spin mr-1" />
+              )}
               Mark Settled
             </Button>
           </DialogFooter>

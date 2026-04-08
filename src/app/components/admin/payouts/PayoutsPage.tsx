@@ -56,11 +56,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "../../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type {
   PayoutRequest,
   PayoutStatus,
@@ -89,7 +85,14 @@ const MIN_PAYOUT_THRESHOLD = 500; // SAR
 
 const STATUS_CONFIG: Record<
   PayoutStatus,
-  { bg: string; text: string; border: string; dot: string; cardBg: string; cardBorder: string }
+  {
+    bg: string;
+    text: string;
+    border: string;
+    dot: string;
+    cardBg: string;
+    cardBorder: string;
+  }
 > = {
   Pending: {
     bg: "bg-amber-50",
@@ -181,7 +184,12 @@ function ProviderTypeBadge({ type }: { type: PayoutProviderType }) {
   return (
     <Badge
       variant="outline"
-      className={cn("text-[11px] gap-1 border shrink-0", cfg.bg, cfg.text, cfg.border)}
+      className={cn(
+        "text-[11px] gap-1 border shrink-0",
+        cfg.bg,
+        cfg.text,
+        cfg.border,
+      )}
     >
       <Icon className="h-2.5 w-2.5" />
       {type}
@@ -194,7 +202,12 @@ function StatusBadge({ status }: { status: PayoutStatus }) {
   return (
     <Badge
       variant="outline"
-      className={cn("text-[11px] gap-1.5 border shrink-0", cfg.bg, cfg.text, cfg.border)}
+      className={cn(
+        "text-[11px] gap-1.5 border shrink-0",
+        cfg.bg,
+        cfg.text,
+        cfg.border,
+      )}
     >
       <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", cfg.dot)} />
       {status}
@@ -213,7 +226,7 @@ function BankStatusBadge({ status }: { status: "Approved" | "Not Approved" }) {
             "text-[11px] border shrink-0",
             isApproved
               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-              : "bg-red-50 text-red-700 border-red-200"
+              : "bg-red-50 text-red-700 border-red-200",
           )}
           aria-label={`Bank account status: ${status}`}
         >
@@ -222,7 +235,8 @@ function BankStatusBadge({ status }: { status: "Approved" | "Not Approved" }) {
       </TooltipTrigger>
       {!isApproved && (
         <TooltipContent>
-          This provider's bank account is not approved. Payout cannot be processed.
+          This provider's bank account is not approved. Payout cannot be
+          processed.
         </TooltipContent>
       )}
     </Tooltip>
@@ -238,7 +252,8 @@ function SortIcon({
   sortField: SortField;
   sortDir: SortDir;
 }) {
-  if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-gray-400" />;
+  if (sortField !== field)
+    return <ArrowUpDown className="h-3 w-3 text-gray-400" />;
   return sortDir === "asc" ? (
     <ArrowUp className="h-3 w-3 text-[#003B95]" />
   ) : (
@@ -274,7 +289,9 @@ export function PayoutsPage() {
 
   // UI state
   const [exportOpen, setExportOpen] = useState(false);
-  const [bulkAction, setBulkAction] = useState<"approve" | "reject" | "settle" | null>(null);
+  const [bulkAction, setBulkAction] = useState<
+    "approve" | "reject" | "settle" | null
+  >(null);
   const [bulkConfirmOpen, setBulkConfirmOpen] = useState(false);
   const [rejectReason, setRejectReason] = useState("");
   const [rejectReasonError, setRejectReasonError] = useState("");
@@ -310,7 +327,7 @@ export function PayoutsPage() {
       data = data.filter(
         (r) =>
           r.providerName.toLowerCase().includes(q) ||
-          r.id.toLowerCase().includes(q)
+          r.id.toLowerCase().includes(q),
       );
     }
 
@@ -326,9 +343,7 @@ export function PayoutsPage() {
 
     // Date range filter
     if (filterDateStart) {
-      data = data.filter(
-        (r) => r.submissionDate >= filterDateStart
-      );
+      data = data.filter((r) => r.submissionDate >= filterDateStart);
     }
     if (filterDateEnd) {
       const endDate = filterDateEnd + "T23:59:59Z";
@@ -365,7 +380,16 @@ export function PayoutsPage() {
     });
 
     return data;
-  }, [payouts, search, filterStatus, filterProviderType, filterDateStart, filterDateEnd, sortField, sortDir]);
+  }, [
+    payouts,
+    search,
+    filterStatus,
+    filterProviderType,
+    filterDateStart,
+    filterDateEnd,
+    sortField,
+    sortDir,
+  ]);
 
   // Pagination
   const totalItems = filteredPayouts.length;
@@ -373,7 +397,7 @@ export function PayoutsPage() {
   const safePage = Math.min(page, totalPages);
   const pagedPayouts = filteredPayouts.slice(
     (safePage - 1) * pageSize,
-    safePage * pageSize
+    safePage * pageSize,
   );
 
   const handleSort = useCallback(
@@ -385,7 +409,7 @@ export function PayoutsPage() {
         setSortDir("asc");
       }
     },
-    [sortField]
+    [sortField],
   );
 
   // Selection
@@ -415,17 +439,20 @@ export function PayoutsPage() {
   // Selected rows details
   const selectedPayouts = useMemo(
     () => payouts.filter((p) => selectedIds.has(p.id)),
-    [payouts, selectedIds]
+    [payouts, selectedIds],
   );
 
-  const allSelectedPending = selectedPayouts.length > 0 && selectedPayouts.every((p) => p.status === "Pending");
+  const allSelectedPending =
+    selectedPayouts.length > 0 &&
+    selectedPayouts.every((p) => p.status === "Pending");
   const allSelectedProcessingOrPartial =
     selectedPayouts.length > 0 &&
     selectedPayouts.every(
-      (p) => p.status === "Processing" || p.status === "Partially Paid"
+      (p) => p.status === "Processing" || p.status === "Partially Paid",
     );
   const allSelectedHaveApprovedBank =
-    selectedPayouts.length > 0 && selectedPayouts.every((p) => p.bankStatus === "Approved");
+    selectedPayouts.length > 0 &&
+    selectedPayouts.every((p) => p.bankStatus === "Approved");
   const hasUniformStatus =
     selectedPayouts.length > 0 &&
     selectedPayouts.every((p) => p.status === selectedPayouts[0].status);
@@ -451,7 +478,9 @@ export function PayoutsPage() {
   const handleConfirmBulk = useCallback(() => {
     if (bulkAction === "reject") {
       if (rejectReason.trim().length < 10) {
-        setRejectReasonError("Rejection reason must be at least 10 characters.");
+        setRejectReasonError(
+          "Rejection reason must be at least 10 characters.",
+        );
         return;
       }
     }
@@ -464,22 +493,24 @@ export function PayoutsPage() {
       if (bulkAction === "approve") {
         setPayouts((prev) =>
           prev.map((p) =>
-            ids.has(p.id) ? { ...p, status: "Processing" as PayoutStatus } : p
-          )
+            ids.has(p.id) ? { ...p, status: "Processing" as PayoutStatus } : p,
+          ),
         );
         toast.success(`${count} payout(s) approved successfully.`);
       } else if (bulkAction === "reject") {
         setPayouts((prev) =>
           prev.map((p) =>
-            ids.has(p.id) ? { ...p, status: "Rejected" as PayoutStatus } : p
-          )
+            ids.has(p.id) ? { ...p, status: "Rejected" as PayoutStatus } : p,
+          ),
         );
-        toast.success(`${count} payout(s) rejected. Providers have been notified.`);
+        toast.success(
+          `${count} payout(s) rejected. Providers have been notified.`,
+        );
       } else if (bulkAction === "settle") {
         setPayouts((prev) =>
           prev.map((p) =>
-            ids.has(p.id) ? { ...p, status: "Settled" as PayoutStatus } : p
-          )
+            ids.has(p.id) ? { ...p, status: "Settled" as PayoutStatus } : p,
+          ),
         );
         toast.success(`${count} payout(s) marked as settled.`);
       }
@@ -505,7 +536,7 @@ export function PayoutsPage() {
   // ─── Render ────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Header */}
       <div>
         <nav className="text-xs text-gray-500 mb-1">
@@ -520,9 +551,7 @@ export function PayoutsPage() {
           <span className="mx-1.5">/</span>
           <span className="text-gray-900">Payouts</span>
         </nav>
-        <h1 className="text-2xl font-bold text-[#111827]">
-          Payout Management
-        </h1>
+        <h1 className="text-2xl font-bold text-[#111827]">Payout Management</h1>
       </div>
 
       {/* Summary Stat Cards */}
@@ -538,7 +567,7 @@ export function PayoutsPage() {
               type="button"
               className={cn(
                 "bg-white border rounded-xl p-4 text-left transition-all hover:shadow-md cursor-pointer",
-                isActive && `border-2 ${cfg.cardBorder}`
+                isActive && `border-2 ${cfg.cardBorder}`,
               )}
               onClick={() => handleStatCardClick(stat.status)}
               role="button"
@@ -548,7 +577,7 @@ export function PayoutsPage() {
                 <span
                   className={cn(
                     "text-xs font-medium uppercase tracking-wider",
-                    cfg.text
+                    cfg.text,
                   )}
                 >
                   {stat.status}
@@ -556,7 +585,7 @@ export function PayoutsPage() {
                 <div
                   className={cn(
                     "flex items-center justify-center h-8 w-8 rounded-lg",
-                    cfg.bg
+                    cfg.bg,
                   )}
                 >
                   <Icon className={cn("h-4 w-4", cfg.text)} />
@@ -586,7 +615,7 @@ export function PayoutsPage() {
                 setPage(1);
               }}
               placeholder="Search by provider name, request ID, or bank name..."
-              className="pl-9 text-sm h-9"
+              className="pl-9 text-sm h-10"
               aria-label="Search payout requests"
             />
             {search && (
@@ -610,7 +639,7 @@ export function PayoutsPage() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-[160px] h-9 text-sm">
+            <SelectTrigger className="w-[160px] h-10 text-sm">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -631,7 +660,7 @@ export function PayoutsPage() {
               setPage(1);
             }}
           >
-            <SelectTrigger className="w-[180px] h-9 text-sm">
+            <SelectTrigger className="w-[180px] h-10 text-sm">
               <SelectValue placeholder="All Types" />
             </SelectTrigger>
             <SelectContent>
@@ -652,7 +681,7 @@ export function PayoutsPage() {
               setFilterDateStart(e.target.value);
               setPage(1);
             }}
-            className="w-[150px] h-9 text-sm"
+            className="w-[150px] h-10 text-sm"
             aria-label="Start date"
           />
           <span className="text-gray-400 text-sm">to</span>
@@ -663,7 +692,7 @@ export function PayoutsPage() {
               setFilterDateEnd(e.target.value);
               setPage(1);
             }}
-            className="w-[150px] h-9 text-sm"
+            className="w-[150px] h-10 text-sm"
             aria-label="End date"
           />
 
@@ -714,7 +743,10 @@ export function PayoutsPage() {
       {/* Bulk action toolbar */}
       {selectedIds.size > 0 && (
         <div className="flex items-center gap-3 bg-gray-50 border rounded-lg p-3">
-          <span className="text-sm text-gray-700 font-medium" aria-live="polite">
+          <span
+            className="text-sm text-gray-700 font-medium"
+            aria-live="polite"
+          >
             {selectedIds.size} payout(s) selected
           </span>
           <div className="flex items-center gap-2 ml-auto">
@@ -736,7 +768,8 @@ export function PayoutsPage() {
                   </Button>
                 </TooltipTrigger>
                 <TooltipContent>
-                  Cannot approve payouts for providers without approved bank accounts.
+                  Cannot approve payouts for providers without approved bank
+                  accounts.
                 </TooltipContent>
               </Tooltip>
             )}
@@ -768,7 +801,8 @@ export function PayoutsPage() {
                   </span>
                 </TooltipTrigger>
                 <TooltipContent>
-                  Selected payouts must all have the same status for this action.
+                  Selected payouts must all have the same status for this
+                  action.
                 </TooltipContent>
               </Tooltip>
             )}
@@ -822,20 +856,48 @@ export function PayoutsPage() {
                 {/* Sortable columns */}
                 {(
                   [
-                    { key: "requestId" as SortField, label: "Request ID", w: "w-[120px]" },
-                    { key: "providerName" as SortField, label: "Provider Name", w: "w-[180px]" },
-                    { key: "providerType" as SortField, label: "Provider Type", w: "w-[140px]" },
-                    { key: "requestedAmount" as SortField, label: "Requested Amount", w: "w-[140px]" },
-                    { key: "walletBalance" as SortField, label: "Wallet Balance", w: "w-[130px]" },
-                    { key: "status" as SortField, label: "Status", w: "w-[130px]" },
-                    { key: "submissionDate" as SortField, label: "Submitted", w: "w-[150px]" },
+                    {
+                      key: "requestId" as SortField,
+                      label: "Request ID",
+                      w: "w-[120px]",
+                    },
+                    {
+                      key: "providerName" as SortField,
+                      label: "Provider Name",
+                      w: "w-[180px]",
+                    },
+                    {
+                      key: "providerType" as SortField,
+                      label: "Provider Type",
+                      w: "w-[140px]",
+                    },
+                    {
+                      key: "requestedAmount" as SortField,
+                      label: "Requested Amount",
+                      w: "w-[140px]",
+                    },
+                    {
+                      key: "walletBalance" as SortField,
+                      label: "Wallet Balance",
+                      w: "w-[130px]",
+                    },
+                    {
+                      key: "status" as SortField,
+                      label: "Status",
+                      w: "w-[130px]",
+                    },
+                    {
+                      key: "submissionDate" as SortField,
+                      label: "Submitted",
+                      w: "w-[150px]",
+                    },
                   ] as const
                 ).map((col) => (
                   <TableHead
                     key={col.key}
                     className={cn(
                       "text-[11px] font-semibold uppercase tracking-wider text-gray-500 cursor-pointer select-none",
-                      col.w
+                      col.w,
                     )}
                     onClick={() => handleSort(col.key)}
                     aria-sort={
@@ -848,7 +910,11 @@ export function PayoutsPage() {
                   >
                     <div className="flex items-center gap-1.5">
                       {col.label}
-                      <SortIcon field={col.key} sortField={sortField} sortDir={sortDir} />
+                      <SortIcon
+                        field={col.key}
+                        sortField={sortField}
+                        sortDir={sortDir}
+                      />
                     </div>
                   </TableHead>
                 ))}
@@ -862,7 +928,8 @@ export function PayoutsPage() {
             </TableHeader>
             <TableBody>
               {pagedPayouts.map((payout, idx) => {
-                const belowThreshold = payout.requestedAmount < MIN_PAYOUT_THRESHOLD;
+                const belowThreshold =
+                  payout.requestedAmount < MIN_PAYOUT_THRESHOLD;
 
                 return (
                   <TableRow
@@ -870,7 +937,7 @@ export function PayoutsPage() {
                     className={cn(
                       "hover:bg-gray-50 transition-colors cursor-pointer",
                       idx % 2 === 1 && "bg-gray-50/50",
-                      selectedIds.has(payout.id) && "bg-blue-50/50"
+                      selectedIds.has(payout.id) && "bg-blue-50/50",
                     )}
                     onClick={() => navigate(`/payouts/${payout.id}`)}
                   >
@@ -913,7 +980,8 @@ export function PayoutsPage() {
                               <AlertTriangle className="h-3.5 w-3.5 text-amber-500 shrink-0" />
                             </TooltipTrigger>
                             <TooltipContent>
-                              This request is below the minimum payout threshold of {MIN_PAYOUT_THRESHOLD} SAR.
+                              This request is below the minimum payout threshold
+                              of {MIN_PAYOUT_THRESHOLD} SAR.
                             </TooltipContent>
                           </Tooltip>
                         )}
@@ -930,11 +998,21 @@ export function PayoutsPage() {
                     </TableCell>
                     {/* Submitted */}
                     <TableCell className="text-sm text-gray-600">
-                      {format(parseISO(payout.submissionDate), "dd MMM yyyy, HH:mm")} UTC
+                      {format(
+                        parseISO(payout.submissionDate),
+                        "dd MMM yyyy, HH:mm",
+                      )}{" "}
+                      UTC
                     </TableCell>
                     {/* Bank Status */}
                     <TableCell>
-                      <BankStatusBadge status={payout.bankStatus === "Revoked" ? "Not Approved" : payout.bankStatus} />
+                      <BankStatusBadge
+                        status={
+                          payout.bankStatus === "Revoked"
+                            ? "Not Approved"
+                            : payout.bankStatus
+                        }
+                      />
                     </TableCell>
                     {/* Actions */}
                     <TableCell onClick={(e) => e.stopPropagation()}>
@@ -997,18 +1075,20 @@ export function PayoutsPage() {
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter(
                 (p) =>
-                  p === 1 ||
-                  p === totalPages ||
-                  Math.abs(p - safePage) <= 1
+                  p === 1 || p === totalPages || Math.abs(p - safePage) <= 1,
               )
               .reduce<(number | "dots")[]>((acc, p, idx, arr) => {
-                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("dots");
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1)
+                  acc.push("dots");
                 acc.push(p);
                 return acc;
               }, [])
               .map((item, idx) =>
                 item === "dots" ? (
-                  <span key={`dots-${idx}`} className="px-1 text-gray-400 text-sm">
+                  <span
+                    key={`dots-${idx}`}
+                    className="px-1 text-gray-400 text-sm"
+                  >
                     ...
                   </span>
                 ) : (
@@ -1019,13 +1099,13 @@ export function PayoutsPage() {
                     className={cn(
                       "h-8 w-8 text-xs",
                       item === safePage &&
-                        "bg-[#003B95] hover:bg-[#002d73] text-white"
+                        "bg-[#003B95] hover:bg-[#002d73] text-white",
                     )}
                     onClick={() => setPage(item as number)}
                   >
                     {item}
                   </Button>
-                )
+                ),
               )}
             <Button
               variant="outline"
@@ -1059,7 +1139,7 @@ export function PayoutsPage() {
               <div
                 className={cn(
                   "flex items-center justify-center h-8 w-8 rounded-lg",
-                  bulkAction === "reject" ? "bg-red-100" : "bg-amber-100"
+                  bulkAction === "reject" ? "bg-red-100" : "bg-amber-100",
                 )}
               >
                 {bulkAction === "reject" ? (
@@ -1130,7 +1210,7 @@ export function PayoutsPage() {
               disabled={isBulkProcessing}
               className={cn(
                 bulkAction !== "reject" &&
-                  "bg-[#003B95] hover:bg-[#002d73] text-white"
+                  "bg-[#003B95] hover:bg-[#002d73] text-white",
               )}
             >
               {isBulkProcessing && (

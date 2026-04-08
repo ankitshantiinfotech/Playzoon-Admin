@@ -69,12 +69,21 @@ const DURATION_LABELS: Record<PromotionDuration, string> = {
 
 // ─── Helper to get cell key ──────────────────────────────────────────────────
 
-function cellKey(placement: PlacementType, duration: PromotionDuration): string {
+function cellKey(
+  placement: PlacementType,
+  duration: PromotionDuration,
+): string {
   return `${placement}::${duration}`;
 }
 
-function getCell(cells: PricingCell[], placement: PlacementType, duration: PromotionDuration): PricingCell {
-  return cells.find((c) => c.placement === placement && c.duration === duration)!;
+function getCell(
+  cells: PricingCell[],
+  placement: PlacementType,
+  duration: PromotionDuration,
+): PricingCell {
+  return cells.find(
+    (c) => c.placement === placement && c.duration === duration,
+  )!;
 }
 
 // ─── Detect changes ──────────────────────────────────────────────────────────
@@ -128,15 +137,25 @@ export function PricingConfigurationTab() {
   const navigate = useNavigate();
 
   // ── State ────────────────────────────────────────────────────────────────
-  const [cells, setCells] = useState<PricingCell[]>(() => JSON.parse(JSON.stringify(INITIAL_PRICING_CELLS)));
-  const [originalCells] = useState<PricingCell[]>(() => JSON.parse(JSON.stringify(INITIAL_PRICING_CELLS)));
-  const [slotConfig, setSlotConfig] = useState<HomepageSlotConfig>({ ...INITIAL_HOMEPAGE_SLOT_CONFIG });
-  const [originalSlotConfig] = useState<HomepageSlotConfig>({ ...INITIAL_HOMEPAGE_SLOT_CONFIG });
+  const [cells, setCells] = useState<PricingCell[]>(() =>
+    JSON.parse(JSON.stringify(INITIAL_PRICING_CELLS)),
+  );
+  const [originalCells] = useState<PricingCell[]>(() =>
+    JSON.parse(JSON.stringify(INITIAL_PRICING_CELLS)),
+  );
+  const [slotConfig, setSlotConfig] = useState<HomepageSlotConfig>({
+    ...INITIAL_HOMEPAGE_SLOT_CONFIG,
+  });
+  const [originalSlotConfig] = useState<HomepageSlotConfig>({
+    ...INITIAL_HOMEPAGE_SLOT_CONFIG,
+  });
   const [auditLog] = useState<PricingAuditEntry[]>(PRICING_AUDIT_LOG);
   const [auditExpanded, setAuditExpanded] = useState(false);
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
-  const [validationErrors, setValidationErrors] = useState<Record<string, string>>({});
+  const [validationErrors, setValidationErrors] = useState<
+    Record<string, string>
+  >({});
 
   // ── Change detection ─────────────────────────────────────────────────────
   const changes = useMemo(
@@ -149,37 +168,51 @@ export function PricingConfigurationTab() {
   const allInactive = cells.every((c) => !c.isActive);
 
   // ── Cell update helpers ──────────────────────────────────────────────────
-  const updateCellPrice = useCallback((placement: PlacementType, duration: PromotionDuration, price: number) => {
-    setCells((prev) =>
-      prev.map((c) =>
-        c.placement === placement && c.duration === duration ? { ...c, price } : c,
-      ),
-    );
-    // Clear validation error for this cell
-    const key = cellKey(placement, duration);
-    setValidationErrors((prev) => {
-      const next = { ...prev };
-      delete next[key];
-      return next;
-    });
-  }, []);
-
-  const updateCellActive = useCallback((placement: PlacementType, duration: PromotionDuration, isActive: boolean) => {
-    setCells((prev) =>
-      prev.map((c) =>
-        c.placement === placement && c.duration === duration ? { ...c, isActive } : c,
-      ),
-    );
-    // Clear validation error when deactivating
-    if (!isActive) {
+  const updateCellPrice = useCallback(
+    (placement: PlacementType, duration: PromotionDuration, price: number) => {
+      setCells((prev) =>
+        prev.map((c) =>
+          c.placement === placement && c.duration === duration
+            ? { ...c, price }
+            : c,
+        ),
+      );
+      // Clear validation error for this cell
       const key = cellKey(placement, duration);
       setValidationErrors((prev) => {
         const next = { ...prev };
         delete next[key];
         return next;
       });
-    }
-  }, []);
+    },
+    [],
+  );
+
+  const updateCellActive = useCallback(
+    (
+      placement: PlacementType,
+      duration: PromotionDuration,
+      isActive: boolean,
+    ) => {
+      setCells((prev) =>
+        prev.map((c) =>
+          c.placement === placement && c.duration === duration
+            ? { ...c, isActive }
+            : c,
+        ),
+      );
+      // Clear validation error when deactivating
+      if (!isActive) {
+        const key = cellKey(placement, duration);
+        setValidationErrors((prev) => {
+          const next = { ...prev };
+          delete next[key];
+          return next;
+        });
+      }
+    },
+    [],
+  );
 
   // ── Validation ───────────────────────────────────────────────────────────
   const validate = (): boolean => {
@@ -197,7 +230,8 @@ export function PricingConfigurationTab() {
     } else if (!Number.isInteger(slotConfig.maxSlots)) {
       errors["maxSlots"] = "Must be a whole number.";
     } else if (slotConfig.maxSlots < slotConfig.currentUsage) {
-      errors["maxSlots"] = `Cannot set maximum below current active homepage promotions (currently ${slotConfig.currentUsage} active).`;
+      errors["maxSlots"] =
+        `Cannot set maximum below current active homepage promotions (currently ${slotConfig.currentUsage} active).`;
     }
 
     setValidationErrors(errors);
@@ -222,18 +256,23 @@ export function PricingConfigurationTab() {
   };
 
   // ── Slot usage indicator ─────────────────────────────────────────────────
-  const usagePct = slotConfig.maxSlots > 0 ? (slotConfig.currentUsage / slotConfig.maxSlots) * 100 : 0;
+  const usagePct =
+    slotConfig.maxSlots > 0
+      ? (slotConfig.currentUsage / slotConfig.maxSlots) * 100
+      : 0;
   const usageColorClass =
-    usagePct >= 100 ? "bg-red-50 border-red-200 text-red-700"
-    : usagePct >= 80 ? "bg-amber-50 border-amber-200 text-amber-700"
-    : "bg-blue-50 border-blue-200 text-blue-700";
+    usagePct >= 100
+      ? "bg-red-50 border-red-200 text-red-700"
+      : usagePct >= 80
+        ? "bg-amber-50 border-amber-200 text-amber-700"
+        : "bg-blue-50 border-blue-200 text-blue-700";
 
   return (
-    <div className="flex flex-col gap-5">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* ── Breadcrumb + Save Button ────────────────────────────────────────── */}
       <div className="flex items-center justify-between gap-4">
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[#003B95]/10">
+          <div className="flex items-center justify-center h-10 w-9 rounded-lg bg-[#003B95]/10">
             <Settings className="h-5 w-5 text-[#003B95]" />
           </div>
           <div>
@@ -247,11 +286,17 @@ export function PricingConfigurationTab() {
                     Promotions
                   </button>
                 </li>
-                <li><ChevronRight className="h-3 w-3" /></li>
-                <li className="text-gray-900 font-medium" aria-current="page">Pricing Configuration</li>
+                <li>
+                  <ChevronRight className="h-3 w-3" />
+                </li>
+                <li className="text-gray-900 font-medium" aria-current="page">
+                  Pricing Configuration
+                </li>
               </ol>
             </nav>
-            <h1 className="text-xl font-semibold text-gray-900 mt-0.5">Pricing Configuration</h1>
+            <h1 className="text-xl font-semibold text-gray-900 mt-0.5">
+              Pricing Configuration
+            </h1>
           </div>
         </div>
 
@@ -292,9 +337,12 @@ export function PricingConfigurationTab() {
         <div className="flex items-start gap-3 bg-amber-50 border border-amber-200 rounded-xl p-4">
           <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
           <div>
-            <p className="text-sm font-medium text-amber-700">All promotion plans are currently inactive</p>
+            <p className="text-sm font-medium text-amber-700">
+              All promotion plans are currently inactive
+            </p>
             <p className="text-xs text-amber-600 mt-0.5">
-              Providers cannot purchase promotions. Activate at least one plan to enable promotion purchases.
+              Providers cannot purchase promotions. Activate at least one plan
+              to enable promotion purchases.
             </p>
           </div>
         </div>
@@ -303,21 +351,35 @@ export function PricingConfigurationTab() {
       {/* ── Section 1: Pricing Matrix ───────────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">Promotion Pricing</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            Promotion Pricing
+          </h2>
           <p className="text-xs text-gray-500 mt-1">
-            Configure prices for each placement and duration combination. Inactive plans cannot be purchased by providers.
+            Configure prices for each placement and duration combination.
+            Inactive plans cannot be purchased by providers.
           </p>
         </div>
 
-        <div className="p-6 overflow-x-auto" role="grid" aria-label="Promotion pricing matrix">
+        <div
+          className="p-6 overflow-x-auto"
+          role="grid"
+          aria-label="Promotion pricing matrix"
+        >
           <table className="w-full border-collapse">
             <thead>
               <tr>
-                <th scope="col" className="text-left text-xs font-medium text-gray-500 pb-3 pr-4 w-[160px]">
+                <th
+                  scope="col"
+                  className="text-left text-xs font-medium text-gray-500 pb-3 pr-4 w-[160px]"
+                >
                   Placement
                 </th>
                 {DURATIONS.map((d) => (
-                  <th key={d} scope="col" className="text-center text-xs font-medium text-gray-500 pb-3 px-3 min-w-[180px]">
+                  <th
+                    key={d}
+                    scope="col"
+                    className="text-center text-xs font-medium text-gray-500 pb-3 px-3 min-w-[180px]"
+                  >
                     {DURATION_LABELS[d]}
                   </th>
                 ))}
@@ -331,7 +393,9 @@ export function PricingConfigurationTab() {
                     <th scope="row" className="text-left py-4 pr-4 align-top">
                       <div className="flex items-center gap-2">
                         <PlacementIcon className="h-4 w-4 text-gray-400" />
-                        <span className="text-sm font-medium text-gray-700">{placement}</span>
+                        <span className="text-sm font-medium text-gray-700">
+                          {placement}
+                        </span>
                       </div>
                     </th>
                     {DURATIONS.map((duration) => {
@@ -340,13 +404,19 @@ export function PricingConfigurationTab() {
                       const error = validationErrors[key];
 
                       return (
-                        <td key={duration} className="px-3 py-4 align-top" role="gridcell">
-                          <div className={cn(
-                            "rounded-lg border p-3 space-y-3 transition-colors",
-                            cell.isActive
-                              ? "bg-white border-gray-200"
-                              : "bg-gray-50 border-gray-100",
-                          )}>
+                        <td
+                          key={duration}
+                          className="px-3 py-4 align-top"
+                          role="gridcell"
+                        >
+                          <div
+                            className={cn(
+                              "rounded-lg border p-3 space-y-3 transition-colors",
+                              cell.isActive
+                                ? "bg-white border-gray-200"
+                                : "bg-gray-50 border-gray-100",
+                            )}
+                          >
                             {/* Price Input */}
                             <div>
                               <Label
@@ -362,16 +432,26 @@ export function PricingConfigurationTab() {
                                   min={0}
                                   step={0.01}
                                   value={cell.price}
-                                  onChange={(e) => updateCellPrice(placement, duration, parseFloat(e.target.value) || 0)}
+                                  onChange={(e) =>
+                                    updateCellPrice(
+                                      placement,
+                                      duration,
+                                      parseFloat(e.target.value) || 0,
+                                    )
+                                  }
                                   disabled={!cell.isActive}
                                   className={cn(
                                     "h-8 text-sm text-right pr-12",
-                                    error && "border-red-300 focus-visible:ring-red-200",
-                                    !cell.isActive && "opacity-50 cursor-not-allowed bg-gray-100",
+                                    error &&
+                                      "border-red-300 focus-visible:ring-red-200",
+                                    !cell.isActive &&
+                                      "opacity-50 cursor-not-allowed bg-gray-100",
                                   )}
                                   aria-required={cell.isActive}
                                   aria-disabled={!cell.isActive}
-                                  aria-describedby={error ? `error-${key}` : undefined}
+                                  aria-describedby={
+                                    error ? `error-${key}` : undefined
+                                  }
                                   aria-label={`${placement} ${duration} Price`}
                                 />
                                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 pointer-events-none">
@@ -379,7 +459,12 @@ export function PricingConfigurationTab() {
                                 </span>
                               </div>
                               {error && (
-                                <p id={`error-${key}`} className="text-[10px] text-red-600 mt-1">{error}</p>
+                                <p
+                                  id={`error-${key}`}
+                                  className="text-[10px] text-red-600 mt-1"
+                                >
+                                  {error}
+                                </p>
                               )}
                             </div>
 
@@ -394,7 +479,9 @@ export function PricingConfigurationTab() {
                               <Switch
                                 id={`toggle-${key}`}
                                 checked={cell.isActive}
-                                onCheckedChange={(checked) => updateCellActive(placement, duration, checked)}
+                                onCheckedChange={(checked) =>
+                                  updateCellActive(placement, duration, checked)
+                                }
                                 aria-label={`${placement} ${duration} status`}
                                 className={cn(
                                   cell.isActive
@@ -418,9 +505,12 @@ export function PricingConfigurationTab() {
       {/* ── Section 2: Homepage Slot Limits ──────────────────────────────────── */}
       <div className="bg-white rounded-xl border border-gray-200">
         <div className="px-6 py-4 border-b border-gray-100">
-          <h2 className="text-base font-semibold text-gray-900">Homepage Slot Limits</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            Homepage Slot Limits
+          </h2>
           <p className="text-xs text-gray-500 mt-1">
-            Control how many promotions can appear on the homepage simultaneously.
+            Control how many promotions can appear on the homepage
+            simultaneously.
           </p>
         </div>
 
@@ -436,12 +526,20 @@ export function PricingConfigurationTab() {
               step={1}
               value={slotConfig.maxSlots}
               onChange={(e) => {
-                setSlotConfig((prev) => ({ ...prev, maxSlots: parseInt(e.target.value) || 0 }));
-                setValidationErrors((prev) => { const next = { ...prev }; delete next["maxSlots"]; return next; });
+                setSlotConfig((prev) => ({
+                  ...prev,
+                  maxSlots: parseInt(e.target.value) || 0,
+                }));
+                setValidationErrors((prev) => {
+                  const next = { ...prev };
+                  delete next["maxSlots"];
+                  return next;
+                });
               }}
               className={cn(
-                "mt-1.5 h-9 w-32",
-                validationErrors["maxSlots"] && "border-red-300 focus-visible:ring-red-200",
+                "mt-1.5 h-10 w-32",
+                validationErrors["maxSlots"] &&
+                  "border-red-300 focus-visible:ring-red-200",
               )}
               aria-required="true"
               aria-describedby="max-homepage-help max-homepage-error"
@@ -455,17 +553,25 @@ export function PricingConfigurationTab() {
 
           {/* Current Usage */}
           <div
-            className={cn("inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm", usageColorClass)}
+            className={cn(
+              "inline-flex items-center gap-2 px-4 py-2.5 rounded-lg border text-sm",
+              usageColorClass,
+            )}
             aria-live="polite"
           >
             <Home className="h-4 w-4" />
-            Currently {slotConfig.currentUsage} of {slotConfig.maxSlots} homepage slots in use
+            Currently {slotConfig.currentUsage} of {slotConfig.maxSlots}{" "}
+            homepage slots in use
           </div>
 
           {/* Info text */}
-          <p id="max-homepage-help" className="text-xs text-gray-500 flex items-start gap-1.5">
+          <p
+            id="max-homepage-help"
+            className="text-xs text-gray-500 flex items-start gap-1.5"
+          >
             <Info className="h-3.5 w-3.5 shrink-0 mt-0.5 text-gray-400" />
-            When all homepage slots are filled, providers can only select listing page placement.
+            When all homepage slots are filled, providers can only select
+            listing page placement.
           </p>
         </div>
       </div>
@@ -477,7 +583,9 @@ export function PricingConfigurationTab() {
           className="w-full px-6 py-4 flex items-center justify-between text-left hover:bg-gray-50/50 transition-colors"
           aria-expanded={auditExpanded}
         >
-          <h2 className="text-base font-semibold text-gray-900">Recent Changes</h2>
+          <h2 className="text-base font-semibold text-gray-900">
+            Recent Changes
+          </h2>
           {auditExpanded ? (
             <ChevronDown className="h-4 w-4 text-gray-400" />
           ) : (
@@ -486,7 +594,11 @@ export function PricingConfigurationTab() {
         </button>
 
         {auditExpanded && (
-          <div className="px-6 pb-5 border-t border-gray-100" role="log" aria-label="Recent pricing changes">
+          <div
+            className="px-6 pb-5 border-t border-gray-100"
+            role="log"
+            aria-label="Recent pricing changes"
+          >
             <div className="space-y-0 mt-3">
               {auditLog.map((entry, idx) => (
                 <div
@@ -500,13 +612,20 @@ export function PricingConfigurationTab() {
                     <Clock className="h-3.5 w-3.5 text-gray-400" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs text-gray-700">{entry.changeSummary}</p>
+                    <p className="text-xs text-gray-700">
+                      {entry.changeSummary}
+                    </p>
                     <div className="flex items-center gap-2 mt-1">
                       <span className="text-[10px] text-gray-400">
-                        {format(parseISO(entry.timestamp), "dd MMM yyyy, HH:mm")}
+                        {format(
+                          parseISO(entry.timestamp),
+                          "dd MMM yyyy, HH:mm",
+                        )}
                       </span>
                       <span className="text-[10px] text-gray-300">|</span>
-                      <span className="text-[10px] text-gray-500">{entry.adminName}</span>
+                      <span className="text-[10px] text-gray-500">
+                        {entry.adminName}
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -517,7 +636,12 @@ export function PricingConfigurationTab() {
       </div>
 
       {/* ── Confirmation Modal ───────────────────────────────────────────────── */}
-      <Dialog open={confirmOpen} onOpenChange={(v) => { if (!v && !isSaving) setConfirmOpen(false); }}>
+      <Dialog
+        open={confirmOpen}
+        onOpenChange={(v) => {
+          if (!v && !isSaving) setConfirmOpen(false);
+        }}
+      >
         <DialogContent className="max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2.5 text-base">
@@ -527,19 +651,27 @@ export function PricingConfigurationTab() {
               Confirm Pricing Changes
             </DialogTitle>
             <DialogDescription className="text-xs text-gray-500">
-              This change will apply to all future promotion purchases. Existing active promotions are unaffected.
+              This change will apply to all future promotion purchases. Existing
+              active promotions are unaffected.
             </DialogDescription>
           </DialogHeader>
 
           <div className="py-2 max-h-[300px] overflow-y-auto">
             <div className="space-y-2">
               {changes.map((change, i) => (
-                <div key={i} className="bg-gray-50 rounded-lg p-3 border border-gray-100 text-xs">
+                <div
+                  key={i}
+                  className="bg-gray-50 rounded-lg p-3 border border-gray-100 text-xs"
+                >
                   <p className="text-gray-700 font-medium">{change.field}</p>
                   <div className="flex items-center gap-2 mt-1">
-                    <span className="text-red-500 line-through">{change.oldValue}</span>
+                    <span className="text-red-500 line-through">
+                      {change.oldValue}
+                    </span>
                     <ChevronRight className="h-3 w-3 text-gray-400" />
-                    <span className="text-emerald-600 font-medium">{change.newValue}</span>
+                    <span className="text-emerald-600 font-medium">
+                      {change.newValue}
+                    </span>
                   </div>
                 </div>
               ))}
@@ -547,7 +679,12 @@ export function PricingConfigurationTab() {
           </div>
 
           <DialogFooter>
-            <Button variant="outline" size="sm" onClick={() => setConfirmOpen(false)} disabled={isSaving}>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setConfirmOpen(false)}
+              disabled={isSaving}
+            >
               Cancel
             </Button>
             <Button

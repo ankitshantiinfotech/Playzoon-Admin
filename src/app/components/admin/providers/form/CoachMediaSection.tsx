@@ -5,10 +5,27 @@
 import { useState, useRef, useCallback, useEffect, useMemo } from "react";
 import { toast } from "sonner";
 import {
-  Upload, X, FileText, Image as ImageIcon, File as FileIcon,
-  FileSpreadsheet, Film, Play, Plus, Link2, Loader2,
-  ChevronLeft, ChevronRight, Eye, Trash2, GripVertical,
-  AlertTriangle, CheckCircle2, XCircle, ImagePlus, Video,
+  Upload,
+  X,
+  FileText,
+  Image as ImageIcon,
+  File as FileIcon,
+  FileSpreadsheet,
+  Film,
+  Play,
+  Plus,
+  Link2,
+  Loader2,
+  ChevronLeft,
+  ChevronRight,
+  Eye,
+  Trash2,
+  GripVertical,
+  AlertTriangle,
+  CheckCircle2,
+  XCircle,
+  ImagePlus,
+  Video,
 } from "lucide-react";
 import { cn } from "../../../ui/utils";
 import ImageCropper from "../../../ImageCropper";
@@ -19,7 +36,10 @@ import { Label } from "../../../ui/label";
 import { Badge } from "../../../ui/badge";
 import { Progress } from "../../../ui/progress";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
 } from "../../../ui/dialog";
 
 // ═══════════════════════════════════════════════════════════════
@@ -31,10 +51,10 @@ export interface MediaFile {
   name: string;
   size: number;
   type: string;
-  progress: number;       // 0-100
+  progress: number; // 0-100
   status: "uploading" | "complete" | "error";
-  previewUrl?: string;    // data URL for images/videos
-  thumbnailUrl?: string;  // auto-generated thumbnail for videos
+  previewUrl?: string; // data URL for images/videos
+  thumbnailUrl?: string; // auto-generated thumbnail for videos
 }
 
 interface YouTubeEntry {
@@ -65,7 +85,9 @@ export const INITIAL_MEDIA_STATE: CoachMediaState = {
 // ═══════════════════════════════════════════════════════════════
 
 const CERT_TYPES = [
-  "application/pdf", "image/png", "image/jpeg",
+  "application/pdf",
+  "image/png",
+  "image/jpeg",
   "application/msword",
   "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
 ];
@@ -81,11 +103,16 @@ const DOC_EXT = ".pdf,.png,.jpg,.jpeg,.doc,.docx,.xls,.xlsx";
 const PHOTO_TYPES = ["image/jpeg", "image/png"];
 const PHOTO_EXT = ".jpg,.jpeg,.png";
 
-const VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/x-msvideo", "video/avi"];
+const VIDEO_TYPES = [
+  "video/mp4",
+  "video/quicktime",
+  "video/x-msvideo",
+  "video/avi",
+];
 const VIDEO_EXT = ".mp4,.mov,.avi";
 
-const MAX_DOC_SIZE = 10 * 1024 * 1024;   // 10 MB
-const MAX_PHOTO_SIZE = 5 * 1024 * 1024;  // 5 MB
+const MAX_DOC_SIZE = 10 * 1024 * 1024; // 10 MB
+const MAX_PHOTO_SIZE = 5 * 1024 * 1024; // 5 MB
 const MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
 
 function formatFileSize(bytes: number): string {
@@ -95,11 +122,16 @@ function formatFileSize(bytes: number): string {
 }
 
 function fileIcon(type: string) {
-  if (type.includes("pdf")) return <FileText className="h-4 w-4 text-red-500" />;
-  if (type.includes("image")) return <ImageIcon className="h-4 w-4 text-blue-500" />;
-  if (type.includes("sheet") || type.includes("excel")) return <FileSpreadsheet className="h-4 w-4 text-emerald-500" />;
-  if (type.includes("word") || type.includes("doc")) return <FileIcon className="h-4 w-4 text-blue-400" />;
-  if (type.includes("video")) return <Film className="h-4 w-4 text-purple-500" />;
+  if (type.includes("pdf"))
+    return <FileText className="h-4 w-4 text-red-500" />;
+  if (type.includes("image"))
+    return <ImageIcon className="h-4 w-4 text-blue-500" />;
+  if (type.includes("sheet") || type.includes("excel"))
+    return <FileSpreadsheet className="h-4 w-4 text-emerald-500" />;
+  if (type.includes("word") || type.includes("doc"))
+    return <FileIcon className="h-4 w-4 text-blue-400" />;
+  if (type.includes("video"))
+    return <Film className="h-4 w-4 text-purple-500" />;
   return <FileIcon className="h-4 w-4 text-gray-400" />;
 }
 
@@ -128,36 +160,57 @@ function extractYouTubeId(url: string): string | null {
 
 function useSimulatedUpload(
   setState: React.Dispatch<React.SetStateAction<CoachMediaState>>,
-  field: keyof Pick<CoachMediaState, "certificates" | "documents" | "photos" | "videos">,
+  field: keyof Pick<
+    CoachMediaState,
+    "certificates" | "documents" | "photos" | "videos"
+  >,
 ) {
-  const intervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(new Map());
+  const intervalsRef = useRef<Map<string, ReturnType<typeof setInterval>>>(
+    new Map(),
+  );
 
-  const startUpload = useCallback((file: MediaFile) => {
-    const interval = setInterval(() => {
-      setState(prev => {
-        const list = prev[field];
-        const idx = list.findIndex(f => f.id === file.id);
-        if (idx === -1) { clearInterval(interval); return prev; }
-        const item = list[idx];
-        if (item.status !== "uploading") { clearInterval(interval); return prev; }
-        const next = Math.min(item.progress + Math.random() * 18 + 5, 100);
-        const done = next >= 100;
-        const updated = [...list];
-        updated[idx] = { ...item, progress: done ? 100 : Math.round(next), status: done ? "complete" : "uploading" };
-        if (done) {
-          clearInterval(interval);
-          intervalsRef.current.delete(file.id);
-        }
-        return { ...prev, [field]: updated };
-      });
-    }, 200 + Math.random() * 300);
-    intervalsRef.current.set(file.id, interval);
-  }, [setState, field]);
+  const startUpload = useCallback(
+    (file: MediaFile) => {
+      const interval = setInterval(
+        () => {
+          setState((prev) => {
+            const list = prev[field];
+            const idx = list.findIndex((f) => f.id === file.id);
+            if (idx === -1) {
+              clearInterval(interval);
+              return prev;
+            }
+            const item = list[idx];
+            if (item.status !== "uploading") {
+              clearInterval(interval);
+              return prev;
+            }
+            const next = Math.min(item.progress + Math.random() * 18 + 5, 100);
+            const done = next >= 100;
+            const updated = [...list];
+            updated[idx] = {
+              ...item,
+              progress: done ? 100 : Math.round(next),
+              status: done ? "complete" : "uploading",
+            };
+            if (done) {
+              clearInterval(interval);
+              intervalsRef.current.delete(file.id);
+            }
+            return { ...prev, [field]: updated };
+          });
+        },
+        200 + Math.random() * 300,
+      );
+      intervalsRef.current.set(file.id, interval);
+    },
+    [setState, field],
+  );
 
   // Cleanup on unmount
   useEffect(() => {
     return () => {
-      intervalsRef.current.forEach(i => clearInterval(i));
+      intervalsRef.current.forEach((i) => clearInterval(i));
     };
   }, []);
 
@@ -196,24 +249,27 @@ function DropZone({
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const dropped = Array.from(e.dataTransfer.files);
-    const valid: File[] = [];
-    for (const f of dropped) {
-      if (!acceptedTypes.includes(f.type)) {
-        toast.error(`"${f.name}" has an unsupported format.`);
-        continue;
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const dropped = Array.from(e.dataTransfer.files);
+      const valid: File[] = [];
+      for (const f of dropped) {
+        if (!acceptedTypes.includes(f.type)) {
+          toast.error(`"${f.name}" has an unsupported format.`);
+          continue;
+        }
+        if (f.size > maxSize) {
+          toast.error(`"${f.name}" exceeds ${maxSizeLabel}.`);
+          continue;
+        }
+        valid.push(f);
       }
-      if (f.size > maxSize) {
-        toast.error(`"${f.name}" exceeds ${maxSizeLabel}.`);
-        continue;
-      }
-      valid.push(f);
-    }
-    if (valid.length) onAdd(valid);
-  }, [acceptedTypes, maxSize, maxSizeLabel, onAdd]);
+      if (valid.length) onAdd(valid);
+    },
+    [acceptedTypes, maxSize, maxSizeLabel, onAdd],
+  );
 
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? []);
@@ -240,7 +296,10 @@ function DropZone({
           {icon} {label}
         </Label>
         {files.length > 0 && (
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-gray-500">
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 text-gray-500"
+          >
             {files.length} file{files.length !== 1 ? "s" : ""}
           </Badge>
         )}
@@ -248,7 +307,10 @@ function DropZone({
 
       {/* Drop zone */}
       <div
-        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
@@ -261,7 +323,8 @@ function DropZone({
       >
         <Upload className="h-5 w-5 text-gray-400 mx-auto mb-2" />
         <p className="text-xs text-[#374151]">
-          Drag & drop files here, or <span className="text-[#003B95] underline">browse</span>
+          Drag & drop files here, or{" "}
+          <span className="text-[#003B95] underline">browse</span>
         </p>
         <p className="text-[10px] text-[#9CA3AF] mt-1">{description}</p>
       </div>
@@ -277,7 +340,7 @@ function DropZone({
       {/* File list */}
       {files.length > 0 && (
         <div className="space-y-2">
-          {files.map(f => (
+          {files.map((f) => (
             <div
               key={f.id}
               className="flex items-center gap-3 px-3 py-2 bg-gray-50 border rounded-lg group"
@@ -286,9 +349,13 @@ function DropZone({
               <div className="flex-1 min-w-0">
                 <p className="text-xs text-[#111827] truncate">{f.name}</p>
                 <div className="flex items-center gap-2 mt-0.5">
-                  <span className="text-[10px] text-[#9CA3AF]">{formatFileSize(f.size)}</span>
+                  <span className="text-[10px] text-[#9CA3AF]">
+                    {formatFileSize(f.size)}
+                  </span>
                   {f.status === "uploading" && (
-                    <span className="text-[10px] text-blue-600">{f.progress}%</span>
+                    <span className="text-[10px] text-blue-600">
+                      {f.progress}%
+                    </span>
                   )}
                   {f.status === "complete" && (
                     <CheckCircle2 className="h-3 w-3 text-emerald-500" />
@@ -305,7 +372,10 @@ function DropZone({
                 {f.status === "complete" && (
                   <button
                     type="button"
-                    onClick={(e) => { e.stopPropagation(); onView(f); }}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onView(f);
+                    }}
                     className="p-1 rounded hover:bg-gray-200 text-gray-500"
                     aria-label={`View ${f.name}`}
                   >
@@ -314,7 +384,10 @@ function DropZone({
                 )}
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); onRemove(f.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(f.id);
+                  }}
                   className="p-1 rounded hover:bg-red-100 text-gray-400 hover:text-red-500"
                   aria-label={`Remove ${f.name}`}
                 >
@@ -349,30 +422,45 @@ function PhotoGallery({
   const inputRef = useRef<HTMLInputElement>(null);
 
   const completedPhotos = useMemo(
-    () => photos.filter(p => p.status === "complete" && p.previewUrl),
+    () => photos.filter((p) => p.status === "complete" && p.previewUrl),
     [photos],
   );
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const dropped = Array.from(e.dataTransfer.files);
-    const valid: File[] = [];
-    for (const f of dropped) {
-      if (!PHOTO_TYPES.includes(f.type)) { toast.error(`"${f.name}" is not a JPG/PNG image.`); continue; }
-      if (f.size > MAX_PHOTO_SIZE) { toast.error(`"${f.name}" exceeds 5MB.`); continue; }
-      valid.push(f);
-    }
-    if (valid.length) onAdd(valid);
-  }, [onAdd]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const dropped = Array.from(e.dataTransfer.files);
+      const valid: File[] = [];
+      for (const f of dropped) {
+        if (!PHOTO_TYPES.includes(f.type)) {
+          toast.error(`"${f.name}" is not a JPG/PNG image.`);
+          continue;
+        }
+        if (f.size > MAX_PHOTO_SIZE) {
+          toast.error(`"${f.name}" exceeds 5MB.`);
+          continue;
+        }
+        valid.push(f);
+      }
+      if (valid.length) onAdd(valid);
+    },
+    [onAdd],
+  );
 
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? []);
     e.target.value = "";
     const valid: File[] = [];
     for (const f of selected) {
-      if (!PHOTO_TYPES.includes(f.type)) { toast.error(`"${f.name}" is not a JPG/PNG image.`); continue; }
-      if (f.size > MAX_PHOTO_SIZE) { toast.error(`"${f.name}" exceeds 5MB.`); continue; }
+      if (!PHOTO_TYPES.includes(f.type)) {
+        toast.error(`"${f.name}" is not a JPG/PNG image.`);
+        continue;
+      }
+      if (f.size > MAX_PHOTO_SIZE) {
+        toast.error(`"${f.name}" exceeds 5MB.`);
+        continue;
+      }
       valid.push(f);
     }
     if (valid.length) onAdd(valid);
@@ -388,7 +476,10 @@ function PhotoGallery({
           <ImagePlus className="h-4 w-4 text-blue-500" /> Photo Gallery
         </Label>
         {photos.length > 0 && (
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-gray-500">
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 text-gray-500"
+          >
             {photos.length} photo{photos.length !== 1 ? "s" : ""}
           </Badge>
         )}
@@ -400,10 +491,18 @@ function PhotoGallery({
           <div
             key={p.id}
             className="relative aspect-square rounded-lg overflow-hidden bg-gray-100 border group cursor-pointer"
-            onClick={() => p.status === "complete" && p.previewUrl && openLightbox(completedPhotos.indexOf(p))}
+            onClick={() =>
+              p.status === "complete" &&
+              p.previewUrl &&
+              openLightbox(completedPhotos.indexOf(p))
+            }
           >
             {p.previewUrl ? (
-              <img src={p.previewUrl} alt={p.name} className="w-full h-full object-cover" />
+              <img
+                src={p.previewUrl}
+                alt={p.name}
+                className="w-full h-full object-cover"
+              />
             ) : (
               <div className="w-full h-full flex items-center justify-center">
                 <Loader2 className="h-5 w-5 text-gray-300 animate-spin" />
@@ -421,7 +520,10 @@ function PhotoGallery({
               <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                 <button
                   type="button"
-                  onClick={(e) => { e.stopPropagation(); onRemove(p.id); }}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemove(p.id);
+                  }}
                   className="p-1.5 bg-white/90 rounded-full text-red-500 hover:bg-white shadow"
                   aria-label={`Remove ${p.name}`}
                 >
@@ -434,7 +536,10 @@ function PhotoGallery({
 
         {/* Add photo tile */}
         <div
-          onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+          onDragOver={(e) => {
+            e.preventDefault();
+            setDragOver(true);
+          }}
           onDragLeave={() => setDragOver(false)}
           onDrop={handleDrop}
           onClick={() => inputRef.current?.click()}
@@ -474,7 +579,12 @@ function PhotoGallery({
                 <>
                   <button
                     type="button"
-                    onClick={() => setLightboxIdx((lightboxIdx - 1 + completedPhotos.length) % completedPhotos.length)}
+                    onClick={() =>
+                      setLightboxIdx(
+                        (lightboxIdx - 1 + completedPhotos.length) %
+                          completedPhotos.length,
+                      )
+                    }
                     className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors"
                     aria-label="Previous photo"
                   >
@@ -482,7 +592,9 @@ function PhotoGallery({
                   </button>
                   <button
                     type="button"
-                    onClick={() => setLightboxIdx((lightboxIdx + 1) % completedPhotos.length)}
+                    onClick={() =>
+                      setLightboxIdx((lightboxIdx + 1) % completedPhotos.length)
+                    }
                     className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-white/20 hover:bg-white/40 rounded-full text-white transition-colors"
                     aria-label="Next photo"
                   >
@@ -521,26 +633,41 @@ function VideoUploadSection({
   const [playingId, setPlayingId] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const handleDrop = useCallback((e: React.DragEvent) => {
-    e.preventDefault();
-    setDragOver(false);
-    const dropped = Array.from(e.dataTransfer.files);
-    const valid: File[] = [];
-    for (const f of dropped) {
-      if (!VIDEO_TYPES.includes(f.type)) { toast.error(`"${f.name}" is not a supported video format.`); continue; }
-      if (f.size > MAX_VIDEO_SIZE) { toast.error(`"${f.name}" exceeds 100MB.`); continue; }
-      valid.push(f);
-    }
-    if (valid.length) onAdd(valid);
-  }, [onAdd]);
+  const handleDrop = useCallback(
+    (e: React.DragEvent) => {
+      e.preventDefault();
+      setDragOver(false);
+      const dropped = Array.from(e.dataTransfer.files);
+      const valid: File[] = [];
+      for (const f of dropped) {
+        if (!VIDEO_TYPES.includes(f.type)) {
+          toast.error(`"${f.name}" is not a supported video format.`);
+          continue;
+        }
+        if (f.size > MAX_VIDEO_SIZE) {
+          toast.error(`"${f.name}" exceeds 100MB.`);
+          continue;
+        }
+        valid.push(f);
+      }
+      if (valid.length) onAdd(valid);
+    },
+    [onAdd],
+  );
 
   const handleSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const selected = Array.from(e.target.files ?? []);
     e.target.value = "";
     const valid: File[] = [];
     for (const f of selected) {
-      if (!VIDEO_TYPES.includes(f.type)) { toast.error(`"${f.name}" is not a supported video format.`); continue; }
-      if (f.size > MAX_VIDEO_SIZE) { toast.error(`"${f.name}" exceeds 100MB.`); continue; }
+      if (!VIDEO_TYPES.includes(f.type)) {
+        toast.error(`"${f.name}" is not a supported video format.`);
+        continue;
+      }
+      if (f.size > MAX_VIDEO_SIZE) {
+        toast.error(`"${f.name}" exceeds 100MB.`);
+        continue;
+      }
       valid.push(f);
     }
     if (valid.length) onAdd(valid);
@@ -553,7 +680,10 @@ function VideoUploadSection({
           <Video className="h-4 w-4 text-purple-500" /> Video Upload
         </Label>
         {videos.length > 0 && (
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-gray-500">
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 text-gray-500"
+          >
             {videos.length} video{videos.length !== 1 ? "s" : ""}
           </Badge>
         )}
@@ -561,7 +691,10 @@ function VideoUploadSection({
 
       {/* Drop zone */}
       <div
-        onDragOver={e => { e.preventDefault(); setDragOver(true); }}
+        onDragOver={(e) => {
+          e.preventDefault();
+          setDragOver(true);
+        }}
         onDragLeave={() => setDragOver(false)}
         onDrop={handleDrop}
         onClick={() => inputRef.current?.click()}
@@ -574,9 +707,12 @@ function VideoUploadSection({
       >
         <Film className="h-5 w-5 text-gray-400 mx-auto mb-2" />
         <p className="text-xs text-[#374151]">
-          Drag & drop videos, or <span className="text-[#003B95] underline">browse</span>
+          Drag & drop videos, or{" "}
+          <span className="text-[#003B95] underline">browse</span>
         </p>
-        <p className="text-[10px] text-[#9CA3AF] mt-1">MP4, MOV, AVI. Max 100MB each.</p>
+        <p className="text-[10px] text-[#9CA3AF] mt-1">
+          MP4, MOV, AVI. Max 100MB each.
+        </p>
       </div>
       <input
         ref={inputRef}
@@ -590,8 +726,11 @@ function VideoUploadSection({
       {/* Video list */}
       {videos.length > 0 && (
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          {videos.map(v => (
-            <div key={v.id} className="border rounded-lg overflow-hidden bg-gray-50 group">
+          {videos.map((v) => (
+            <div
+              key={v.id}
+              className="border rounded-lg overflow-hidden bg-gray-50 group"
+            >
               {/* Thumbnail / Player */}
               <div className="relative aspect-video bg-gray-900 flex items-center justify-center">
                 {v.previewUrl && playingId === v.id ? (
@@ -604,7 +743,11 @@ function VideoUploadSection({
                   />
                 ) : v.previewUrl ? (
                   <>
-                    <video src={v.previewUrl} className="w-full h-full object-contain" muted />
+                    <video
+                      src={v.previewUrl}
+                      className="w-full h-full object-contain"
+                      muted
+                    />
                     {v.status === "complete" && (
                       <button
                         type="button"
@@ -628,13 +771,19 @@ function VideoUploadSection({
                     <div className="w-3/4">
                       <Progress value={v.progress} className="h-1.5" />
                     </div>
-                    <span className="text-xs text-white">{v.progress}%{v.size > 50 * 1024 * 1024 ? " (chunked)" : ""}</span>
+                    <span className="text-xs text-white">
+                      {v.progress}%
+                      {v.size > 50 * 1024 * 1024 ? " (chunked)" : ""}
+                    </span>
                   </div>
                 )}
                 {/* Remove button */}
                 <button
                   type="button"
-                  onClick={() => { onRemove(v.id); if (playingId === v.id) setPlayingId(null); }}
+                  onClick={() => {
+                    onRemove(v.id);
+                    if (playingId === v.id) setPlayingId(null);
+                  }}
                   className="absolute top-2 right-2 p-1 bg-black/50 hover:bg-red-600 rounded text-white opacity-0 group-hover:opacity-100 transition-opacity"
                   aria-label={`Remove ${v.name}`}
                 >
@@ -644,9 +793,15 @@ function VideoUploadSection({
               {/* Info bar */}
               <div className="px-3 py-2 flex items-center gap-2">
                 <Film className="h-3.5 w-3.5 text-purple-500 shrink-0" />
-                <p className="text-xs text-[#111827] truncate flex-1">{v.name}</p>
-                <span className="text-[10px] text-[#9CA3AF]">{formatFileSize(v.size)}</span>
-                {v.status === "complete" && <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />}
+                <p className="text-xs text-[#111827] truncate flex-1">
+                  {v.name}
+                </p>
+                <span className="text-[10px] text-[#9CA3AF]">
+                  {formatFileSize(v.size)}
+                </span>
+                {v.status === "complete" && (
+                  <CheckCircle2 className="h-3 w-3 text-emerald-500 shrink-0" />
+                )}
               </div>
             </div>
           ))}
@@ -678,30 +833,39 @@ function YouTubeUrlSection({
           <Link2 className="h-4 w-4 text-red-500" /> YouTube Video URLs
         </Label>
         {entries.length > 0 && (
-          <Badge variant="outline" className="text-[10px] px-1.5 py-0 text-gray-500">
+          <Badge
+            variant="outline"
+            className="text-[10px] px-1.5 py-0 text-gray-500"
+          >
             {entries.length} link{entries.length !== 1 ? "s" : ""}
           </Badge>
         )}
       </div>
 
-      {entries.map(entry => (
+      {entries.map((entry) => (
         <div key={entry.id} className="space-y-2">
           <div className="flex items-center gap-2">
             <div className="relative flex-1">
               <Link2 className="absolute left-2.5 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
               <Input
                 value={entry.url}
-                onChange={e => onUpdate(entry.id, e.target.value)}
+                onChange={(e) => onUpdate(entry.id, e.target.value)}
                 placeholder="https://www.youtube.com/watch?v=..."
                 className={cn(
-                  "h-9 pl-8 pr-8 text-sm",
+                  "h-10 pl-8 pr-8 text-sm",
                   entry.error && "border-red-300 ring-1 ring-red-200",
-                  entry.embedId && !entry.error && "border-emerald-300 ring-1 ring-emerald-200",
+                  entry.embedId &&
+                    !entry.error &&
+                    "border-emerald-300 ring-1 ring-emerald-200",
                 )}
               />
               <div className="absolute right-2.5 top-1/2 -translate-y-1/2">
-                {entry.embedId && !entry.error && <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />}
-                {entry.error && <XCircle className="h-3.5 w-3.5 text-red-500" />}
+                {entry.embedId && !entry.error && (
+                  <CheckCircle2 className="h-3.5 w-3.5 text-emerald-500" />
+                )}
+                {entry.error && (
+                  <XCircle className="h-3.5 w-3.5 text-red-500" />
+                )}
               </div>
             </div>
             <button
@@ -713,7 +877,9 @@ function YouTubeUrlSection({
               <X className="h-4 w-4" />
             </button>
           </div>
-          {entry.error && <p className="text-xs text-red-500 pl-1">{entry.error}</p>}
+          {entry.error && (
+            <p className="text-xs text-red-500 pl-1">{entry.error}</p>
+          )}
           {/* Embed preview */}
           {entry.embedId && !entry.error && (
             <div className="rounded-lg overflow-hidden border bg-black aspect-video max-w-md">
@@ -772,127 +938,176 @@ export function CoachMediaSection({
     setPhotoCropOpen(true);
   }, []);
 
-  const handlePhotoCropComplete = useCallback((blob: Blob, previewUrl: string) => {
-    const croppedFile = new File([blob], `gallery-${Date.now()}.jpg`, { type: "image/jpeg" });
-    const mf: MediaFile = {
-      id: genId(),
-      name: croppedFile.name,
-      size: croppedFile.size,
-      type: croppedFile.type,
-      progress: 0,
-      status: "uploading",
-      previewUrl,
-    };
-    setMedia(prev => ({ ...prev, photos: [...prev.photos, mf] }));
-    startPhotoUpload(mf);
-    onDirty();
+  const handlePhotoCropComplete = useCallback(
+    (blob: Blob, previewUrl: string) => {
+      const croppedFile = new File([blob], `gallery-${Date.now()}.jpg`, {
+        type: "image/jpeg",
+      });
+      const mf: MediaFile = {
+        id: genId(),
+        name: croppedFile.name,
+        size: croppedFile.size,
+        type: croppedFile.type,
+        progress: 0,
+        status: "uploading",
+        previewUrl,
+      };
+      setMedia((prev) => ({ ...prev, photos: [...prev.photos, mf] }));
+      startPhotoUpload(mf);
+      onDirty();
 
-    // Process next image in queue
-    if (photoCropQueueRef.current.length > 0) {
-      setTimeout(() => processNextPhotoCrop(), 200);
-    }
-  }, [setMedia, startPhotoUpload, onDirty, processNextPhotoCrop]);
+      // Process next image in queue
+      if (photoCropQueueRef.current.length > 0) {
+        setTimeout(() => processNextPhotoCrop(), 200);
+      }
+    },
+    [setMedia, startPhotoUpload, onDirty, processNextPhotoCrop],
+  );
 
   // ── File → MediaFile converter ────────────────────────
-  const createMediaFile = useCallback((file: File): MediaFile => {
-    const mf: MediaFile = {
-      id: genId(),
-      name: file.name,
-      size: file.size,
-      type: file.type,
-      progress: 0,
-      status: "uploading",
-    };
-    // Generate preview for images
-    if (file.type.startsWith("image/")) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setMedia(prev => {
-          const updateList = (list: MediaFile[]) =>
-            list.map(f => f.id === mf.id ? { ...f, previewUrl: reader.result as string } : f);
-          return {
-            ...prev,
-            certificates: updateList(prev.certificates),
-            documents: updateList(prev.documents),
-            photos: updateList(prev.photos),
-          };
-        });
+  const createMediaFile = useCallback(
+    (file: File): MediaFile => {
+      const mf: MediaFile = {
+        id: genId(),
+        name: file.name,
+        size: file.size,
+        type: file.type,
+        progress: 0,
+        status: "uploading",
       };
-      reader.readAsDataURL(file);
-    }
-    // Generate preview for videos
-    if (file.type.startsWith("video/")) {
-      const url = URL.createObjectURL(file);
-      mf.previewUrl = url;
-    }
-    return mf;
-  }, [setMedia]);
+      // Generate preview for images
+      if (file.type.startsWith("image/")) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setMedia((prev) => {
+            const updateList = (list: MediaFile[]) =>
+              list.map((f) =>
+                f.id === mf.id
+                  ? { ...f, previewUrl: reader.result as string }
+                  : f,
+              );
+            return {
+              ...prev,
+              certificates: updateList(prev.certificates),
+              documents: updateList(prev.documents),
+              photos: updateList(prev.photos),
+            };
+          });
+        };
+        reader.readAsDataURL(file);
+      }
+      // Generate preview for videos
+      if (file.type.startsWith("video/")) {
+        const url = URL.createObjectURL(file);
+        mf.previewUrl = url;
+      }
+      return mf;
+    },
+    [setMedia],
+  );
 
   // ── Add handlers ──────────────────────────────────────
-  const addCertificates = useCallback((files: File[]) => {
-    const mfs = files.map(f => createMediaFile(f));
-    setMedia(prev => ({ ...prev, certificates: [...prev.certificates, ...mfs] }));
-    mfs.forEach(startCertUpload);
-    onDirty();
-  }, [createMediaFile, setMedia, startCertUpload, onDirty]);
+  const addCertificates = useCallback(
+    (files: File[]) => {
+      const mfs = files.map((f) => createMediaFile(f));
+      setMedia((prev) => ({
+        ...prev,
+        certificates: [...prev.certificates, ...mfs],
+      }));
+      mfs.forEach(startCertUpload);
+      onDirty();
+    },
+    [createMediaFile, setMedia, startCertUpload, onDirty],
+  );
 
-  const addDocuments = useCallback((files: File[]) => {
-    const mfs = files.map(f => createMediaFile(f));
-    setMedia(prev => ({ ...prev, documents: [...prev.documents, ...mfs] }));
-    mfs.forEach(startDocUpload);
-    onDirty();
-  }, [createMediaFile, setMedia, startDocUpload, onDirty]);
+  const addDocuments = useCallback(
+    (files: File[]) => {
+      const mfs = files.map((f) => createMediaFile(f));
+      setMedia((prev) => ({ ...prev, documents: [...prev.documents, ...mfs] }));
+      mfs.forEach(startDocUpload);
+      onDirty();
+    },
+    [createMediaFile, setMedia, startDocUpload, onDirty],
+  );
 
-  const addPhotos = useCallback((files: File[]) => {
-    // Queue each file for cropping (one at a time)
-    let startedFirst = false;
-    for (const file of files) {
-      const reader = new FileReader();
-      reader.onload = () => {
-        const src = reader.result as string;
-        if (!startedFirst && !photoCropOpen) {
-          startedFirst = true;
-          setPhotoCropSrc(src);
-          setPhotoCropOpen(true);
-        } else {
-          photoCropQueueRef.current.push(src);
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  }, [photoCropOpen]);
+  const addPhotos = useCallback(
+    (files: File[]) => {
+      // Queue each file for cropping (one at a time)
+      let startedFirst = false;
+      for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const src = reader.result as string;
+          if (!startedFirst && !photoCropOpen) {
+            startedFirst = true;
+            setPhotoCropSrc(src);
+            setPhotoCropOpen(true);
+          } else {
+            photoCropQueueRef.current.push(src);
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+    },
+    [photoCropOpen],
+  );
 
-  const addVideos = useCallback((files: File[]) => {
-    const mfs = files.map(f => createMediaFile(f));
-    setMedia(prev => ({ ...prev, videos: [...prev.videos, ...mfs] }));
-    mfs.forEach(startVideoUpload);
-    onDirty();
-  }, [createMediaFile, setMedia, startVideoUpload, onDirty]);
+  const addVideos = useCallback(
+    (files: File[]) => {
+      const mfs = files.map((f) => createMediaFile(f));
+      setMedia((prev) => ({ ...prev, videos: [...prev.videos, ...mfs] }));
+      mfs.forEach(startVideoUpload);
+      onDirty();
+    },
+    [createMediaFile, setMedia, startVideoUpload, onDirty],
+  );
 
   // ── Remove handlers ───────────────────────────────────
-  const removeCert = useCallback((id: string) => {
-    setMedia(prev => ({ ...prev, certificates: prev.certificates.filter(f => f.id !== id) }));
-    onDirty();
-  }, [setMedia, onDirty]);
+  const removeCert = useCallback(
+    (id: string) => {
+      setMedia((prev) => ({
+        ...prev,
+        certificates: prev.certificates.filter((f) => f.id !== id),
+      }));
+      onDirty();
+    },
+    [setMedia, onDirty],
+  );
 
-  const removeDoc = useCallback((id: string) => {
-    setMedia(prev => ({ ...prev, documents: prev.documents.filter(f => f.id !== id) }));
-    onDirty();
-  }, [setMedia, onDirty]);
+  const removeDoc = useCallback(
+    (id: string) => {
+      setMedia((prev) => ({
+        ...prev,
+        documents: prev.documents.filter((f) => f.id !== id),
+      }));
+      onDirty();
+    },
+    [setMedia, onDirty],
+  );
 
-  const removePhoto = useCallback((id: string) => {
-    setMedia(prev => ({ ...prev, photos: prev.photos.filter(f => f.id !== id) }));
-    onDirty();
-  }, [setMedia, onDirty]);
+  const removePhoto = useCallback(
+    (id: string) => {
+      setMedia((prev) => ({
+        ...prev,
+        photos: prev.photos.filter((f) => f.id !== id),
+      }));
+      onDirty();
+    },
+    [setMedia, onDirty],
+  );
 
-  const removeVideo = useCallback((id: string) => {
-    setMedia(prev => {
-      const v = prev.videos.find(f => f.id === id);
-      if (v?.previewUrl && v.type.startsWith("video/")) URL.revokeObjectURL(v.previewUrl);
-      return { ...prev, videos: prev.videos.filter(f => f.id !== id) };
-    });
-    onDirty();
-  }, [setMedia, onDirty]);
+  const removeVideo = useCallback(
+    (id: string) => {
+      setMedia((prev) => {
+        const v = prev.videos.find((f) => f.id === id);
+        if (v?.previewUrl && v.type.startsWith("video/"))
+          URL.revokeObjectURL(v.previewUrl);
+        return { ...prev, videos: prev.videos.filter((f) => f.id !== id) };
+      });
+      onDirty();
+    },
+    [setMedia, onDirty],
+  );
 
   // ── View file handler (opens in new tab) ──────────────
   const viewFile = useCallback((file: MediaFile) => {
@@ -905,7 +1120,7 @@ export function CoachMediaSection({
 
   // ── YouTube URL handlers ──────────────────────────────
   const addYouTubeEntry = useCallback(() => {
-    setMedia(prev => ({
+    setMedia((prev) => ({
       ...prev,
       youtubeUrls: [
         ...prev.youtubeUrls,
@@ -915,32 +1130,38 @@ export function CoachMediaSection({
     onDirty();
   }, [setMedia, onDirty]);
 
-  const updateYouTubeEntry = useCallback((id: string, url: string) => {
-    setMedia(prev => ({
-      ...prev,
-      youtubeUrls: prev.youtubeUrls.map(e => {
-        if (e.id !== id) return e;
-        const trimmed = url.trim();
-        if (!trimmed) return { ...e, url, embedId: null, error: null };
-        const embedId = extractYouTubeId(trimmed);
-        return {
-          ...e,
-          url,
-          embedId,
-          error: embedId ? null : "Please enter a valid YouTube URL",
-        };
-      }),
-    }));
-    onDirty();
-  }, [setMedia, onDirty]);
+  const updateYouTubeEntry = useCallback(
+    (id: string, url: string) => {
+      setMedia((prev) => ({
+        ...prev,
+        youtubeUrls: prev.youtubeUrls.map((e) => {
+          if (e.id !== id) return e;
+          const trimmed = url.trim();
+          if (!trimmed) return { ...e, url, embedId: null, error: null };
+          const embedId = extractYouTubeId(trimmed);
+          return {
+            ...e,
+            url,
+            embedId,
+            error: embedId ? null : "Please enter a valid YouTube URL",
+          };
+        }),
+      }));
+      onDirty();
+    },
+    [setMedia, onDirty],
+  );
 
-  const removeYouTubeEntry = useCallback((id: string) => {
-    setMedia(prev => ({
-      ...prev,
-      youtubeUrls: prev.youtubeUrls.filter(e => e.id !== id),
-    }));
-    onDirty();
-  }, [setMedia, onDirty]);
+  const removeYouTubeEntry = useCallback(
+    (id: string) => {
+      setMedia((prev) => ({
+        ...prev,
+        youtubeUrls: prev.youtubeUrls.filter((e) => e.id !== id),
+      }));
+      onDirty();
+    },
+    [setMedia, onDirty],
+  );
 
   // ═══════════════════════════════════════════════════════
   return (

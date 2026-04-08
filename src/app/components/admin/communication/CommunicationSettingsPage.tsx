@@ -1,8 +1,13 @@
 import type React from "react";
 import { toast } from "sonner";
 import {
-  MessageCircle, WifiOff, Info, Monitor,
-  AlertTriangle, CheckCircle2, Send,
+  MessageCircle,
+  WifiOff,
+  Info,
+  Monitor,
+  AlertTriangle,
+  CheckCircle2,
+  Send,
 } from "lucide-react";
 import { cn } from "../../ui/utils";
 import { Switch } from "../../ui/switch";
@@ -40,7 +45,7 @@ function SettingRow({
       aria-label={label}
       className={cn(
         "data-[state=checked]:bg-[#003B95]",
-        disabled && "cursor-not-allowed opacity-50"
+        disabled && "cursor-not-allowed opacity-50",
       )}
     />
   );
@@ -51,7 +56,7 @@ function SettingRow({
         "flex items-start gap-4 p-5 rounded-xl border transition-all",
         disabled
           ? "bg-gray-50/80 border-gray-200 opacity-75"
-          : "bg-white border-gray-200 hover:border-gray-300"
+          : "bg-white border-gray-200 hover:border-gray-300",
       )}
     >
       <div
@@ -59,7 +64,7 @@ function SettingRow({
           "w-10 h-10 rounded-xl flex items-center justify-center shrink-0",
           checked && !disabled
             ? "bg-[#003B95]/10 text-[#003B95]"
-            : "bg-gray-100 text-gray-400"
+            : "bg-gray-100 text-gray-400",
         )}
       >
         <Icon className="h-5 w-5" />
@@ -67,7 +72,9 @@ function SettingRow({
 
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
-          <Label className="text-sm text-[#111827] cursor-default">{label}</Label>
+          <Label className="text-sm text-[#111827] cursor-default">
+            {label}
+          </Label>
           {statusLabel && (
             <Badge
               variant="outline"
@@ -75,7 +82,7 @@ function SettingRow({
                 "text-[10px] h-5",
                 statusLabel.variant === "on"
                   ? "bg-emerald-100 text-emerald-700 border-emerald-200"
-                  : "bg-gray-100 text-gray-500 border-gray-200"
+                  : "bg-gray-100 text-gray-500 border-gray-200",
               )}
             >
               {statusLabel.text}
@@ -122,38 +129,46 @@ export function CommunicationSettingsPage() {
   const handleChatToggle = (v: boolean) => {
     setChatEnabled(v);
     toast(
-      v ? "Admin chat with providers enabled" : "Admin chat with providers disabled",
+      v
+        ? "Admin chat with providers enabled"
+        : "Admin chat with providers disabled",
       {
-        icon: v ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <AlertTriangle className="h-4 w-4 text-amber-500" />,
+        icon: v ? (
+          <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+        ) : (
+          <AlertTriangle className="h-4 w-4 text-amber-500" />
+        ),
         duration: 3000,
-      }
+      },
     );
   };
 
   const handleOfflineToggle = (v: boolean) => {
     setOfflineMessagesEnabled(v);
-    toast(
-      v ? "Offline messages enabled" : "Offline messages disabled",
-      {
-        icon: v ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <Info className="h-4 w-4 text-blue-500" />,
-        duration: 3000,
-      }
-    );
+    toast(v ? "Offline messages enabled" : "Offline messages disabled", {
+      icon: v ? (
+        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+      ) : (
+        <Info className="h-4 w-4 text-blue-500" />
+      ),
+      duration: 3000,
+    });
   };
 
   const handleOnlineToggle = (v: boolean) => {
     setIsAdminOnline(v);
-    toast(
-      v ? "Admin status set to Online" : "Admin status set to Offline",
-      {
-        icon: v ? <CheckCircle2 className="h-4 w-4 text-emerald-500" /> : <WifiOff className="h-4 w-4 text-gray-500" />,
-        duration: 3000,
-      }
-    );
+    toast(v ? "Admin status set to Online" : "Admin status set to Offline", {
+      icon: v ? (
+        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+      ) : (
+        <WifiOff className="h-4 w-4 text-gray-500" />
+      ),
+      duration: 3000,
+    });
   };
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* ── Page Header ─────────────────────────────── */}
       <div>
         <h1 className="text-2xl text-[#111827] tracking-tight">
@@ -194,7 +209,11 @@ export function CommunicationSettingsPage() {
           disabled={!chatEnabled}
           disabledTooltip="Enable Admin Chat first"
           statusLabel={{
-            text: !chatEnabled ? "Requires Chat" : offlineMessagesEnabled ? "On" : "Off",
+            text: !chatEnabled
+              ? "Requires Chat"
+              : offlineMessagesEnabled
+                ? "On"
+                : "Off",
             variant: offlineMessagesEnabled && chatEnabled ? "on" : "off",
           }}
         />
@@ -232,39 +251,55 @@ export function CommunicationSettingsPage() {
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             {/* Chat Status */}
             <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-              <div className={cn(
-                "w-2.5 h-2.5 rounded-full shrink-0",
-                chatEnabled ? "bg-emerald-500" : "bg-gray-300"
-              )} />
+              <div
+                className={cn(
+                  "w-2.5 h-2.5 rounded-full shrink-0",
+                  chatEnabled ? "bg-emerald-500" : "bg-gray-300",
+                )}
+              />
               <div>
                 <p className="text-xs text-[#6B7280]">Chat</p>
-                <p className="text-sm text-[#111827]">{chatEnabled ? "Enabled" : "Disabled"}</p>
+                <p className="text-sm text-[#111827]">
+                  {chatEnabled ? "Enabled" : "Disabled"}
+                </p>
               </div>
             </div>
 
             {/* Offline Messages */}
             <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-              <div className={cn(
-                "w-2.5 h-2.5 rounded-full shrink-0",
-                chatEnabled && offlineMessagesEnabled ? "bg-emerald-500" : "bg-gray-300"
-              )} />
+              <div
+                className={cn(
+                  "w-2.5 h-2.5 rounded-full shrink-0",
+                  chatEnabled && offlineMessagesEnabled
+                    ? "bg-emerald-500"
+                    : "bg-gray-300",
+                )}
+              />
               <div>
                 <p className="text-xs text-[#6B7280]">Offline Messages</p>
                 <p className="text-sm text-[#111827]">
-                  {!chatEnabled ? "N/A" : offlineMessagesEnabled ? "Allowed" : "Blocked"}
+                  {!chatEnabled
+                    ? "N/A"
+                    : offlineMessagesEnabled
+                      ? "Allowed"
+                      : "Blocked"}
                 </p>
               </div>
             </div>
 
             {/* Admin Online */}
             <div className="flex items-center gap-3 p-3 rounded-lg bg-gray-50">
-              <div className={cn(
-                "w-2.5 h-2.5 rounded-full shrink-0",
-                isAdminOnline ? "bg-emerald-500" : "bg-gray-300"
-              )} />
+              <div
+                className={cn(
+                  "w-2.5 h-2.5 rounded-full shrink-0",
+                  isAdminOnline ? "bg-emerald-500" : "bg-gray-300",
+                )}
+              />
               <div>
                 <p className="text-xs text-[#6B7280]">Admin Status</p>
-                <p className="text-sm text-[#111827]">{isAdminOnline ? "Online" : "Offline"}</p>
+                <p className="text-sm text-[#111827]">
+                  {isAdminOnline ? "Online" : "Offline"}
+                </p>
               </div>
             </div>
           </div>
@@ -274,7 +309,8 @@ export function CommunicationSettingsPage() {
             <div className="mt-4 flex items-center gap-2 px-3 py-2 rounded-lg bg-blue-50 border border-blue-100">
               <MessageCircle className="h-4 w-4 text-[#003B95]" />
               <p className="text-xs text-[#003B95]">
-                You have <span className="font-medium">{totalUnread}</span> unread message{totalUnread !== 1 ? "s" : ""} from providers
+                You have <span className="font-medium">{totalUnread}</span>{" "}
+                unread message{totalUnread !== 1 ? "s" : ""} from providers
               </p>
             </div>
           )}
@@ -291,7 +327,8 @@ export function CommunicationSettingsPage() {
         <div className="bg-white border rounded-xl overflow-hidden">
           <div className="px-5 py-3 border-b bg-gray-50/50">
             <p className="text-xs text-[#6B7280]">
-              This is what providers see in their chat interface based on current settings:
+              This is what providers see in their chat interface based on
+              current settings:
             </p>
           </div>
           <div className="p-5">
@@ -302,7 +339,8 @@ export function CommunicationSettingsPage() {
                 <div>
                   <p className="text-sm text-gray-500">Chat is unavailable</p>
                   <p className="text-xs text-gray-400">
-                    The admin has disabled the chat feature. Please try again later.
+                    The admin has disabled the chat feature. Please try again
+                    later.
                   </p>
                 </div>
               </div>
@@ -325,10 +363,10 @@ export function CommunicationSettingsPage() {
                     <p className="text-xs text-gray-400">Input disabled</p>
                   </div>
                   <div className="flex items-center gap-2 opacity-50 p-2">
-                    <div className="flex-1 h-9 px-3 rounded-lg border bg-gray-50 flex items-center text-sm text-gray-400">
+                    <div className="flex-1 h-10 px-3 rounded-lg border bg-gray-50 flex items-center text-sm text-gray-400">
                       Type a message...
                     </div>
-                    <div className="h-9 w-9 rounded-lg bg-gray-200 flex items-center justify-center">
+                    <div className="h-10 w-9 rounded-lg bg-gray-200 flex items-center justify-center">
                       <Send className="h-4 w-4 text-gray-400" />
                     </div>
                   </div>
@@ -346,8 +384,7 @@ export function CommunicationSettingsPage() {
                   <p className="text-xs text-emerald-500 mt-0.5">
                     {isAdminOnline
                       ? "Providers can send and receive messages in real-time."
-                      : "Providers can leave messages that will be delivered when admin comes online."
-                    }
+                      : "Providers can leave messages that will be delivered when admin comes online."}
                   </p>
                 </div>
               </div>

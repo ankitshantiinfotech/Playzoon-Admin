@@ -2,8 +2,14 @@
 
 import { useState, useEffect, useRef } from "react";
 import {
-  X, Upload, Image as ImageIcon, Link as LinkIcon,
-  AlertCircle, Type, MousePointerClick, Hash,
+  X,
+  Upload,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  AlertCircle,
+  Type,
+  MousePointerClick,
+  Hash,
 } from "lucide-react";
 import { toast } from "sonner";
 import { cn } from "../../../lib/utils";
@@ -17,7 +23,11 @@ interface BannerFormProps {
   onCancel: () => void;
 }
 
-export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps) {
+export function BannerForm({
+  initialData,
+  onSubmit,
+  onCancel,
+}: BannerFormProps) {
   const fileRef = useRef<HTMLInputElement>(null);
 
   const [form, setForm] = useState<BannerFormData>({
@@ -51,7 +61,8 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
     setErrors({});
   }, [initialData]);
 
-  const patch = (p: Partial<BannerFormData>) => setForm(prev => ({ ...prev, ...p }));
+  const patch = (p: Partial<BannerFormData>) =>
+    setForm((prev) => ({ ...prev, ...p }));
 
   // ── Validation ───────────────────────────────────────────
   const validate = (): boolean => {
@@ -63,8 +74,7 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
       e.buttonLabel = "Button label must not exceed 30 characters.";
     if (form.redirectUrl && !/^(\/|https?:\/\/)/.test(form.redirectUrl))
       e.redirectUrl = "Must be a valid URL or path starting with / or http.";
-    if (form.sortOrder < 1)
-      e.sortOrder = "Sort order must be at least 1.";
+    if (form.sortOrder < 1) e.sortOrder = "Sort order must be at least 1.";
     setErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -105,7 +115,7 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
           // Use object URL for preview
           const url = URL.createObjectURL(file);
           patch({ imageUrl: url });
-          setErrors(prev => {
+          setErrors((prev) => {
             const n = { ...prev };
             delete n.imageUrl;
             return n;
@@ -141,7 +151,7 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
 
   const handleBannerCropComplete = (_blob: Blob, previewUrl: string) => {
     patch({ imageUrl: previewUrl });
-    setErrors(prev => {
+    setErrors((prev) => {
       const n = { ...prev };
       delete n.imageUrl;
       return n;
@@ -159,7 +169,9 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
               {initialData ? "Edit Banner" : "Add New Banner"}
             </h2>
             <p className="text-[11px] text-gray-400 mt-0.5">
-              {initialData ? `Editing ${initialData.id}` : "Create a new homepage banner."}
+              {initialData
+                ? `Editing ${initialData.id}`
+                : "Create a new homepage banner."}
             </p>
           </div>
           <button
@@ -213,8 +225,12 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
                 <div className="w-12 h-12 rounded-full bg-blue-50 flex items-center justify-center">
                   <ImageIcon className="w-6 h-6 text-blue-500" />
                 </div>
-                <span className="text-sm font-medium">Click to upload banner image</span>
-                <span className="text-xs text-gray-400">JPG or PNG — Max 5 MB — Recommended 1200x675 (16:9)</span>
+                <span className="text-sm font-medium">
+                  Click to upload banner image
+                </span>
+                <span className="text-xs text-gray-400">
+                  JPG or PNG — Max 5 MB — Recommended 1200x675 (16:9)
+                </span>
               </button>
             )}
 
@@ -222,7 +238,8 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
               <div className="space-y-1">
                 <div className="flex items-center justify-between text-xs text-gray-600">
                   <span className="flex items-center gap-1.5">
-                    <Upload className="w-3 h-3" />Uploading...
+                    <Upload className="w-3 h-3" />
+                    Uploading...
                   </span>
                   <span>{uploadProgress}%</span>
                 </div>
@@ -250,7 +267,7 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
             </label>
             <textarea
               value={form.bannerText}
-              onChange={e => patch({ bannerText: e.target.value })}
+              onChange={(e) => patch({ bannerText: e.target.value })}
               placeholder="Overlay text displayed on the banner..."
               maxLength={200}
               rows={2}
@@ -258,7 +275,7 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
                 "w-full px-3 py-2 text-sm border rounded-lg outline-none resize-none transition-colors",
                 errors.bannerText
                   ? "border-red-400 bg-red-50/30 focus:border-red-500"
-                  : "border-gray-300 focus:border-[#003B95]"
+                  : "border-gray-300 focus:border-[#003B95]",
               )}
             />
             <div className="flex items-center justify-between">
@@ -276,8 +293,8 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
                   form.bannerText.length > 180
                     ? "text-red-500"
                     : form.bannerText.length > 150
-                    ? "text-amber-500"
-                    : "text-gray-400"
+                      ? "text-amber-500"
+                      : "text-gray-400",
                 )}
               >
                 {form.bannerText.length}/200
@@ -295,14 +312,14 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
               <input
                 type="text"
                 value={form.buttonLabel}
-                onChange={e => patch({ buttonLabel: e.target.value })}
+                onChange={(e) => patch({ buttonLabel: e.target.value })}
                 placeholder="e.g. Register Now"
                 maxLength={30}
                 className={cn(
-                  "w-full h-9 px-3 text-sm border rounded-lg outline-none transition-colors",
+                  "w-full h-10 px-3 text-sm border rounded-lg outline-none transition-colors",
                   errors.buttonLabel
                     ? "border-red-400 bg-red-50/30"
-                    : "border-gray-300 focus:border-[#003B95]"
+                    : "border-gray-300 focus:border-[#003B95]",
                 )}
               />
               {errors.buttonLabel && (
@@ -321,13 +338,13 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
               <input
                 type="text"
                 value={form.redirectUrl}
-                onChange={e => patch({ redirectUrl: e.target.value })}
+                onChange={(e) => patch({ redirectUrl: e.target.value })}
                 placeholder="e.g. /promotions/summer or https://..."
                 className={cn(
-                  "w-full h-9 px-3 text-sm border rounded-lg outline-none transition-colors font-mono text-xs",
+                  "w-full h-10 px-3 text-sm border rounded-lg outline-none transition-colors font-mono text-xs",
                   errors.redirectUrl
                     ? "border-red-400 bg-red-50/30"
-                    : "border-gray-300 focus:border-[#003B95]"
+                    : "border-gray-300 focus:border-[#003B95]",
                 )}
               />
               {errors.redirectUrl && (
@@ -350,12 +367,14 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
                 type="number"
                 min={1}
                 value={form.sortOrder}
-                onChange={e => patch({ sortOrder: parseInt(e.target.value) || 1 })}
+                onChange={(e) =>
+                  patch({ sortOrder: parseInt(e.target.value) || 1 })
+                }
                 className={cn(
-                  "w-full h-9 px-3 text-sm border rounded-lg outline-none transition-colors tabular-nums",
+                  "w-full h-10 px-3 text-sm border rounded-lg outline-none transition-colors tabular-nums",
                   errors.sortOrder
                     ? "border-red-400 bg-red-50/30"
-                    : "border-gray-300 focus:border-[#003B95]"
+                    : "border-gray-300 focus:border-[#003B95]",
                 )}
               />
               {errors.sortOrder && (
@@ -364,12 +383,16 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
                   {errors.sortOrder}
                 </p>
               )}
-              <p className="text-[11px] text-gray-400">Controls display order on homepage (lower = first).</p>
+              <p className="text-[11px] text-gray-400">
+                Controls display order on homepage (lower = first).
+              </p>
             </div>
 
             <div className="space-y-2">
-              <label className="text-xs font-semibold text-gray-700">Status</label>
-              <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl h-9 box-content">
+              <label className="text-xs font-semibold text-gray-700">
+                Status
+              </label>
+              <div className="flex items-center justify-between p-3 bg-gray-50 border border-gray-200 rounded-xl h-10 box-content">
                 <span className="text-sm text-gray-700">
                   {form.status === "Active" ? (
                     <span className="flex items-center gap-1.5">
@@ -388,22 +411,28 @@ export function BannerForm({ initialData, onSubmit, onCancel }: BannerFormProps)
                   role="switch"
                   aria-checked={form.status === "Active"}
                   onClick={() =>
-                    patch({ status: form.status === "Active" ? "Inactive" : "Active" })
+                    patch({
+                      status: form.status === "Active" ? "Inactive" : "Active",
+                    })
                   }
                   className={cn(
                     "relative inline-flex h-6 w-11 items-center rounded-full transition-colors",
-                    form.status === "Active" ? "bg-emerald-500" : "bg-gray-300"
+                    form.status === "Active" ? "bg-emerald-500" : "bg-gray-300",
                   )}
                 >
                   <span
                     className={cn(
                       "inline-block h-4 w-4 rounded-full bg-white shadow transform transition-transform",
-                      form.status === "Active" ? "translate-x-6" : "translate-x-1"
+                      form.status === "Active"
+                        ? "translate-x-6"
+                        : "translate-x-1",
                     )}
                   />
                 </button>
               </div>
-              <p className="text-[11px] text-gray-400">Inactive banners are hidden from the homepage.</p>
+              <p className="text-[11px] text-gray-400">
+                Inactive banners are hidden from the homepage.
+              </p>
             </div>
           </div>
 

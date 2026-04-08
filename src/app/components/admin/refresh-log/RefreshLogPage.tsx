@@ -56,7 +56,12 @@ interface RefreshEntry {
   date: Date;
 }
 
-type SortField = "providerName" | "entityName" | "listingType" | "dailyRefreshCount" | "lastRefreshed";
+type SortField =
+  | "providerName"
+  | "entityName"
+  | "listingType"
+  | "dailyRefreshCount"
+  | "lastRefreshed";
 type SortDir = "asc" | "desc";
 
 // ─── Abuse Threshold ────────────────────────────────────────
@@ -72,29 +77,282 @@ function hoursAgo(h: number) {
 }
 
 const MOCK_DATA: RefreshEntry[] = [
-  { id: "r01", providerId: "p1", providerName: "Champions Sports Club", providerType: "Facility", entityName: "Indoor Basketball Court A", entityType: "Facility", listingType: "promoted", dailyRefreshCount: 22, lastRefreshed: hoursAgo(0.5), date: today },
-  { id: "r02", providerId: "p1", providerName: "Champions Sports Club", providerType: "Facility", entityName: "Indoor Basketball Court B", entityType: "Facility", listingType: "promoted", dailyRefreshCount: 18, lastRefreshed: hoursAgo(1), date: today },
-  { id: "r03", providerId: "p1", providerName: "Champions Sports Club", providerType: "Facility", entityName: "Outdoor Football Pitch", entityType: "Facility", listingType: "standard", dailyRefreshCount: 4, lastRefreshed: hoursAgo(3), date: today },
-  { id: "r04", providerId: "p1", providerName: "Champions Sports Club", providerType: "Facility", entityName: "Swimming Pool", entityType: "Facility", listingType: "standard", dailyRefreshCount: 2, lastRefreshed: hoursAgo(5), date: today },
-  { id: "r05", providerId: "p2", providerName: "FitZone Academy", providerType: "Training", entityName: "CrossFit Fundamentals", entityType: "Training Program", listingType: "promoted", dailyRefreshCount: 12, lastRefreshed: hoursAgo(0.3), date: today },
-  { id: "r06", providerId: "p2", providerName: "FitZone Academy", providerType: "Training", entityName: "Yoga for Beginners", entityType: "Training Program", listingType: "standard", dailyRefreshCount: 3, lastRefreshed: hoursAgo(4), date: today },
-  { id: "r07", providerId: "p2", providerName: "FitZone Academy", providerType: "Training", entityName: "HIIT Bootcamp", entityType: "Training Program", listingType: "promoted", dailyRefreshCount: 8, lastRefreshed: hoursAgo(1.5), date: today },
-  { id: "r08", providerId: "p3", providerName: "Gulf Tennis Center", providerType: "Facility", entityName: "Clay Court 1", entityType: "Facility", listingType: "promoted", dailyRefreshCount: 25, lastRefreshed: hoursAgo(0.1), date: today },
-  { id: "r09", providerId: "p3", providerName: "Gulf Tennis Center", providerType: "Facility", entityName: "Clay Court 2", entityType: "Facility", listingType: "standard", dailyRefreshCount: 19, lastRefreshed: hoursAgo(0.2), date: today },
-  { id: "r10", providerId: "p3", providerName: "Gulf Tennis Center", providerType: "Facility", entityName: "Hard Court 1", entityType: "Facility", listingType: "standard", dailyRefreshCount: 16, lastRefreshed: hoursAgo(0.4), date: today },
-  { id: "r11", providerId: "p4", providerName: "Coach Ahmed Al-Farsi", providerType: "Freelance Coach", entityName: "Personal Training — Football", entityType: "Coach Profile", listingType: "standard", dailyRefreshCount: 6, lastRefreshed: hoursAgo(2), date: today },
-  { id: "r12", providerId: "p4", providerName: "Coach Ahmed Al-Farsi", providerType: "Freelance Coach", entityName: "Group Training — Fitness", entityType: "Coach Profile", listingType: "promoted", dailyRefreshCount: 9, lastRefreshed: hoursAgo(1), date: today },
-  { id: "r13", providerId: "p5", providerName: "AquaSplash Waterpark", providerType: "Facility", entityName: "Main Pool — Adult", entityType: "Facility", listingType: "promoted", dailyRefreshCount: 5, lastRefreshed: hoursAgo(2.5), date: today },
-  { id: "r14", providerId: "p5", providerName: "AquaSplash Waterpark", providerType: "Facility", entityName: "Kids Pool Zone", entityType: "Facility", listingType: "standard", dailyRefreshCount: 3, lastRefreshed: hoursAgo(6), date: today },
-  { id: "r15", providerId: "p5", providerName: "AquaSplash Waterpark", providerType: "Facility", entityName: "Wave Pool", entityType: "Facility", listingType: "promoted", dailyRefreshCount: 7, lastRefreshed: hoursAgo(1.2), date: today },
-  { id: "r16", providerId: "p6", providerName: "Pro Kick Football Academy", providerType: "Training", entityName: "Junior Development Program", entityType: "Training Program", listingType: "standard", dailyRefreshCount: 2, lastRefreshed: hoursAgo(8), date: today },
-  { id: "r17", providerId: "p6", providerName: "Pro Kick Football Academy", providerType: "Training", entityName: "Elite Striker Camp", entityType: "Training Program", listingType: "promoted", dailyRefreshCount: 11, lastRefreshed: hoursAgo(0.8), date: today },
-  { id: "r18", providerId: "p6", providerName: "Pro Kick Football Academy", providerType: "Training", entityName: "Goalkeeper Masterclass", entityType: "Training Program", listingType: "standard", dailyRefreshCount: 1, lastRefreshed: hoursAgo(12), date: today },
-  { id: "r19", providerId: "p7", providerName: "Coach Sara Khalil", providerType: "Freelance Coach", entityName: "Swimming Coaching — Advanced", entityType: "Coach Profile", listingType: "promoted", dailyRefreshCount: 14, lastRefreshed: hoursAgo(0.6), date: today },
-  { id: "r20", providerId: "p7", providerName: "Coach Sara Khalil", providerType: "Freelance Coach", entityName: "Swimming Coaching — Kids", entityType: "Coach Profile", listingType: "standard", dailyRefreshCount: 4, lastRefreshed: hoursAgo(3.5), date: today },
-  { id: "r21", providerId: "p8", providerName: "Desert Padel Club", providerType: "Facility", entityName: "Padel Court 1", entityType: "Facility", listingType: "promoted", dailyRefreshCount: 10, lastRefreshed: hoursAgo(0.9), date: today },
-  { id: "r22", providerId: "p8", providerName: "Desert Padel Club", providerType: "Facility", entityName: "Padel Court 2", entityType: "Facility", listingType: "standard", dailyRefreshCount: 7, lastRefreshed: hoursAgo(2), date: today },
-  { id: "r23", providerId: "p8", providerName: "Desert Padel Club", providerType: "Facility", entityName: "VIP Padel Suite", entityType: "Facility", listingType: "promoted", dailyRefreshCount: 21, lastRefreshed: hoursAgo(0.15), date: today },
+  {
+    id: "r01",
+    providerId: "p1",
+    providerName: "Champions Sports Club",
+    providerType: "Facility",
+    entityName: "Indoor Basketball Court A",
+    entityType: "Facility",
+    listingType: "promoted",
+    dailyRefreshCount: 22,
+    lastRefreshed: hoursAgo(0.5),
+    date: today,
+  },
+  {
+    id: "r02",
+    providerId: "p1",
+    providerName: "Champions Sports Club",
+    providerType: "Facility",
+    entityName: "Indoor Basketball Court B",
+    entityType: "Facility",
+    listingType: "promoted",
+    dailyRefreshCount: 18,
+    lastRefreshed: hoursAgo(1),
+    date: today,
+  },
+  {
+    id: "r03",
+    providerId: "p1",
+    providerName: "Champions Sports Club",
+    providerType: "Facility",
+    entityName: "Outdoor Football Pitch",
+    entityType: "Facility",
+    listingType: "standard",
+    dailyRefreshCount: 4,
+    lastRefreshed: hoursAgo(3),
+    date: today,
+  },
+  {
+    id: "r04",
+    providerId: "p1",
+    providerName: "Champions Sports Club",
+    providerType: "Facility",
+    entityName: "Swimming Pool",
+    entityType: "Facility",
+    listingType: "standard",
+    dailyRefreshCount: 2,
+    lastRefreshed: hoursAgo(5),
+    date: today,
+  },
+  {
+    id: "r05",
+    providerId: "p2",
+    providerName: "FitZone Academy",
+    providerType: "Training",
+    entityName: "CrossFit Fundamentals",
+    entityType: "Training Program",
+    listingType: "promoted",
+    dailyRefreshCount: 12,
+    lastRefreshed: hoursAgo(0.3),
+    date: today,
+  },
+  {
+    id: "r06",
+    providerId: "p2",
+    providerName: "FitZone Academy",
+    providerType: "Training",
+    entityName: "Yoga for Beginners",
+    entityType: "Training Program",
+    listingType: "standard",
+    dailyRefreshCount: 3,
+    lastRefreshed: hoursAgo(4),
+    date: today,
+  },
+  {
+    id: "r07",
+    providerId: "p2",
+    providerName: "FitZone Academy",
+    providerType: "Training",
+    entityName: "HIIT Bootcamp",
+    entityType: "Training Program",
+    listingType: "promoted",
+    dailyRefreshCount: 8,
+    lastRefreshed: hoursAgo(1.5),
+    date: today,
+  },
+  {
+    id: "r08",
+    providerId: "p3",
+    providerName: "Gulf Tennis Center",
+    providerType: "Facility",
+    entityName: "Clay Court 1",
+    entityType: "Facility",
+    listingType: "promoted",
+    dailyRefreshCount: 25,
+    lastRefreshed: hoursAgo(0.1),
+    date: today,
+  },
+  {
+    id: "r09",
+    providerId: "p3",
+    providerName: "Gulf Tennis Center",
+    providerType: "Facility",
+    entityName: "Clay Court 2",
+    entityType: "Facility",
+    listingType: "standard",
+    dailyRefreshCount: 19,
+    lastRefreshed: hoursAgo(0.2),
+    date: today,
+  },
+  {
+    id: "r10",
+    providerId: "p3",
+    providerName: "Gulf Tennis Center",
+    providerType: "Facility",
+    entityName: "Hard Court 1",
+    entityType: "Facility",
+    listingType: "standard",
+    dailyRefreshCount: 16,
+    lastRefreshed: hoursAgo(0.4),
+    date: today,
+  },
+  {
+    id: "r11",
+    providerId: "p4",
+    providerName: "Coach Ahmed Al-Farsi",
+    providerType: "Freelance Coach",
+    entityName: "Personal Training — Football",
+    entityType: "Coach Profile",
+    listingType: "standard",
+    dailyRefreshCount: 6,
+    lastRefreshed: hoursAgo(2),
+    date: today,
+  },
+  {
+    id: "r12",
+    providerId: "p4",
+    providerName: "Coach Ahmed Al-Farsi",
+    providerType: "Freelance Coach",
+    entityName: "Group Training — Fitness",
+    entityType: "Coach Profile",
+    listingType: "promoted",
+    dailyRefreshCount: 9,
+    lastRefreshed: hoursAgo(1),
+    date: today,
+  },
+  {
+    id: "r13",
+    providerId: "p5",
+    providerName: "AquaSplash Waterpark",
+    providerType: "Facility",
+    entityName: "Main Pool — Adult",
+    entityType: "Facility",
+    listingType: "promoted",
+    dailyRefreshCount: 5,
+    lastRefreshed: hoursAgo(2.5),
+    date: today,
+  },
+  {
+    id: "r14",
+    providerId: "p5",
+    providerName: "AquaSplash Waterpark",
+    providerType: "Facility",
+    entityName: "Kids Pool Zone",
+    entityType: "Facility",
+    listingType: "standard",
+    dailyRefreshCount: 3,
+    lastRefreshed: hoursAgo(6),
+    date: today,
+  },
+  {
+    id: "r15",
+    providerId: "p5",
+    providerName: "AquaSplash Waterpark",
+    providerType: "Facility",
+    entityName: "Wave Pool",
+    entityType: "Facility",
+    listingType: "promoted",
+    dailyRefreshCount: 7,
+    lastRefreshed: hoursAgo(1.2),
+    date: today,
+  },
+  {
+    id: "r16",
+    providerId: "p6",
+    providerName: "Pro Kick Football Academy",
+    providerType: "Training",
+    entityName: "Junior Development Program",
+    entityType: "Training Program",
+    listingType: "standard",
+    dailyRefreshCount: 2,
+    lastRefreshed: hoursAgo(8),
+    date: today,
+  },
+  {
+    id: "r17",
+    providerId: "p6",
+    providerName: "Pro Kick Football Academy",
+    providerType: "Training",
+    entityName: "Elite Striker Camp",
+    entityType: "Training Program",
+    listingType: "promoted",
+    dailyRefreshCount: 11,
+    lastRefreshed: hoursAgo(0.8),
+    date: today,
+  },
+  {
+    id: "r18",
+    providerId: "p6",
+    providerName: "Pro Kick Football Academy",
+    providerType: "Training",
+    entityName: "Goalkeeper Masterclass",
+    entityType: "Training Program",
+    listingType: "standard",
+    dailyRefreshCount: 1,
+    lastRefreshed: hoursAgo(12),
+    date: today,
+  },
+  {
+    id: "r19",
+    providerId: "p7",
+    providerName: "Coach Sara Khalil",
+    providerType: "Freelance Coach",
+    entityName: "Swimming Coaching — Advanced",
+    entityType: "Coach Profile",
+    listingType: "promoted",
+    dailyRefreshCount: 14,
+    lastRefreshed: hoursAgo(0.6),
+    date: today,
+  },
+  {
+    id: "r20",
+    providerId: "p7",
+    providerName: "Coach Sara Khalil",
+    providerType: "Freelance Coach",
+    entityName: "Swimming Coaching — Kids",
+    entityType: "Coach Profile",
+    listingType: "standard",
+    dailyRefreshCount: 4,
+    lastRefreshed: hoursAgo(3.5),
+    date: today,
+  },
+  {
+    id: "r21",
+    providerId: "p8",
+    providerName: "Desert Padel Club",
+    providerType: "Facility",
+    entityName: "Padel Court 1",
+    entityType: "Facility",
+    listingType: "promoted",
+    dailyRefreshCount: 10,
+    lastRefreshed: hoursAgo(0.9),
+    date: today,
+  },
+  {
+    id: "r22",
+    providerId: "p8",
+    providerName: "Desert Padel Club",
+    providerType: "Facility",
+    entityName: "Padel Court 2",
+    entityType: "Facility",
+    listingType: "standard",
+    dailyRefreshCount: 7,
+    lastRefreshed: hoursAgo(2),
+    date: today,
+  },
+  {
+    id: "r23",
+    providerId: "p8",
+    providerName: "Desert Padel Club",
+    providerType: "Facility",
+    entityName: "VIP Padel Suite",
+    entityType: "Facility",
+    listingType: "promoted",
+    dailyRefreshCount: 21,
+    lastRefreshed: hoursAgo(0.15),
+    date: today,
+  },
 ];
 
 // ─── Stat Card ──────────────────────────────────────────────
@@ -114,7 +372,12 @@ function StatCard({
 }) {
   return (
     <div className="bg-white border rounded-xl p-4 flex items-start gap-3.5">
-      <div className={cn("w-10 h-10 rounded-lg flex items-center justify-center shrink-0", color)}>
+      <div
+        className={cn(
+          "w-10 h-10 rounded-lg flex items-center justify-center shrink-0",
+          color,
+        )}
+      >
         <Icon className="h-5 w-5" />
       </div>
       <div className="min-w-0">
@@ -143,7 +406,9 @@ export function RefreshLogPage() {
 
   // ─── Group state ───────────────────────────────────────
   const [groupByProvider, setGroupByProvider] = useState(false);
-  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(new Set());
+  const [collapsedGroups, setCollapsedGroups] = useState<Set<string>>(
+    new Set(),
+  );
 
   // ─── Derived: unique providers ─────────────────────────
   const uniqueProviders = useMemo(() => {
@@ -163,9 +428,11 @@ export function RefreshLogPage() {
         )
           return false;
       }
-      if (providerFilter !== "all" && entry.providerId !== providerFilter) return false;
+      if (providerFilter !== "all" && entry.providerId !== providerFilter)
+        return false;
       if (typeFilter !== "all" && entry.entityType !== typeFilter) return false;
-      if (listingFilter !== "all" && entry.listingType !== listingFilter) return false;
+      if (listingFilter !== "all" && entry.listingType !== listingFilter)
+        return false;
       if (dateFilter) {
         const entryDate = format(entry.date, "yyyy-MM-dd");
         const filterDate = format(dateFilter, "yyyy-MM-dd");
@@ -203,21 +470,38 @@ export function RefreshLogPage() {
   // ─── Grouping ──────────────────────────────────────────
   const grouped = useMemo(() => {
     if (!groupByProvider) return null;
-    const map = new Map<string, { providerName: string; providerType: string; entries: RefreshEntry[] }>();
+    const map = new Map<
+      string,
+      { providerName: string; providerType: string; entries: RefreshEntry[] }
+    >();
     sorted.forEach((e) => {
       if (!map.has(e.providerId)) {
-        map.set(e.providerId, { providerName: e.providerName, providerType: e.providerType, entries: [] });
+        map.set(e.providerId, {
+          providerName: e.providerName,
+          providerType: e.providerType,
+          entries: [],
+        });
       }
       map.get(e.providerId)!.entries.push(e);
     });
-    return Array.from(map.entries()).sort((a, b) => a[1].providerName.localeCompare(b[1].providerName));
+    return Array.from(map.entries()).sort((a, b) =>
+      a[1].providerName.localeCompare(b[1].providerName),
+    );
   }, [sorted, groupByProvider]);
 
   // ─── Stats ─────────────────────────────────────────────
-  const totalRefreshesToday = MOCK_DATA.reduce((s, e) => s + e.dailyRefreshCount, 0);
+  const totalRefreshesToday = MOCK_DATA.reduce(
+    (s, e) => s + e.dailyRefreshCount,
+    0,
+  );
   const activeProviders = new Set(MOCK_DATA.map((e) => e.providerId)).size;
-  const flaggedEntries = MOCK_DATA.filter((e) => e.dailyRefreshCount >= ABUSE_THRESHOLD).length;
-  const avgRefreshes = MOCK_DATA.length > 0 ? Math.round(totalRefreshesToday / MOCK_DATA.length) : 0;
+  const flaggedEntries = MOCK_DATA.filter(
+    (e) => e.dailyRefreshCount >= ABUSE_THRESHOLD,
+  ).length;
+  const avgRefreshes =
+    MOCK_DATA.length > 0
+      ? Math.round(totalRefreshesToday / MOCK_DATA.length)
+      : 0;
 
   const activeFiltersCount = [
     providerFilter !== "all",
@@ -255,7 +539,8 @@ export function RefreshLogPage() {
 
   // ─── Sort icon ─────────────────────────────────────────
   const SortIcon = ({ field }: { field: SortField }) => {
-    if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-gray-300" />;
+    if (sortField !== field)
+      return <ArrowUpDown className="h-3 w-3 text-gray-300" />;
     return sortDir === "asc" ? (
       <ArrowUp className="h-3 w-3 text-[#003B95]" />
     ) : (
@@ -267,10 +552,7 @@ export function RefreshLogPage() {
   const renderRow = (entry: RefreshEntry, showProvider = true) => {
     const isAbuse = entry.dailyRefreshCount >= ABUSE_THRESHOLD;
     return (
-      <TableRow
-        key={entry.id}
-        className={cn(isAbuse && "bg-red-50/50")}
-      >
+      <TableRow key={entry.id} className={cn(isAbuse && "bg-red-50/50")}>
         {showProvider && (
           <TableCell className="px-4">
             <div>
@@ -290,7 +572,7 @@ export function RefreshLogPage() {
               "text-[10px] capitalize",
               entry.listingType === "promoted"
                 ? "bg-blue-50 text-[#003B95] border-blue-200"
-                : "bg-gray-100 text-[#6B7280] border-gray-200"
+                : "bg-gray-100 text-[#6B7280] border-gray-200",
             )}
           >
             {entry.listingType === "promoted" && (
@@ -304,7 +586,7 @@ export function RefreshLogPage() {
             <span
               className={cn(
                 "text-sm tabular-nums",
-                isAbuse ? "text-red-600" : "text-[#111827]"
+                isAbuse ? "text-red-600" : "text-[#111827]",
               )}
             >
               {entry.dailyRefreshCount}
@@ -377,7 +659,11 @@ export function RefreshLogPage() {
           value={flaggedEntries}
           sub={`Threshold: ${ABUSE_THRESHOLD}+ refreshes`}
           icon={AlertTriangle}
-          color={flaggedEntries > 0 ? "bg-red-50 text-red-500" : "bg-gray-50 text-gray-400"}
+          color={
+            flaggedEntries > 0
+              ? "bg-red-50 text-red-500"
+              : "bg-gray-50 text-gray-400"
+          }
         />
       </div>
 
@@ -419,7 +705,7 @@ export function RefreshLogPage() {
             }}
             className={cn(
               "gap-2 shrink-0",
-              groupByProvider && "bg-[#003B95] hover:bg-[#002a6b]"
+              groupByProvider && "bg-[#003B95] hover:bg-[#002a6b]",
             )}
           >
             {groupByProvider ? (
@@ -438,7 +724,7 @@ export function RefreshLogPage() {
             <div className="space-y-1 min-w-[180px]">
               <label className="text-[11px] text-[#6B7280]">Provider</label>
               <Select value={providerFilter} onValueChange={setProviderFilter}>
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="All providers" />
                 </SelectTrigger>
                 <SelectContent>
@@ -456,13 +742,15 @@ export function RefreshLogPage() {
             <div className="space-y-1 min-w-[160px]">
               <label className="text-[11px] text-[#6B7280]">Entity Type</label>
               <Select value={typeFilter} onValueChange={setTypeFilter}>
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="All types" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
                   <SelectItem value="Facility">Facility</SelectItem>
-                  <SelectItem value="Training Program">Training Program</SelectItem>
+                  <SelectItem value="Training Program">
+                    Training Program
+                  </SelectItem>
                   <SelectItem value="Coach Profile">Coach Profile</SelectItem>
                 </SelectContent>
               </Select>
@@ -472,7 +760,7 @@ export function RefreshLogPage() {
             <div className="space-y-1 min-w-[140px]">
               <label className="text-[11px] text-[#6B7280]">Listing</label>
               <Select value={listingFilter} onValueChange={setListingFilter}>
-                <SelectTrigger className="h-9">
+                <SelectTrigger className="h-10">
                   <SelectValue placeholder="All listings" />
                 </SelectTrigger>
                 <SelectContent>
@@ -491,12 +779,14 @@ export function RefreshLogPage() {
                   <Button
                     variant="outline"
                     className={cn(
-                      "h-9 gap-2 text-sm min-w-[140px] justify-start",
-                      !dateFilter && "text-muted-foreground"
+                      "h-10 gap-2 text-sm min-w-[140px] justify-start",
+                      !dateFilter && "text-muted-foreground",
                     )}
                   >
                     <CalendarIcon className="h-3.5 w-3.5" />
-                    {dateFilter ? format(dateFilter, "MMM d, yyyy") : "Pick date"}
+                    {dateFilter
+                      ? format(dateFilter, "MMM d, yyyy")
+                      : "Pick date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="start">
@@ -512,7 +802,12 @@ export function RefreshLogPage() {
 
             {/* Clear */}
             {activeFiltersCount > 0 && (
-              <Button variant="ghost" size="sm" onClick={clearFilters} className="gap-1 text-xs text-red-500 hover:text-red-700 h-9">
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={clearFilters}
+                className="gap-1 text-xs text-red-500 hover:text-red-700 h-10"
+              >
                 <X className="h-3.5 w-3.5" />
                 Clear all
               </Button>
@@ -530,7 +825,8 @@ export function RefreshLogPage() {
         {flaggedEntries > 0 && (
           <p className="text-xs text-red-500 flex items-center gap-1">
             <AlertTriangle className="h-3 w-3" />
-            {flaggedEntries} entities flagged for high activity ({ABUSE_THRESHOLD}+ refreshes)
+            {flaggedEntries} entities flagged for high activity (
+            {ABUSE_THRESHOLD}+ refreshes)
           </p>
         )}
       </div>
@@ -596,8 +892,13 @@ export function RefreshLogPage() {
               grouped.length > 0 ? (
                 grouped.map(([providerId, group]) => {
                   const isCollapsed = collapsedGroups.has(providerId);
-                  const groupTotal = group.entries.reduce((s, e) => s + e.dailyRefreshCount, 0);
-                  const groupFlagged = group.entries.filter((e) => e.dailyRefreshCount >= ABUSE_THRESHOLD).length;
+                  const groupTotal = group.entries.reduce(
+                    (s, e) => s + e.dailyRefreshCount,
+                    0,
+                  );
+                  const groupFlagged = group.entries.filter(
+                    (e) => e.dailyRefreshCount >= ABUSE_THRESHOLD,
+                  ).length;
 
                   return (
                     <GroupBlock key={providerId}>
@@ -621,7 +922,9 @@ export function RefreshLogPage() {
                                 {group.providerName}
                               </p>
                               <p className="text-[11px] text-[#9CA3AF]">
-                                {group.providerType} &middot; {group.entries.length} entities &middot; {groupTotal} total refreshes
+                                {group.providerType} &middot;{" "}
+                                {group.entries.length} entities &middot;{" "}
+                                {groupTotal} total refreshes
                               </p>
                             </div>
                             {groupFlagged > 0 && (
@@ -673,13 +976,19 @@ export function RefreshLogPage() {
           High activity ({ABUSE_THRESHOLD}+ daily refreshes)
         </span>
         <span className="flex items-center gap-1.5">
-          <Badge variant="secondary" className="text-[9px] bg-blue-50 text-[#003B95] border-blue-200 h-4 px-1">
+          <Badge
+            variant="secondary"
+            className="text-[9px] bg-blue-50 text-[#003B95] border-blue-200 h-4 px-1"
+          >
             promoted
           </Badge>
           Promoted listing
         </span>
         <span className="flex items-center gap-1.5">
-          <Badge variant="secondary" className="text-[9px] bg-gray-100 text-[#6B7280] border-gray-200 h-4 px-1">
+          <Badge
+            variant="secondary"
+            className="text-[9px] bg-gray-100 text-[#6B7280] border-gray-200 h-4 px-1"
+          >
             standard
           </Badge>
           Standard listing

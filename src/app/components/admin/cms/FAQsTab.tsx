@@ -234,7 +234,9 @@ export function FAQsTab() {
   const [faqs, setFaqs] = useState<FAQItem[]>(INITIAL_FAQS);
   const [search, setSearch] = useState("");
   const [categoryFilter, setCategoryFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | "Active" | "Inactive">("all");
+  const [statusFilter, setStatusFilter] = useState<
+    "all" | "Active" | "Inactive"
+  >("all");
   const [sortField, setSortField] = useState<SortField>("questionEN");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -255,7 +257,8 @@ export function FAQsTab() {
 
   // ─── Derived Data ─────────────────────────────────────────
 
-  const isFiltered = search.trim() !== "" || categoryFilter !== "all" || statusFilter !== "all";
+  const isFiltered =
+    search.trim() !== "" || categoryFilter !== "all" || statusFilter !== "all";
 
   const availableCategories = useMemo(() => {
     const cats = new Set(faqs.map((f) => f.category));
@@ -272,7 +275,8 @@ export function FAQsTab() {
             faq.answerEN.toLowerCase().includes(q);
           if (!matchesQ) return false;
         }
-        if (categoryFilter !== "all" && faq.category !== categoryFilter) return false;
+        if (categoryFilter !== "all" && faq.category !== categoryFilter)
+          return false;
         if (statusFilter !== "all" && faq.status !== statusFilter) return false;
         return true;
       })
@@ -286,10 +290,14 @@ export function FAQsTab() {
             cmp = a.category.localeCompare(b.category);
             break;
           case "createdDate":
-            cmp = new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime();
+            cmp =
+              new Date(a.createdDate).getTime() -
+              new Date(b.createdDate).getTime();
             break;
           case "updatedDate":
-            cmp = new Date(a.updatedDate).getTime() - new Date(b.updatedDate).getTime();
+            cmp =
+              new Date(a.updatedDate).getTime() -
+              new Date(b.updatedDate).getTime();
             break;
         }
         return sortDir === "asc" ? cmp : -cmp;
@@ -297,7 +305,10 @@ export function FAQsTab() {
   }, [faqs, search, categoryFilter, statusFilter, sortField, sortDir]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
-  const paginatedFaqs = filtered.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedFaqs = filtered.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   // ─── Sorting ──────────────────────────────────────────────
 
@@ -311,7 +322,8 @@ export function FAQsTab() {
   };
 
   function SortIcon({ field }: { field: SortField }) {
-    if (sortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
+    if (sortField !== field)
+      return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
     return sortDir === "asc" ? (
       <ArrowUp className="w-3 h-3 text-[#003B95]" />
     ) : (
@@ -397,8 +409,8 @@ export function FAQsTab() {
                   status: editingFaq.status,
                   updatedDate: now,
                 }
-              : f
-          )
+              : f,
+          ),
         );
         toast.success("FAQ updated successfully.");
       } else {
@@ -451,7 +463,10 @@ export function FAQsTab() {
             {faqs.length} FAQ item{faqs.length !== 1 ? "s" : ""}
           </p>
         </div>
-        <Button onClick={openCreate} className="bg-[#003B95] hover:bg-[#002a6b] gap-2 h-9">
+        <Button
+          onClick={openCreate}
+          className="bg-[#003B95] hover:bg-[#002a6b] gap-2 h-10"
+        >
           <Plus className="h-4 w-4" />
           Create New FAQ
         </Button>
@@ -468,7 +483,7 @@ export function FAQsTab() {
               setCurrentPage(1);
             }}
             placeholder="Search by question or answer..."
-            className="pl-8 h-9 text-sm"
+            className="pl-8 h-10 text-sm"
             role="search"
             aria-label="Search FAQs by question or answer"
           />
@@ -492,7 +507,10 @@ export function FAQsTab() {
             setCurrentPage(1);
           }}
         >
-          <SelectTrigger className="w-48 h-9 text-sm" aria-label="Filter by category">
+          <SelectTrigger
+            className="w-48 h-10 text-sm"
+            aria-label="Filter by category"
+          >
             <SelectValue placeholder="All Categories" />
           </SelectTrigger>
           <SelectContent>
@@ -512,7 +530,10 @@ export function FAQsTab() {
             setCurrentPage(1);
           }}
         >
-          <SelectTrigger className="w-36 h-9 text-sm" aria-label="Filter by status">
+          <SelectTrigger
+            className="w-36 h-10 text-sm"
+            aria-label="Filter by status"
+          >
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -523,7 +544,10 @@ export function FAQsTab() {
         </Select>
 
         {isFiltered && (
-          <button onClick={clearFilters} className="text-xs text-[#003B95] hover:underline">
+          <button
+            onClick={clearFilters}
+            className="text-xs text-[#003B95] hover:underline"
+          >
             Clear Filters
           </button>
         )}
@@ -534,8 +558,15 @@ export function FAQsTab() {
         <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-lg bg-white">
           <HelpCircle className="w-10 h-10 text-gray-200 mb-3" />
           <p className="text-sm font-medium text-[#111827]">No FAQs found</p>
-          <p className="text-xs text-[#6B7280] mt-1">No FAQ items have been created yet.</p>
-          <Button onClick={openCreate} variant="outline" size="sm" className="mt-4 gap-2">
+          <p className="text-xs text-[#6B7280] mt-1">
+            No FAQ items have been created yet.
+          </p>
+          <Button
+            onClick={openCreate}
+            variant="outline"
+            size="sm"
+            className="mt-4 gap-2"
+          >
             <Plus className="h-3.5 w-3.5" /> Create New FAQ
           </Button>
         </div>
@@ -543,8 +574,13 @@ export function FAQsTab() {
         <div className="flex flex-col items-center justify-center py-16 border-2 border-dashed rounded-lg bg-white">
           <Search className="w-10 h-10 text-gray-200 mb-3" />
           <p className="text-sm font-medium text-[#111827]">No FAQs found</p>
-          <p className="text-xs text-[#6B7280] mt-1">No results match your search or filters.</p>
-          <button onClick={clearFilters} className="text-xs text-[#003B95] hover:underline mt-3">
+          <p className="text-xs text-[#6B7280] mt-1">
+            No results match your search or filters.
+          </p>
+          <button
+            onClick={clearFilters}
+            className="text-xs text-[#003B95] hover:underline mt-3"
+          >
             Clear all filters
           </button>
         </div>
@@ -581,7 +617,9 @@ export function FAQsTab() {
                     key={faq.id}
                     faq={faq}
                     isExpanded={isExpanded}
-                    onToggleExpand={() => setExpandedId(isExpanded ? null : faq.id)}
+                    onToggleExpand={() =>
+                      setExpandedId(isExpanded ? null : faq.id)
+                    }
                     onEdit={() => openEdit(faq)}
                     onDelete={() => setDeleteTarget(faq)}
                   />
@@ -595,7 +633,8 @@ export function FAQsTab() {
             <div className="flex items-center gap-2 text-xs text-[#6B7280]">
               <span>
                 Showing {(currentPage - 1) * pageSize + 1}-
-                {Math.min(currentPage * pageSize, filtered.length)} of {filtered.length}
+                {Math.min(currentPage * pageSize, filtered.length)} of{" "}
+                {filtered.length}
               </span>
               <span className="text-gray-300">|</span>
               <span>Rows per page:</span>
@@ -623,7 +662,10 @@ export function FAQsTab() {
               </Button>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter(
-                  (p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1
+                  (p) =>
+                    p === 1 ||
+                    p === totalPages ||
+                    Math.abs(p - currentPage) <= 1,
                 )
                 .map((p, i, arr) => {
                   const showEllipsis = i > 0 && p - arr[i - 1] > 1;
@@ -638,7 +680,8 @@ export function FAQsTab() {
                         onClick={() => setCurrentPage(p)}
                         className={cn(
                           "h-7 w-7 p-0 text-xs",
-                          currentPage === p && "bg-[#003B95] hover:bg-[#002a6b]"
+                          currentPage === p &&
+                            "bg-[#003B95] hover:bg-[#002a6b]",
                         )}
                       >
                         {p}
@@ -687,12 +730,18 @@ export function FAQsTab() {
                   id="faq-q-en"
                   value={editingFaq.questionEN}
                   onChange={(e) => {
-                    setEditingFaq({ ...editingFaq, questionEN: e.target.value });
+                    setEditingFaq({
+                      ...editingFaq,
+                      questionEN: e.target.value,
+                    });
                     setFormErrors((p) => ({ ...p, questionEN: undefined }));
                   }}
                   placeholder="Enter question in English"
                   maxLength={500}
-                  className={cn("text-sm", formErrors.questionEN && "border-red-400")}
+                  className={cn(
+                    "text-sm",
+                    formErrors.questionEN && "border-red-400",
+                  )}
                   aria-required="true"
                 />
                 <div className="flex items-center justify-between">
@@ -711,7 +760,7 @@ export function FAQsTab() {
                         ? "text-red-500"
                         : editingFaq.questionEN.length > 400
                           ? "text-amber-500"
-                          : "text-gray-400"
+                          : "text-gray-400",
                     )}
                   >
                     {editingFaq.questionEN.length}/500
@@ -734,7 +783,10 @@ export function FAQsTab() {
                   placeholder="Enter answer in English"
                   maxLength={2000}
                   rows={5}
-                  className={cn("text-sm", formErrors.answerEN && "border-red-400")}
+                  className={cn(
+                    "text-sm",
+                    formErrors.answerEN && "border-red-400",
+                  )}
                   aria-required="true"
                 />
                 <div className="flex items-center justify-between">
@@ -753,7 +805,7 @@ export function FAQsTab() {
                         ? "text-red-500"
                         : editingFaq.answerEN.length > 1500
                           ? "text-amber-500"
-                          : "text-gray-400"
+                          : "text-gray-400",
                     )}
                   >
                     {editingFaq.answerEN.length}/2000
@@ -771,13 +823,19 @@ export function FAQsTab() {
                     id="faq-category"
                     value={editingFaq.category}
                     onChange={(e) => {
-                      setEditingFaq({ ...editingFaq, category: e.target.value });
+                      setEditingFaq({
+                        ...editingFaq,
+                        category: e.target.value,
+                      });
                       setFormErrors((p) => ({ ...p, category: undefined }));
                     }}
                     placeholder="Select or type a category"
                     maxLength={100}
                     list="faq-categories"
-                    className={cn("text-sm", formErrors.category && "border-red-400")}
+                    className={cn(
+                      "text-sm",
+                      formErrors.category && "border-red-400",
+                    )}
                     aria-required="true"
                   />
                   <datalist id="faq-categories">
@@ -804,7 +862,7 @@ export function FAQsTab() {
               {/* Status */}
               <div className="space-y-2">
                 <Label>Status</Label>
-                <div className="flex items-center gap-3 h-9">
+                <div className="flex items-center gap-3 h-10">
                   <Switch
                     checked={editingFaq.status === "Active"}
                     onCheckedChange={(checked) =>
@@ -815,14 +873,20 @@ export function FAQsTab() {
                     }
                     className="data-[state=checked]:bg-[#003B95]"
                   />
-                  <span className="text-sm text-[#6B7280]">{editingFaq.status}</span>
+                  <span className="text-sm text-[#6B7280]">
+                    {editingFaq.status}
+                  </span>
                 </div>
               </div>
             </div>
           )}
 
           <SheetFooter className="px-4 pb-4 flex gap-2">
-            <Button variant="outline" onClick={() => setPanelOpen(false)} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={() => setPanelOpen(false)}
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button
@@ -840,7 +904,10 @@ export function FAQsTab() {
       </Sheet>
 
       {/* ─── Delete Confirmation ───────────────────────────── */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Delete FAQ</AlertDialogTitle>
@@ -850,7 +917,10 @@ export function FAQsTab() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -878,10 +948,7 @@ function FaqTableRow({
   return (
     <>
       <TableRow
-        className={cn(
-          "group",
-          faq.status === "Inactive" && "opacity-60"
-        )}
+        className={cn("group", faq.status === "Inactive" && "opacity-60")}
       >
         <TableCell className="px-3">
           <button
@@ -893,7 +960,7 @@ function FaqTableRow({
             <ChevronDown
               className={cn(
                 "h-4 w-4 text-gray-400 shrink-0 transition-transform",
-                isExpanded && "rotate-180"
+                isExpanded && "rotate-180",
               )}
             />
             <span className="text-sm text-[#111827] group-hover/expand:text-[#003B95] transition-colors">
@@ -913,7 +980,7 @@ function FaqTableRow({
               "text-[10px] gap-1",
               faq.status === "Active"
                 ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                : "bg-gray-100 text-gray-500 border-gray-200"
+                : "bg-gray-100 text-gray-500 border-gray-200",
             )}
           >
             {faq.status === "Active" ? (

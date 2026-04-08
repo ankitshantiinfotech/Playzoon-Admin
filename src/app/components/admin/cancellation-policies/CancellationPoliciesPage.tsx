@@ -97,18 +97,54 @@ const BOOKING_TYPE_CFG: Record<
   BookingType,
   { icon: ElementType; bg: string; text: string; border: string; label: string }
 > = {
-  Facility: { icon: Building2,     bg: "bg-blue-50",   text: "text-blue-700",   border: "border-blue-200",   label: "Facility" },
-  Training: { icon: GraduationCap, bg: "bg-purple-50", text: "text-purple-700", border: "border-purple-200", label: "Training" },
-  Coach:    { icon: Users,         bg: "bg-amber-50",  text: "text-amber-700",  border: "border-amber-200",  label: "Freelancer Coach" },
+  Facility: {
+    icon: Building2,
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    border: "border-blue-200",
+    label: "Facility",
+  },
+  Training: {
+    icon: GraduationCap,
+    bg: "bg-purple-50",
+    text: "text-purple-700",
+    border: "border-purple-200",
+    label: "Training",
+  },
+  Coach: {
+    icon: Users,
+    bg: "bg-amber-50",
+    text: "text-amber-700",
+    border: "border-amber-200",
+    label: "Freelancer Coach",
+  },
 };
 
 const STATUS_CFG: Record<
   PolicyStatus,
   { bg: string; text: string; border: string; dot: string; label: string }
 > = {
-  Active:   { bg: "bg-emerald-50", text: "text-emerald-700", border: "border-emerald-200", dot: "bg-emerald-500", label: "Active"   },
-  Inactive: { bg: "bg-gray-50",    text: "text-gray-500",    border: "border-gray-200",    dot: "bg-gray-400",    label: "Inactive" },
-  Draft:    { bg: "bg-blue-50",    text: "text-blue-700",    border: "border-blue-200",    dot: "bg-blue-500",    label: "Draft"    },
+  Active: {
+    bg: "bg-emerald-50",
+    text: "text-emerald-700",
+    border: "border-emerald-200",
+    dot: "bg-emerald-500",
+    label: "Active",
+  },
+  Inactive: {
+    bg: "bg-gray-50",
+    text: "text-gray-500",
+    border: "border-gray-200",
+    dot: "bg-gray-400",
+    label: "Inactive",
+  },
+  Draft: {
+    bg: "bg-blue-50",
+    text: "text-blue-700",
+    border: "border-blue-200",
+    dot: "bg-blue-500",
+    label: "Draft",
+  },
 };
 
 // ─── Small helpers ─────────────────────────────────────────────────────────────
@@ -129,7 +165,12 @@ function PolicyStatusBadge({ status }: { status: PolicyStatus }) {
   return (
     <Badge
       variant="outline"
-      className={cn("text-[11px] gap-1.5 border shrink-0", cfg.bg, cfg.text, cfg.border)}
+      className={cn(
+        "text-[11px] gap-1.5 border shrink-0",
+        cfg.bg,
+        cfg.text,
+        cfg.border,
+      )}
     >
       <span className={cn("h-1.5 w-1.5 rounded-full shrink-0", cfg.dot)} />
       {cfg.label}
@@ -141,7 +182,10 @@ function BookingTypeBadge({ type }: { type: BookingType }) {
   const cfg = BOOKING_TYPE_CFG[type];
   const Icon = cfg.icon;
   return (
-    <Badge variant="outline" className={cn("text-[11px] gap-1 border", cfg.bg, cfg.text, cfg.border)}>
+    <Badge
+      variant="outline"
+      className={cn("text-[11px] gap-1 border", cfg.bg, cfg.text, cfg.border)}
+    >
       <Icon className="h-2.5 w-2.5" />
       {cfg.label}
     </Badge>
@@ -155,15 +199,27 @@ function TierBar({ tiers }: { tiers: PolicyTier[] }) {
       {tiers.map((tier) => (
         <div key={tier.id} className="flex items-center gap-2">
           <div className="w-[88px] shrink-0">
-            <span className="text-[10px] text-gray-400 tabular-nums">{tierTimeShortLabel(tier)}</span>
+            <span className="text-[10px] text-gray-400 tabular-nums">
+              {tierTimeShortLabel(tier)}
+            </span>
           </div>
           <div className="flex-1 h-2 bg-gray-100 rounded-full overflow-hidden">
             <div
-              className={cn("h-full rounded-full transition-all", refundColorClass(tier.refundPercentage))}
-              style={{ width: `${Math.max(tier.refundPercentage, tier.refundPercentage === 0 ? 0 : 4)}%` }}
+              className={cn(
+                "h-full rounded-full transition-all",
+                refundColorClass(tier.refundPercentage),
+              )}
+              style={{
+                width: `${Math.max(tier.refundPercentage, tier.refundPercentage === 0 ? 0 : 4)}%`,
+              }}
             />
           </div>
-          <span className={cn("text-[11px] w-9 text-right tabular-nums shrink-0", refundTextClass(tier.refundPercentage))}>
+          <span
+            className={cn(
+              "text-[11px] w-9 text-right tabular-nums shrink-0",
+              refundTextClass(tier.refundPercentage),
+            )}
+          >
             {tier.refundPercentage}%
           </span>
         </div>
@@ -174,7 +230,9 @@ function TierBar({ tiers }: { tiers: PolicyTier[] }) {
 
 /** Coverage card for one booking type — shows active policy or BR-004 warning */
 function CoverageCard({
-  type, activePolicy, onClick,
+  type,
+  activePolicy,
+  onClick,
 }: {
   type: BookingType;
   activePolicy?: CancellationPolicy;
@@ -193,7 +251,12 @@ function CoverageCard({
           : "bg-amber-50/40 border-amber-200 hover:border-amber-300",
       )}
     >
-      <div className={cn("flex items-center justify-center h-9 w-9 rounded-lg shrink-0", cfg.bg)}>
+      <div
+        className={cn(
+          "flex items-center justify-center h-10 w-9 rounded-lg shrink-0",
+          cfg.bg,
+        )}
+      >
         <Icon className={cn("h-4 w-4", cfg.text)} />
       </div>
       <div className="min-w-0 flex-1">
@@ -218,7 +281,9 @@ function CoverageCard({
               <AlertTriangle className="h-3 w-3" />
               No active policy — 0% refund (BR-004)
             </p>
-            <p className="text-[10px] text-gray-400 mt-0.5">Fully non-refundable by default</p>
+            <p className="text-[10px] text-gray-400 mt-0.5">
+              Fully non-refundable by default
+            </p>
           </>
         )}
       </div>
@@ -232,8 +297,11 @@ function SkeletonCoverageCards() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
       {Array.from({ length: 3 }).map((_, i) => (
-        <div key={i} className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 animate-pulse">
-          <div className="h-9 w-9 rounded-lg bg-gray-200" />
+        <div
+          key={i}
+          className="flex items-start gap-3 p-4 rounded-xl border border-gray-200 animate-pulse"
+        >
+          <div className="h-10 w-9 rounded-lg bg-gray-200" />
           <div className="space-y-2 flex-1">
             <div className="h-3 w-24 bg-gray-200 rounded" />
             <div className="h-3 w-36 bg-gray-100 rounded" />
@@ -249,7 +317,10 @@ function SkeletonPolicyCards() {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="bg-white border rounded-xl p-5 space-y-4 animate-pulse">
+        <div
+          key={i}
+          className="bg-white border rounded-xl p-5 space-y-4 animate-pulse"
+        >
           <div className="flex items-center gap-2">
             <div className="h-5 w-14 bg-gray-200 rounded-full" />
             <div className="h-5 w-16 bg-gray-100 rounded-full" />
@@ -305,7 +376,10 @@ function PolicyCard({
           <div className="flex items-center gap-2 flex-wrap">
             <PolicyStatusBadge status={policy.status} />
             {policy.isDefault && (
-              <Badge variant="outline" className="text-[11px] gap-1 border bg-amber-50 text-amber-700 border-amber-200">
+              <Badge
+                variant="outline"
+                className="text-[11px] gap-1 border bg-amber-50 text-amber-700 border-amber-200"
+              >
                 <Star className="h-2.5 w-2.5" /> Default
               </Badge>
             )}
@@ -313,11 +387,17 @@ function PolicyCard({
               <BookingTypeBadge key={t} type={t} />
             ))}
           </div>
-          <p className="text-base text-gray-900 mt-2 leading-snug">{policy.name}</p>
+          <p className="text-base text-gray-900 mt-2 leading-snug">
+            {policy.name}
+          </p>
           {policy.cancellationFee > 0 && (
             <p className="text-xs text-gray-500 mt-1 flex items-center gap-1">
               <DollarSign className="h-3 w-3" />
-              Cancellation fee: {fmtCurrency(policy.cancellationFee, policy.cancellationFeeCurrency)}
+              Cancellation fee:{" "}
+              {fmtCurrency(
+                policy.cancellationFee,
+                policy.cancellationFeeCurrency,
+              )}
             </p>
           )}
         </div>
@@ -328,30 +408,61 @@ function PolicyCard({
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-48 text-sm">
-            <DropdownMenuItem onClick={() => { onEdit(policy); setMenuOpen(false); }} className="gap-2">
+            <DropdownMenuItem
+              onClick={() => {
+                onEdit(policy);
+                setMenuOpen(false);
+              }}
+              className="gap-2"
+            >
               <Edit2 className="h-3.5 w-3.5" /> Edit Policy
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => { onDuplicate(policy); setMenuOpen(false); }} className="gap-2">
+            <DropdownMenuItem
+              onClick={() => {
+                onDuplicate(policy);
+                setMenuOpen(false);
+              }}
+              className="gap-2"
+            >
               <Copy className="h-3.5 w-3.5" /> Duplicate
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             {!isActive ? (
-              <DropdownMenuItem onClick={() => { onActivate(policy); setMenuOpen(false); }} className="gap-2 text-emerald-700 focus:bg-emerald-50">
+              <DropdownMenuItem
+                onClick={() => {
+                  onActivate(policy);
+                  setMenuOpen(false);
+                }}
+                className="gap-2 text-emerald-700 focus:bg-emerald-50"
+              >
                 <CheckCircle className="h-3.5 w-3.5" /> Activate
               </DropdownMenuItem>
             ) : (
-              <DropdownMenuItem onClick={() => { onDeactivate(policy); setMenuOpen(false); }} className="gap-2 text-orange-700 focus:bg-orange-50">
+              <DropdownMenuItem
+                onClick={() => {
+                  onDeactivate(policy);
+                  setMenuOpen(false);
+                }}
+                className="gap-2 text-orange-700 focus:bg-orange-50"
+              >
                 <XCircle className="h-3.5 w-3.5" /> Deactivate
               </DropdownMenuItem>
             )}
             <DropdownMenuSeparator />
             <DropdownMenuItem
-              onClick={() => { onDelete(policy); setMenuOpen(false); }}
+              onClick={() => {
+                onDelete(policy);
+                setMenuOpen(false);
+              }}
               className="gap-2 text-red-600 focus:bg-red-50"
               disabled={isActive || hasAssignments}
             >
               <Trash2 className="h-3.5 w-3.5" />
-              {isActive ? "Cannot delete active" : hasAssignments ? "In use by providers" : "Delete"}
+              {isActive
+                ? "Cannot delete active"
+                : hasAssignments
+                  ? "In use by providers"
+                  : "Delete"}
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
@@ -360,7 +471,8 @@ function PolicyCard({
       {/* Tier Bar */}
       <div className="border-t pt-3">
         <p className="text-[10px] uppercase tracking-wider text-gray-400 mb-2">
-          {policy.tiers.length} tier{policy.tiers.length !== 1 ? "s" : ""} · Refund timeline
+          {policy.tiers.length} tier{policy.tiers.length !== 1 ? "s" : ""} ·
+          Refund timeline
         </p>
         <TierBar tiers={policy.tiers} />
       </div>
@@ -377,7 +489,8 @@ function PolicyCard({
       {hasAssignments && (
         <div className="flex items-center gap-1.5 text-[11px] text-gray-500">
           <Users className="h-3 w-3 shrink-0" />
-          Assigned to {policy.assignedProviders} active provider{policy.assignedProviders !== 1 ? "s" : ""}
+          Assigned to {policy.assignedProviders} active provider
+          {policy.assignedProviders !== 1 ? "s" : ""}
         </div>
       )}
 
@@ -424,7 +537,11 @@ function TierRow({
   tier: TierDraft;
   index: number;
   total: number;
-  errors: { lowerValue?: string; upperValue?: string; refundPercentage?: string };
+  errors: {
+    lowerValue?: string;
+    upperValue?: string;
+    refundPercentage?: string;
+  };
   onChange: (updates: Partial<TierDraft>) => void;
   onRemove: () => void;
 }) {
@@ -436,18 +553,21 @@ function TierRow({
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <GripVertical className="h-4 w-4 text-gray-300" />
-          <span className="text-xs text-gray-500 uppercase tracking-wider">Tier {index + 1}</span>
-          {tier.refundPercentage !== "" && !isNaN(parseFloat(tier.refundPercentage)) && (
-            <Badge
-              variant="outline"
-              className={cn(
-                "text-[10px] border ml-1",
-                refundBgClass(parseFloat(tier.refundPercentage)),
-              )}
-            >
-              {parseFloat(tier.refundPercentage)}% refund
-            </Badge>
-          )}
+          <span className="text-xs text-gray-500 uppercase tracking-wider">
+            Tier {index + 1}
+          </span>
+          {tier.refundPercentage !== "" &&
+            !isNaN(parseFloat(tier.refundPercentage)) && (
+              <Badge
+                variant="outline"
+                className={cn(
+                  "text-[10px] border ml-1",
+                  refundBgClass(parseFloat(tier.refundPercentage)),
+                )}
+              >
+                {parseFloat(tier.refundPercentage)}% refund
+              </Badge>
+            )}
         </div>
         <button
           type="button"
@@ -542,7 +662,9 @@ function TierRow({
                   />
                   <Select
                     value={tier.upperUnit}
-                    onValueChange={(v) => onChange({ upperUnit: v as TimeUnit })}
+                    onValueChange={(v) =>
+                      onChange({ upperUnit: v as TimeUnit })
+                    }
                   >
                     <SelectTrigger className="h-8 w-[80px] text-xs">
                       <SelectValue />
@@ -554,12 +676,16 @@ function TierRow({
                   </Select>
                 </div>
                 {errors.upperValue && (
-                  <p className="text-[10px] text-red-500">{errors.upperValue}</p>
+                  <p className="text-[10px] text-red-500">
+                    {errors.upperValue}
+                  </p>
                 )}
               </div>
             </>
           )}
-          <span className="text-xs text-gray-400 self-center">before session</span>
+          <span className="text-xs text-gray-400 self-center">
+            before session
+          </span>
         </div>
       </div>
 
@@ -585,22 +711,35 @@ function TierRow({
                   errors.refundPercentage && "border-red-300",
                 )}
               />
-              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">%</span>
+              <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400 pointer-events-none">
+                %
+              </span>
             </div>
             {/* Visual swatch */}
-            {tier.refundPercentage !== "" && !isNaN(parseFloat(tier.refundPercentage)) && (
-              <div className="flex items-center gap-1.5">
-                <div
-                  className={cn("h-2 w-10 rounded-full", refundColorClass(parseFloat(tier.refundPercentage)))}
-                />
-                <span className={cn("text-[11px] tabular-nums", refundTextClass(parseFloat(tier.refundPercentage)))}>
-                  {parseFloat(tier.refundPercentage)}%
-                </span>
-              </div>
-            )}
+            {tier.refundPercentage !== "" &&
+              !isNaN(parseFloat(tier.refundPercentage)) && (
+                <div className="flex items-center gap-1.5">
+                  <div
+                    className={cn(
+                      "h-2 w-10 rounded-full",
+                      refundColorClass(parseFloat(tier.refundPercentage)),
+                    )}
+                  />
+                  <span
+                    className={cn(
+                      "text-[11px] tabular-nums",
+                      refundTextClass(parseFloat(tier.refundPercentage)),
+                    )}
+                  >
+                    {parseFloat(tier.refundPercentage)}%
+                  </span>
+                </div>
+              )}
           </div>
           {errors.refundPercentage && (
-            <p className="text-[10px] text-red-500">{errors.refundPercentage}</p>
+            <p className="text-[10px] text-red-500">
+              {errors.refundPercentage}
+            </p>
           )}
         </div>
 
@@ -660,16 +799,27 @@ function PolicyPreview({
 
   return (
     <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 space-y-3">
-      <p className="text-[11px] text-gray-400 uppercase tracking-wider">Live Preview</p>
+      <p className="text-[11px] text-gray-400 uppercase tracking-wider">
+        Live Preview
+      </p>
 
       <div>
-        <p className="text-sm text-gray-900">{name || <span className="text-gray-300 italic">Untitled Policy</span>}</p>
+        <p className="text-sm text-gray-900">
+          {name || (
+            <span className="text-gray-300 italic">Untitled Policy</span>
+          )}
+        </p>
         <div className="flex flex-wrap gap-1 mt-1.5">
-          {applicableTo.length > 0
-            ? applicableTo.map((t) => <BookingTypeBadge key={t} type={t} />)
-            : <span className="text-[11px] text-gray-400">No types selected</span>}
+          {applicableTo.length > 0 ? (
+            applicableTo.map((t) => <BookingTypeBadge key={t} type={t} />)
+          ) : (
+            <span className="text-[11px] text-gray-400">No types selected</span>
+          )}
           {isDefault && (
-            <Badge variant="outline" className="text-[10px] gap-0.5 border bg-amber-50 text-amber-700 border-amber-200">
+            <Badge
+              variant="outline"
+              className="text-[10px] gap-0.5 border bg-amber-50 text-amber-700 border-amber-200"
+            >
               <Star className="h-2 w-2" /> Default
             </Badge>
           )}
@@ -690,15 +840,27 @@ function PolicyPreview({
             const label = (() => {
               const f = (v: number, u: TimeUnit) =>
                 `${v} ${v === 1 ? u.slice(0, -1) : u}`;
-              if (comparison === "More than") return `> ${f(lv, lu)} before session`;
-              if (comparison === "Less than") return `< ${f(lv, lu)} before session`;
+              if (comparison === "More than")
+                return `> ${f(lv, lu)} before session`;
+              if (comparison === "Less than")
+                return `< ${f(lv, lu)} before session`;
               return `${f(lv, lu)} – ${uvStr} before session`;
             })();
             return (
               <div key={tier.id} className="flex items-center gap-3">
-                <div className={cn("h-2 w-2 rounded-full shrink-0", refundColorClass(pct))} />
+                <div
+                  className={cn(
+                    "h-2 w-2 rounded-full shrink-0",
+                    refundColorClass(pct),
+                  )}
+                />
                 <p className="text-xs text-gray-600 flex-1">{label}</p>
-                <span className={cn("text-xs tabular-nums shrink-0", refundTextClass(pct))}>
+                <span
+                  className={cn(
+                    "text-xs tabular-nums shrink-0",
+                    refundTextClass(pct),
+                  )}
+                >
                   {pct}% refund{tier.platformFeeRefundable ? " + fee" : ""}
                 </span>
               </div>
@@ -719,12 +881,14 @@ function PolicyPreview({
       )}
 
       <div className="border-t pt-2">
-        <span className={cn(
-          "text-[11px] px-2 py-0.5 rounded-full border",
-          saveAsActive
-            ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-            : "bg-blue-50 text-blue-600 border-blue-200",
-        )}>
+        <span
+          className={cn(
+            "text-[11px] px-2 py-0.5 rounded-full border",
+            saveAsActive
+              ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+              : "bg-blue-50 text-blue-600 border-blue-200",
+          )}
+        >
           Will be saved as: {saveAsActive ? "Active" : "Draft"}
         </span>
       </div>
@@ -757,7 +921,8 @@ function PolicyEditorDialog({
           name: editing.name,
           applicableTo: [...editing.applicableTo],
           tiers: tiersToDraftTiers(editing.tiers),
-          cancellationFee: editing.cancellationFee > 0 ? String(editing.cancellationFee) : "",
+          cancellationFee:
+            editing.cancellationFee > 0 ? String(editing.cancellationFee) : "",
           cancellationFeeCurrency: editing.cancellationFeeCurrency,
           isDefault: editing.isDefault,
           saveAsActive: editing.status === "Active",
@@ -776,7 +941,10 @@ function PolicyEditorDialog({
               name: editing.name,
               applicableTo: [...editing.applicableTo],
               tiers: tiersToDraftTiers(editing.tiers),
-              cancellationFee: editing.cancellationFee > 0 ? String(editing.cancellationFee) : "",
+              cancellationFee:
+                editing.cancellationFee > 0
+                  ? String(editing.cancellationFee)
+                  : "",
               cancellationFeeCurrency: editing.cancellationFeeCurrency,
               isDefault: editing.isDefault,
               saveAsActive: editing.status === "Active",
@@ -846,10 +1014,16 @@ function PolicyEditorDialog({
   const tierErrors = errors.tiers ?? draft.tiers.map(() => ({}));
 
   // Check if toggling isDefault would replace an existing default
-  const willReplaceDefault = draft.isDefault && existingDefault && existingDefault.id !== editing?.id;
+  const willReplaceDefault =
+    draft.isDefault && existingDefault && existingDefault.id !== editing?.id;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v && !isSaving) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v && !isSaving) onClose();
+      }}
+    >
       <DialogContent className="max-w-3xl max-h-[90vh] overflow-hidden flex flex-col p-0">
         {/* Fixed header */}
         <div className="px-6 py-5 border-b shrink-0">
@@ -861,7 +1035,8 @@ function PolicyEditorDialog({
               {isNew ? "Create Cancellation Policy" : `Edit — ${editing!.name}`}
             </DialogTitle>
             <DialogDescription className="text-xs text-gray-500">
-              Configure cancellation windows, refund tiers, and fees. BR-003: changes apply to future bookings only.
+              Configure cancellation windows, refund tiers, and fees. BR-003:
+              changes apply to future bookings only.
             </DialogDescription>
           </DialogHeader>
         </div>
@@ -875,26 +1050,40 @@ function PolicyEditorDialog({
               <div className="space-y-1.5">
                 <label className="text-sm text-gray-700">
                   Policy Name <span className="text-red-500">*</span>
-                  <span className="text-gray-400 text-xs ml-1">(2–60 chars)</span>
+                  <span className="text-gray-400 text-xs ml-1">
+                    (2–60 chars)
+                  </span>
                 </label>
                 <Input
                   value={draft.name}
-                  onChange={(e) => setDraft((p) => ({ ...p, name: e.target.value }))}
+                  onChange={(e) =>
+                    setDraft((p) => ({ ...p, name: e.target.value }))
+                  }
                   placeholder="e.g. Standard 24-Hour Policy"
-                  className={cn("h-9 text-sm", errors.name && "border-red-300")}
+                  className={cn(
+                    "h-10 text-sm",
+                    errors.name && "border-red-300",
+                  )}
                   maxLength={60}
                   disabled={isSaving}
                 />
                 <div className="flex items-center justify-between">
                   {errors.name ? (
                     <p className="text-[11px] text-red-500 flex items-center gap-1">
-                      <AlertTriangle className="h-3 w-3" />{errors.name}
+                      <AlertTriangle className="h-3 w-3" />
+                      {errors.name}
                     </p>
-                  ) : <span />}
-                  <span className={cn(
-                    "text-[10px] tabular-nums",
-                    draft.name.trim().length > 55 ? "text-amber-500" : "text-gray-400",
-                  )}>
+                  ) : (
+                    <span />
+                  )}
+                  <span
+                    className={cn(
+                      "text-[10px] tabular-nums",
+                      draft.name.trim().length > 55
+                        ? "text-amber-500"
+                        : "text-gray-400",
+                    )}
+                  >
                     {draft.name.trim().length}/60
                   </span>
                 </div>
@@ -904,7 +1093,9 @@ function PolicyEditorDialog({
               <div className="space-y-2">
                 <label className="text-sm text-gray-700">
                   Applicable To <span className="text-red-500">*</span>
-                  <span className="text-gray-400 text-xs ml-1">(select one or more)</span>
+                  <span className="text-gray-400 text-xs ml-1">
+                    (select one or more)
+                  </span>
                 </label>
                 <div className="flex gap-2 flex-wrap">
                   {BOOKING_TYPES.map((type) => {
@@ -924,7 +1115,12 @@ function PolicyEditorDialog({
                             : "border-gray-200 text-gray-400 hover:border-gray-300 bg-white",
                         )}
                       >
-                        <Icon className={cn("h-4 w-4", selected ? cfg.text : "text-gray-300")} />
+                        <Icon
+                          className={cn(
+                            "h-4 w-4",
+                            selected ? cfg.text : "text-gray-300",
+                          )}
+                        />
                         {cfg.label}
                       </button>
                     );
@@ -932,7 +1128,8 @@ function PolicyEditorDialog({
                 </div>
                 {errors.applicableTo && (
                   <p className="text-[11px] text-red-500 flex items-center gap-1">
-                    <AlertTriangle className="h-3 w-3" />{errors.applicableTo}
+                    <AlertTriangle className="h-3 w-3" />
+                    {errors.applicableTo}
                   </p>
                 )}
               </div>
@@ -941,14 +1138,18 @@ function PolicyEditorDialog({
               <div className="space-y-1.5">
                 <label className="text-sm text-gray-700">
                   Cancellation Fee
-                  <span className="text-gray-400 text-xs ml-1">(optional flat fee)</span>
+                  <span className="text-gray-400 text-xs ml-1">
+                    (optional flat fee)
+                  </span>
                 </label>
                 <div className="flex items-center gap-2">
                   <Select
                     value={draft.cancellationFeeCurrency}
-                    onValueChange={(v) => setDraft((p) => ({ ...p, cancellationFeeCurrency: v }))}
+                    onValueChange={(v) =>
+                      setDraft((p) => ({ ...p, cancellationFeeCurrency: v }))
+                    }
                   >
-                    <SelectTrigger className="h-9 w-[80px] text-xs">
+                    <SelectTrigger className="h-10 w-[80px] text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -965,12 +1166,19 @@ function PolicyEditorDialog({
                     min={0}
                     step={1}
                     value={draft.cancellationFee}
-                    onChange={(e) => setDraft((p) => ({ ...p, cancellationFee: e.target.value }))}
+                    onChange={(e) =>
+                      setDraft((p) => ({
+                        ...p,
+                        cancellationFee: e.target.value,
+                      }))
+                    }
                     placeholder="0.00"
-                    className="h-9 w-[120px] text-sm tabular-nums"
+                    className="h-10 w-[120px] text-sm tabular-nums"
                     disabled={isSaving}
                   />
-                  <span className="text-xs text-gray-400">Flat fee charged on every cancellation</span>
+                  <span className="text-xs text-gray-400">
+                    Flat fee charged on every cancellation
+                  </span>
                 </div>
               </div>
 
@@ -981,8 +1189,12 @@ function PolicyEditorDialog({
                     Cancellation Tiers <span className="text-red-500">*</span>
                     <span className="text-gray-400 text-xs ml-1">(min 1)</span>
                   </label>
-                  <Badge variant="outline" className="text-[11px] text-gray-500 border-gray-200">
-                    {draft.tiers.length} tier{draft.tiers.length !== 1 ? "s" : ""}
+                  <Badge
+                    variant="outline"
+                    className="text-[11px] text-gray-500 border-gray-200"
+                  >
+                    {draft.tiers.length} tier
+                    {draft.tiers.length !== 1 ? "s" : ""}
                   </Badge>
                 </div>
 
@@ -1022,12 +1234,15 @@ function PolicyEditorDialog({
                       Set as Default Policy
                     </label>
                     <p className="text-xs text-gray-400 mt-0.5">
-                      The default policy applies platform-wide to all new providers.
+                      The default policy applies platform-wide to all new
+                      providers.
                     </p>
                   </div>
                   <Switch
                     checked={draft.isDefault}
-                    onCheckedChange={(v) => setDraft((p) => ({ ...p, isDefault: v }))}
+                    onCheckedChange={(v) =>
+                      setDraft((p) => ({ ...p, isDefault: v }))
+                    }
                     disabled={isSaving}
                   />
                 </div>
@@ -1035,8 +1250,9 @@ function PolicyEditorDialog({
                   <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
                     <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
                     <p className="text-xs text-amber-700">
-                      This will replace the current default policy: <strong>"{existingDefault!.name}"</strong>.
-                      Only one policy can be the platform default at a time.
+                      This will replace the current default policy:{" "}
+                      <strong>"{existingDefault!.name}"</strong>. Only one
+                      policy can be the platform default at a time.
                     </p>
                   </div>
                 )}
@@ -1047,15 +1263,26 @@ function PolicyEditorDialog({
                 <div className="flex items-center justify-between">
                   <div>
                     <label className="text-sm text-gray-700">Status</label>
-                    <p className="text-xs text-gray-400 mt-0.5">Active policies are available for providers to select.</p>
+                    <p className="text-xs text-gray-400 mt-0.5">
+                      Active policies are available for providers to select.
+                    </p>
                   </div>
                   <div className="flex items-center gap-2">
-                    <span className={cn("text-xs", draft.saveAsActive ? "text-emerald-600" : "text-gray-400")}>
+                    <span
+                      className={cn(
+                        "text-xs",
+                        draft.saveAsActive
+                          ? "text-emerald-600"
+                          : "text-gray-400",
+                      )}
+                    >
                       {draft.saveAsActive ? "Active" : "Draft"}
                     </span>
                     <Switch
                       checked={draft.saveAsActive}
-                      onCheckedChange={(v) => setDraft((p) => ({ ...p, saveAsActive: v }))}
+                      onCheckedChange={(v) =>
+                        setDraft((p) => ({ ...p, saveAsActive: v }))
+                      }
                       disabled={isSaving}
                     />
                   </div>
@@ -1063,7 +1290,8 @@ function PolicyEditorDialog({
                 {draft.saveAsActive && (
                   <p className="text-[11px] text-amber-600 flex items-start gap-1">
                     <AlertTriangle className="h-3 w-3 shrink-0 mt-0.5" />
-                    BR-002: Any currently active policy for the selected booking type(s) will be automatically deactivated.
+                    BR-002: Any currently active policy for the selected booking
+                    type(s) will be automatically deactivated.
                   </p>
                 )}
               </div>
@@ -1084,7 +1312,8 @@ function PolicyEditorDialog({
                 {/* BR-003 notice */}
                 <div className="mt-3 flex items-start gap-2 bg-blue-50 border border-blue-100 rounded-lg p-3 text-[11px] text-blue-600">
                   <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-                  BR-003: Policy changes apply only to future bookings. Existing bookings retain the policy active at their booking time.
+                  BR-003: Policy changes apply only to future bookings. Existing
+                  bookings retain the policy active at their booking time.
                 </div>
               </div>
             </div>
@@ -1101,11 +1330,19 @@ function PolicyEditorDialog({
             disabled={isSaving}
             className="bg-[#003B95] hover:bg-[#002d73] text-white min-w-[140px] gap-1.5"
           >
-            {isSaving
-              ? <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…</>
-              : isNew
-                ? <><Plus className="h-3.5 w-3.5" /> Create Policy</>
-                : <><CheckCircle className="h-3.5 w-3.5" /> Save Changes</>}
+            {isSaving ? (
+              <>
+                <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving…
+              </>
+            ) : isNew ? (
+              <>
+                <Plus className="h-3.5 w-3.5" /> Create Policy
+              </>
+            ) : (
+              <>
+                <CheckCircle className="h-3.5 w-3.5" /> Save Changes
+              </>
+            )}
           </Button>
         </div>
       </DialogContent>
@@ -1134,7 +1371,12 @@ function ActivateConfirmDialog({
   const hasConflicts = conflicts.length > 0;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v && !isSaving) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v && !isSaving) onClose();
+      }}
+    >
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
@@ -1145,7 +1387,10 @@ function ActivateConfirmDialog({
           </DialogTitle>
           <DialogDescription className="text-xs text-gray-500">
             "{policy.name}" will become the active policy for:{" "}
-            {policy.applicableTo.map((t) => <strong key={t}> {BOOKING_TYPE_CFG[t].label}</strong>)} bookings.
+            {policy.applicableTo.map((t) => (
+              <strong key={t}> {BOOKING_TYPE_CFG[t].label}</strong>
+            ))}{" "}
+            bookings.
           </DialogDescription>
         </DialogHeader>
 
@@ -1153,14 +1398,20 @@ function ActivateConfirmDialog({
           <div className="space-y-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
             <p className="text-xs text-amber-700 flex items-center gap-1.5">
               <AlertTriangle className="h-3.5 w-3.5 shrink-0" />
-              <strong>BR-002:</strong> The following active {conflicts.length > 1 ? "policies" : "policy"} will be automatically deactivated:
+              <strong>BR-002:</strong> The following active{" "}
+              {conflicts.length > 1 ? "policies" : "policy"} will be
+              automatically deactivated:
             </p>
             <ul className="space-y-1 ml-5">
               {conflicts.map((c) => (
                 <li key={c.id} className="text-xs text-amber-800 list-disc">
                   {c.name}
                   <span className="text-amber-500 ml-1">
-                    ({c.applicableTo.filter((t) => policy.applicableTo.includes(t)).join(", ")})
+                    (
+                    {c.applicableTo
+                      .filter((t) => policy.applicableTo.includes(t))
+                      .join(", ")}
+                    )
                   </span>
                 </li>
               ))}
@@ -1169,15 +1420,19 @@ function ActivateConfirmDialog({
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSaving}>Cancel</Button>
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
           <Button
             onClick={onConfirm}
             disabled={isSaving}
             className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[110px]"
           >
-            {isSaving
-              ? <Loader2 className="h-3.5 w-3.5 animate-spin" />
-              : "Activate"}
+            {isSaving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              "Activate"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1188,7 +1443,11 @@ function ActivateConfirmDialog({
 // ─── Deactivate Confirm Dialog ────────────────────────────────────────────────
 
 function DeactivateConfirmDialog({
-  policy, open, onClose, onConfirm, isSaving,
+  policy,
+  open,
+  onClose,
+  onConfirm,
+  isSaving,
 }: {
   policy: CancellationPolicy | null;
   open: boolean;
@@ -1198,7 +1457,12 @@ function DeactivateConfirmDialog({
 }) {
   if (!policy) return null;
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v && !isSaving) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v && !isSaving) onClose();
+      }}
+    >
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
@@ -1208,7 +1472,8 @@ function DeactivateConfirmDialog({
             Deactivate Policy?
           </DialogTitle>
           <DialogDescription className="text-xs text-gray-500">
-            "{policy.name}" will be deactivated. Providers currently using this policy will be notified to select an alternative.
+            "{policy.name}" will be deactivated. Providers currently using this
+            policy will be notified to select an alternative.
           </DialogDescription>
         </DialogHeader>
 
@@ -1216,19 +1481,30 @@ function DeactivateConfirmDialog({
           <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
             <AlertTriangle className="h-3.5 w-3.5 text-amber-600 shrink-0 mt-0.5" />
             <p className="text-xs text-amber-700">
-              <strong>{policy.assignedProviders} provider{policy.assignedProviders !== 1 ? "s" : ""}</strong> currently use this policy. They will be notified to select a new cancellation policy.
+              <strong>
+                {policy.assignedProviders} provider
+                {policy.assignedProviders !== 1 ? "s" : ""}
+              </strong>{" "}
+              currently use this policy. They will be notified to select a new
+              cancellation policy.
             </p>
           </div>
         )}
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose} disabled={isSaving}>Cancel</Button>
+          <Button variant="outline" onClick={onClose} disabled={isSaving}>
+            Cancel
+          </Button>
           <Button
             onClick={onConfirm}
             disabled={isSaving}
             className="bg-orange-600 hover:bg-orange-700 text-white min-w-[110px]"
           >
-            {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Deactivate"}
+            {isSaving ? (
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+            ) : (
+              "Deactivate"
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -1239,7 +1515,11 @@ function DeactivateConfirmDialog({
 // ─── Delete Confirm Dialog ────────────────────────────────────────────────────
 
 function DeleteConfirmDialog({
-  policy, open, onClose, onConfirm, isSaving,
+  policy,
+  open,
+  onClose,
+  onConfirm,
+  isSaving,
 }: {
   policy: CancellationPolicy | null;
   open: boolean;
@@ -1251,7 +1531,12 @@ function DeleteConfirmDialog({
   const inUse = policy.assignedProviders > 0;
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v && !isSaving) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v && !isSaving) onClose();
+      }}
+    >
       <DialogContent className="max-w-sm">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
@@ -1263,8 +1548,7 @@ function DeleteConfirmDialog({
           <DialogDescription className="text-xs text-gray-500">
             {inUse
               ? `"${policy.name}" cannot be deleted because it is currently assigned to ${policy.assignedProviders} active provider${policy.assignedProviders !== 1 ? "s" : ""}. Deactivate the policy first, then have providers switch to another policy.`
-              : `"${policy.name}" will be permanently deleted. This action cannot be undone.`
-            }
+              : `"${policy.name}" will be permanently deleted. This action cannot be undone.`}
           </DialogDescription>
         </DialogHeader>
 
@@ -1272,7 +1556,8 @@ function DeleteConfirmDialog({
           <div className="flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg p-3">
             <XCircle className="h-3.5 w-3.5 text-red-600 shrink-0 mt-0.5" />
             <p className="text-xs text-red-700">
-              Policy is assigned to active providers and cannot be deleted. Please deactivate it and reassign providers first.
+              Policy is assigned to active providers and cannot be deleted.
+              Please deactivate it and reassign providers first.
             </p>
           </div>
         )}
@@ -1282,8 +1567,16 @@ function DeleteConfirmDialog({
             {inUse ? "Close" : "Cancel"}
           </Button>
           {!inUse && (
-            <Button onClick={onConfirm} disabled={isSaving} className="bg-red-600 hover:bg-red-700 text-white min-w-[110px]">
-              {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : "Delete"}
+            <Button
+              onClick={onConfirm}
+              disabled={isSaving}
+              className="bg-red-600 hover:bg-red-700 text-white min-w-[110px]"
+            >
+              {isSaving ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                "Delete"
+              )}
             </Button>
           )}
         </DialogFooter>
@@ -1308,17 +1601,25 @@ export function CancellationPoliciesPage() {
 
   // Editor dialog
   const [editorOpen, setEditorOpen] = useState(false);
-  const [editingPolicy, setEditingPolicy] = useState<CancellationPolicy | null>(null);
+  const [editingPolicy, setEditingPolicy] = useState<CancellationPolicy | null>(
+    null,
+  );
 
   // Activate confirm dialog
-  const [activateTarget, setActivateTarget] = useState<CancellationPolicy | null>(null);
-  const [activateConflicts, setActivateConflicts] = useState<CancellationPolicy[]>([]);
+  const [activateTarget, setActivateTarget] =
+    useState<CancellationPolicy | null>(null);
+  const [activateConflicts, setActivateConflicts] = useState<
+    CancellationPolicy[]
+  >([]);
 
   // Deactivate confirm dialog
-  const [deactivateTarget, setDeactivateTarget] = useState<CancellationPolicy | null>(null);
+  const [deactivateTarget, setDeactivateTarget] =
+    useState<CancellationPolicy | null>(null);
 
   // Delete confirm dialog
-  const [deleteTarget, setDeleteTarget] = useState<CancellationPolicy | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<CancellationPolicy | null>(
+    null,
+  );
 
   // ── Load data ──
   const loadData = useCallback(() => {
@@ -1353,11 +1654,16 @@ export function CancellationPoliciesPage() {
 
   const filtered = useMemo(() => {
     let r = policies;
-    if (filterType !== "All") r = r.filter((p) => p.applicableTo.includes(filterType));
+    if (filterType !== "All")
+      r = r.filter((p) => p.applicableTo.includes(filterType));
     if (filterStatus !== "All") r = r.filter((p) => p.status === filterStatus);
     if (search.trim()) {
       const q = search.toLowerCase();
-      r = r.filter((p) => p.name.toLowerCase().includes(q) || p.createdBy.toLowerCase().includes(q));
+      r = r.filter(
+        (p) =>
+          p.name.toLowerCase().includes(q) ||
+          p.createdBy.toLowerCase().includes(q),
+      );
     }
     // Sort: Active first, then Draft, then Inactive; within each, newest first
     return [...r].sort((a, b) => {
@@ -1370,9 +1676,16 @@ export function CancellationPoliciesPage() {
   }, [policies, filterType, filterStatus, search]);
 
   const typeCounts: Record<FilterType, number> = useMemo(() => {
-    const counts: Record<FilterType, number> = { All: policies.length, Facility: 0, Training: 0, Coach: 0 };
+    const counts: Record<FilterType, number> = {
+      All: policies.length,
+      Facility: 0,
+      Training: 0,
+      Coach: 0,
+    };
     policies.forEach((p) => {
-      p.applicableTo.forEach((t) => { counts[t]++; });
+      p.applicableTo.forEach((t) => {
+        counts[t]++;
+      });
     });
     return counts;
   }, [policies]);
@@ -1413,14 +1726,24 @@ export function CancellationPoliciesPage() {
                 cancellationFee: fee,
                 cancellationFeeCurrency: draft.cancellationFeeCurrency,
                 isDefault: draft.isDefault,
-                status: draft.saveAsActive ? "Active" : p.status === "Active" ? "Active" : "Draft",
+                status: draft.saveAsActive
+                  ? "Active"
+                  : p.status === "Active"
+                    ? "Active"
+                    : "Draft",
                 updatedAt: now,
                 activatedAt: draft.saveAsActive ? now : p.activatedAt,
               };
             }
             // BR-002: deactivate conflicting active policies
-            if (draft.saveAsActive && p.status === "Active" && p.id !== editingId) {
-              const overlaps = p.applicableTo.some((t) => draft.applicableTo.includes(t));
+            if (
+              draft.saveAsActive &&
+              p.status === "Active" &&
+              p.id !== editingId
+            ) {
+              const overlaps = p.applicableTo.some((t) =>
+                draft.applicableTo.includes(t),
+              );
               if (overlaps) return { ...p, status: "Inactive", updatedAt: now };
             }
             // Clear default flag from other policies if this one is default
@@ -1455,8 +1778,15 @@ export function CancellationPoliciesPage() {
           ...prev.map((p) => {
             let updated = p;
             if (draft.saveAsActive && p.status === "Active") {
-              const overlaps = p.applicableTo.some((t) => draft.applicableTo.includes(t));
-              if (overlaps) updated = { ...updated, status: "Inactive" as PolicyStatus, updatedAt: now };
+              const overlaps = p.applicableTo.some((t) =>
+                draft.applicableTo.includes(t),
+              );
+              if (overlaps)
+                updated = {
+                  ...updated,
+                  status: "Inactive" as PolicyStatus,
+                  updatedAt: now,
+                };
             }
             if (draft.isDefault && p.isDefault) {
               updated = { ...updated, isDefault: false, updatedAt: now };
@@ -1496,7 +1826,10 @@ export function CancellationPoliciesPage() {
           return { ...p, status: "Active", updatedAt: now, activatedAt: now };
         }
         // BR-002: deactivate overlapping active policies
-        if (p.status === "Active" && p.applicableTo.some((t) => activateTarget.applicableTo.includes(t))) {
+        if (
+          p.status === "Active" &&
+          p.applicableTo.some((t) => activateTarget.applicableTo.includes(t))
+        ) {
           return { ...p, status: "Inactive", updatedAt: now };
         }
         return p;
@@ -1505,7 +1838,9 @@ export function CancellationPoliciesPage() {
 
     toast.success(`"${activateTarget.name}" is now Active.`);
     if (activateConflicts.length > 0) {
-      toast.info(`${activateConflicts.length} previous ${activateConflicts.length > 1 ? "policies" : "policy"} deactivated (BR-002).`);
+      toast.info(
+        `${activateConflicts.length} previous ${activateConflicts.length > 1 ? "policies" : "policy"} deactivated (BR-002).`,
+      );
     }
 
     setActivateTarget(null);
@@ -1526,7 +1861,9 @@ export function CancellationPoliciesPage() {
     );
     toast.success(`"${deactivateTarget.name}" deactivated.`);
     if (deactivateTarget.assignedProviders > 0) {
-      toast.info(`${deactivateTarget.assignedProviders} provider${deactivateTarget.assignedProviders !== 1 ? "s" : ""} will be notified to select a new policy.`);
+      toast.info(
+        `${deactivateTarget.assignedProviders} provider${deactivateTarget.assignedProviders !== 1 ? "s" : ""} will be notified to select a new policy.`,
+      );
     }
     setDeactivateTarget(null);
     setIsSaving(false);
@@ -1555,7 +1892,9 @@ export function CancellationPoliciesPage() {
     if (!deleteTarget) return;
     // Double-check: cannot delete if in use
     if (deleteTarget.assignedProviders > 0) {
-      toast.error(`Cannot delete "${deleteTarget.name}" — it is assigned to ${deleteTarget.assignedProviders} active provider(s).`);
+      toast.error(
+        `Cannot delete "${deleteTarget.name}" — it is assigned to ${deleteTarget.assignedProviders} active provider(s).`,
+      );
       setDeleteTarget(null);
       return;
     }
@@ -1575,11 +1914,16 @@ export function CancellationPoliciesPage() {
         <div className="w-16 h-16 rounded-2xl bg-red-50 flex items-center justify-center">
           <XCircle className="h-8 w-8 text-red-500" />
         </div>
-        <h2 className="text-lg text-gray-900">Unable to load cancellation policies</h2>
+        <h2 className="text-lg text-gray-900">
+          Unable to load cancellation policies
+        </h2>
         <p className="text-sm text-gray-500 text-center max-w-md">
           Something went wrong while loading the policy data. Please try again.
         </p>
-        <Button onClick={loadData} className="gap-2 bg-[#003B95] hover:bg-[#002d73]">
+        <Button
+          onClick={loadData}
+          className="gap-2 bg-[#003B95] hover:bg-[#002d73]"
+        >
           <RefreshCw className="h-4 w-4" />
           Retry
         </Button>
@@ -1590,18 +1934,19 @@ export function CancellationPoliciesPage() {
   // ── Render ───────────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* ── Page Header ──────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
           <h1 className="text-xl text-gray-900 flex items-center gap-2.5">
-            <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-[#003B95]/10">
+            <div className="flex items-center justify-center h-10 w-9 rounded-lg bg-[#003B95]/10">
               <ClipboardList className="h-5 w-5 text-[#003B95]" />
             </div>
             Cancellation Policy Management
           </h1>
           <p className="text-sm text-gray-500 mt-1 max-w-xl">
-            Define cancellation windows, refund rules, and fees for provider bookings. One active policy per type at a time (BR-001).
+            Define cancellation windows, refund rules, and fees for provider
+            bookings. One active policy per type at a time (BR-001).
           </p>
         </div>
         <Button
@@ -1618,14 +1963,20 @@ export function CancellationPoliciesPage() {
       <div className="flex items-start gap-3 bg-blue-50 border border-blue-200 rounded-xl px-4 py-3 text-xs text-blue-700">
         <Info className="h-4 w-4 shrink-0 mt-0.5 text-blue-500" />
         <span>
-          <strong>BR-003:</strong> Policy changes apply only to <strong>future bookings</strong>. Existing bookings are not retroactively affected — they retain the policy that was active at their booking time.{" "}
-          <strong>BR-004:</strong> If no active policy exists for a booking type, a 0% refund is applied by default (fully non-refundable).
+          <strong>BR-003:</strong> Policy changes apply only to{" "}
+          <strong>future bookings</strong>. Existing bookings are not
+          retroactively affected — they retain the policy that was active at
+          their booking time. <strong>BR-004:</strong> If no active policy
+          exists for a booking type, a 0% refund is applied by default (fully
+          non-refundable).
         </span>
       </div>
 
       {/* ── Coverage Overview (BR-004) ────────────────────────────────────── */}
       <div>
-        <p className="text-xs text-gray-400 uppercase tracking-wider mb-2.5">Active Policy Coverage</p>
+        <p className="text-xs text-gray-400 uppercase tracking-wider mb-2.5">
+          Active Policy Coverage
+        </p>
         {isLoading ? (
           <SkeletonCoverageCards />
         ) : (
@@ -1644,7 +1995,9 @@ export function CancellationPoliciesPage() {
           <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg px-4 py-3 text-xs text-amber-700">
             <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
             <span>
-              <strong>BR-004:</strong> {uncoveredTypes.join(", ")} booking{uncoveredTypes.length > 1 ? "s have" : " has"} no active cancellation policy. The 0% refund default will apply.
+              <strong>BR-004:</strong> {uncoveredTypes.join(", ")} booking
+              {uncoveredTypes.length > 1 ? "s have" : " has"} no active
+              cancellation policy. The 0% refund default will apply.
             </span>
           </div>
         )}
@@ -1666,10 +2019,14 @@ export function CancellationPoliciesPage() {
               )}
             >
               {type === "Coach" ? "Freelancer Coach" : type}
-              <span className={cn(
-                "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full tabular-nums",
-                filterType === type ? "bg-[#003B95]/15 text-[#003B95]" : "bg-gray-200 text-gray-500",
-              )}>
+              <span
+                className={cn(
+                  "ml-1.5 text-[10px] px-1.5 py-0.5 rounded-full tabular-nums",
+                  filterType === type
+                    ? "bg-[#003B95]/15 text-[#003B95]"
+                    : "bg-gray-200 text-gray-500",
+                )}
+              >
                 {typeCounts[type]}
               </span>
             </button>
@@ -1678,8 +2035,11 @@ export function CancellationPoliciesPage() {
 
         <div className="flex gap-2 items-center">
           {/* Status filter */}
-          <Select value={filterStatus} onValueChange={(v) => setFilterStatus(v as StatusFilter)}>
-            <SelectTrigger className="h-9 w-[140px] text-xs">
+          <Select
+            value={filterStatus}
+            onValueChange={(v) => setFilterStatus(v as StatusFilter)}
+          >
+            <SelectTrigger className="h-10 w-[140px] text-xs">
               <SelectValue placeholder="All Statuses" />
             </SelectTrigger>
             <SelectContent>
@@ -1697,7 +2057,7 @@ export function CancellationPoliciesPage() {
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search policies…"
-              className="pl-9 pr-8 h-9 text-xs w-[200px]"
+              className="pl-9 pr-8 h-10 text-xs w-[200px]"
             />
             {search && (
               <button
@@ -1724,15 +2084,19 @@ export function CancellationPoliciesPage() {
           <p className="text-gray-500">
             {policies.length === 0
               ? "No cancellation policies found. Click 'Add Policy' to create one."
-              : "No policies match your filters."
-            }
+              : "No policies match your filters."}
           </p>
           {policies.length === 0 ? (
-            <Button onClick={openCreate} className="mt-4 bg-[#003B95] hover:bg-[#002d73] text-white gap-1.5">
+            <Button
+              onClick={openCreate}
+              className="mt-4 bg-[#003B95] hover:bg-[#002d73] text-white gap-1.5"
+            >
               <Plus className="h-4 w-4" /> Add Policy
             </Button>
           ) : (
-            <p className="text-xs text-gray-400 mt-1">Try a different filter or create a new policy.</p>
+            <p className="text-xs text-gray-400 mt-1">
+              Try a different filter or create a new policy.
+            </p>
           )}
         </div>
       ) : (
@@ -1756,8 +2120,11 @@ export function CancellationPoliciesPage() {
         <div className="bg-gray-50 border border-gray-200 rounded-xl p-4 flex items-start gap-3 text-xs text-gray-500">
           <ShieldCheck className="h-4 w-4 text-gray-400 shrink-0 mt-0.5" />
           <span>
-            <strong className="text-gray-700">BR-005:</strong> Platform fee refundability is configured per tier independently of the booking refund percentage.
-            If a tier has platform fee refundable <em>off</em>, the platform fee is excluded from all refund calculations for that cancellation window.
+            <strong className="text-gray-700">BR-005:</strong> Platform fee
+            refundability is configured per tier independently of the booking
+            refund percentage. If a tier has platform fee refundable{" "}
+            <em>off</em>, the platform fee is excluded from all refund
+            calculations for that cancellation window.
           </span>
         </div>
       )}
@@ -1776,7 +2143,10 @@ export function CancellationPoliciesPage() {
         policy={activateTarget}
         conflicts={activateConflicts}
         open={!!activateTarget}
-        onClose={() => { setActivateTarget(null); setActivateConflicts([]); }}
+        onClose={() => {
+          setActivateTarget(null);
+          setActivateConflicts([]);
+        }}
         onConfirm={handleActivate}
         isSaving={isSaving}
       />
