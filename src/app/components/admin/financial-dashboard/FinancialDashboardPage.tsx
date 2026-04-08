@@ -73,13 +73,19 @@ function formatSARAbbrev(value: number): string {
 
 // ─── Mock data ────────────────────────────────────────────────────────────────
 
-type DatePreset = "today" | "this-week" | "this-month" | "this-quarter" | "this-year" | "all-time";
+type DatePreset =
+  | "today"
+  | "this-week"
+  | "this-month"
+  | "this-quarter"
+  | "this-year"
+  | "all-time";
 
 const KPI_DATA = {
-  totalRevenue:     { amount: 1_258_450.00, change: 12.5 },
-  totalCommission:  { amount:   188_767.50, change: 8.3 },
-  totalTax:         { amount:    66_069.63, change: 5.1 },
-  totalPayouts:     { amount:   945_337.50, change: -2.4 },
+  totalRevenue: { amount: 1_258_450.0, change: 12.5 },
+  totalCommission: { amount: 188_767.5, change: 8.3 },
+  totalTax: { amount: 66_069.63, change: 5.1 },
+  totalPayouts: { amount: 945_337.5, change: -2.4 },
 };
 
 // Revenue trend (line chart data — last 12 months)
@@ -102,43 +108,103 @@ const REVENUE_TREND_DATA = [
 const COMMISSION_BY_PROVIDER = [
   { name: "Facility Provider", amount: 94383.75, percentage: 50 },
   { name: "Training Provider", amount: 56630.25, percentage: 30 },
-  { name: "Coach",             amount: 37753.50, percentage: 20 },
+  { name: "Coach", amount: 37753.5, percentage: 20 },
 ];
 const PIE_COLORS = ["#003B95", "#3B82F6", "#93C5FD"];
 
 // Booking revenue by type (bar chart data)
 const BOOKING_REVENUE_BY_TYPE = [
   { type: "Tournament", revenue: 320000, commission: 48000, tax: 16800 },
-  { type: "Facility",   revenue: 485000, commission: 72750, tax: 25463 },
-  { type: "Training",   revenue: 278450, commission: 41768, tax: 14618 },
-  { type: "Coach",      revenue: 175000, commission: 26250, tax:  9188 },
+  { type: "Facility", revenue: 485000, commission: 72750, tax: 25463 },
+  { type: "Training", revenue: 278450, commission: 41768, tax: 14618 },
+  { type: "Coach", revenue: 175000, commission: 26250, tax: 9188 },
 ];
 
 // Recent transactions
 const RECENT_TRANSACTIONS = [
-  { id: "TXN-10052", type: "Booking" as const,  amount: 350.00, status: "Completed" as const, date: "2026-03-10T14:32:00Z" },
-  { id: "TXN-10051", type: "Payout" as const,   amount: 12500.00, status: "Processing" as const, date: "2026-03-10T12:15:00Z" },
-  { id: "TXN-10050", type: "Refund" as const,   amount: 200.00, status: "Completed" as const, date: "2026-03-10T10:45:00Z" },
-  { id: "TXN-10049", type: "Booking" as const,  amount: 500.00, status: "Completed" as const, date: "2026-03-09T18:00:00Z" },
-  { id: "TXN-10048", type: "Booking" as const,  amount: 180.00, status: "Completed" as const, date: "2026-03-09T15:30:00Z" },
-  { id: "TXN-10047", type: "Payout" as const,   amount: 8750.00, status: "Completed" as const, date: "2026-03-09T09:00:00Z" },
-  { id: "TXN-10046", type: "Booking" as const,  amount: 420.00, status: "Completed" as const, date: "2026-03-08T16:20:00Z" },
-  { id: "TXN-10045", type: "Refund" as const,   amount: 150.00, status: "Pending" as const, date: "2026-03-08T14:10:00Z" },
-  { id: "TXN-10044", type: "Booking" as const,  amount: 275.00, status: "Completed" as const, date: "2026-03-08T11:05:00Z" },
-  { id: "TXN-10043", type: "Booking" as const,  amount: 600.00, status: "Completed" as const, date: "2026-03-07T08:45:00Z" },
+  {
+    id: "TXN-10052",
+    type: "Booking" as const,
+    amount: 350.0,
+    status: "Completed" as const,
+    date: "2026-03-10T14:32:00Z",
+  },
+  {
+    id: "TXN-10051",
+    type: "Payout" as const,
+    amount: 12500.0,
+    status: "Processing" as const,
+    date: "2026-03-10T12:15:00Z",
+  },
+  {
+    id: "TXN-10050",
+    type: "Refund" as const,
+    amount: 200.0,
+    status: "Completed" as const,
+    date: "2026-03-10T10:45:00Z",
+  },
+  {
+    id: "TXN-10049",
+    type: "Booking" as const,
+    amount: 500.0,
+    status: "Completed" as const,
+    date: "2026-03-09T18:00:00Z",
+  },
+  {
+    id: "TXN-10048",
+    type: "Booking" as const,
+    amount: 180.0,
+    status: "Completed" as const,
+    date: "2026-03-09T15:30:00Z",
+  },
+  {
+    id: "TXN-10047",
+    type: "Payout" as const,
+    amount: 8750.0,
+    status: "Completed" as const,
+    date: "2026-03-09T09:00:00Z",
+  },
+  {
+    id: "TXN-10046",
+    type: "Booking" as const,
+    amount: 420.0,
+    status: "Completed" as const,
+    date: "2026-03-08T16:20:00Z",
+  },
+  {
+    id: "TXN-10045",
+    type: "Refund" as const,
+    amount: 150.0,
+    status: "Pending" as const,
+    date: "2026-03-08T14:10:00Z",
+  },
+  {
+    id: "TXN-10044",
+    type: "Booking" as const,
+    amount: 275.0,
+    status: "Completed" as const,
+    date: "2026-03-08T11:05:00Z",
+  },
+  {
+    id: "TXN-10043",
+    type: "Booking" as const,
+    amount: 600.0,
+    status: "Completed" as const,
+    date: "2026-03-07T08:45:00Z",
+  },
 ];
 
 const TXN_TYPE_STYLES: Record<string, string> = {
   Booking: "bg-blue-100 text-blue-700 border-blue-200",
-  Payout:  "bg-amber-100 text-amber-700 border-amber-200",
-  Refund:  "bg-red-100 text-red-600 border-red-200",
+  Payout: "bg-amber-100 text-amber-700 border-amber-200",
+  Refund: "bg-red-100 text-red-600 border-red-200",
 };
 
 const TXN_STATUS_STYLES: Record<string, string> = {
-  Completed:  "bg-emerald-100 text-emerald-700 border-emerald-200",
+  Completed: "bg-emerald-100 text-emerald-700 border-emerald-200",
   Processing: "bg-blue-100 text-blue-700 border-blue-200",
-  Pending:    "bg-amber-100 text-amber-700 border-amber-200",
-  Failed:     "bg-red-100 text-red-600 border-red-200",
+  Pending: "bg-amber-100 text-amber-700 border-amber-200",
+  Failed: "bg-red-100 text-red-600 border-red-200",
 };
 
 // ─── KPI Card Component ───────────────────────────────────────────────────────
@@ -179,22 +245,32 @@ function KPICard({
     <div
       className={cn(
         "bg-white border rounded-xl p-5 flex items-start gap-4 transition-shadow",
-        clickable && "hover:shadow-md cursor-pointer"
+        clickable && "hover:shadow-md cursor-pointer",
       )}
       role="region"
       aria-label={`${label}: ${formatSAR(amount)}. ${isPositive ? "Up" : isNeutral ? "No change" : "Down"} ${Math.abs(change)} percent compared to previous period.`}
     >
-      <div className={cn("w-11 h-11 rounded-lg flex items-center justify-center shrink-0", iconBg)}>
+      <div
+        className={cn(
+          "w-11 h-11 rounded-lg flex items-center justify-center shrink-0",
+          iconBg,
+        )}
+      >
         <Icon className={cn("h-5 w-5", iconColor)} />
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs text-[#6B7280] font-medium">{label}</p>
-        <p className="text-xl font-bold text-[#111827] mt-1 tabular-nums" title={formatSAR(amount)}>
+        <p
+          className="text-xl font-bold text-[#111827] mt-1 tabular-nums"
+          title={formatSAR(amount)}
+        >
           {formatSARAbbrev(amount)}
         </p>
         <div className="flex items-center gap-1.5 mt-1">
           <TrendIcon className={cn("h-3.5 w-3.5", trendColor)} />
-          <span className={cn("text-xs font-medium", trendColor)}>{trendText}</span>
+          <span className={cn("text-xs font-medium", trendColor)}>
+            {trendText}
+          </span>
           <span className="text-xs text-[#9CA3AF]">{comparisonText}</span>
         </div>
       </div>
@@ -209,29 +285,54 @@ function KPICard({
 
 // ─── Custom Tooltip for charts ────────────────────────────────────────────────
 
-function ChartTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ name: string; value: number; color: string }>; label?: string }) {
+function ChartTooltip({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ name: string; value: number; color: string }>;
+  label?: string;
+}) {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white border rounded-lg shadow-lg px-3 py-2 text-xs">
       <p className="font-medium text-[#111827] mb-1">{label}</p>
       {payload.map((entry) => (
         <div key={entry.name} className="flex items-center gap-2">
-          <span className="w-2 h-2 rounded-full" style={{ backgroundColor: entry.color }} />
+          <span
+            className="w-2 h-2 rounded-full"
+            style={{ backgroundColor: entry.color }}
+          />
           <span className="text-[#6B7280]">{entry.name}:</span>
-          <span className="font-medium text-[#111827]">{formatSAR(entry.value)}</span>
+          <span className="font-medium text-[#111827]">
+            {formatSAR(entry.value)}
+          </span>
         </div>
       ))}
     </div>
   );
 }
 
-function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ name: string; value: number; payload: { percentage: number } }> }) {
+function PieTooltip({
+  active,
+  payload,
+}: {
+  active?: boolean;
+  payload?: Array<{
+    name: string;
+    value: number;
+    payload: { percentage: number };
+  }>;
+}) {
   if (!active || !payload?.length) return null;
   const entry = payload[0];
   return (
     <div className="bg-white border rounded-lg shadow-lg px-3 py-2 text-xs">
       <p className="font-medium text-[#111827]">{entry.name}</p>
-      <p className="text-[#6B7280]">{formatSAR(entry.value)} ({entry.payload.percentage}%)</p>
+      <p className="text-[#6B7280]">
+        {formatSAR(entry.value)} ({entry.payload.percentage}%)
+      </p>
     </div>
   );
 }
@@ -240,7 +341,9 @@ function PieTooltip({ active, payload }: { active?: boolean; payload?: Array<{ n
 
 export function FinancialDashboardPage() {
   // Date range state
-  const [dateFrom, setDateFrom] = useState<Date | undefined>(startOfMonth(new Date()));
+  const [dateFrom, setDateFrom] = useState<Date | undefined>(
+    startOfMonth(new Date()),
+  );
   const [dateTo, setDateTo] = useState<Date | undefined>(new Date());
   const [activePreset, setActivePreset] = useState<DatePreset>("this-month");
 
@@ -294,7 +397,9 @@ export function FinancialDashboardPage() {
   };
 
   const handleExport = (formatType: string) => {
-    toast.success("Financial report export started. Your file will download shortly.");
+    toast.success(
+      "Financial report export started. Your file will download shortly.",
+    );
   };
 
   const toggleLine = (key: keyof typeof lineVisibility) => {
@@ -302,7 +407,10 @@ export function FinancialDashboardPage() {
   };
 
   // Total commission for donut centre
-  const totalCommission = COMMISSION_BY_PROVIDER.reduce((sum, p) => sum + p.amount, 0);
+  const totalCommission = COMMISSION_BY_PROVIDER.reduce(
+    (sum, p) => sum + p.amount,
+    0,
+  );
 
   return (
     <div className="p-6 lg:p-8 space-y-6 bg-[#F9FAFB] min-h-screen">
@@ -313,7 +421,9 @@ export function FinancialDashboardPage() {
           <span className="mx-1.5">&gt;</span>
           <span>Reporting</span>
           <span className="mx-1.5">&gt;</span>
-          <span className="text-[#111827] font-medium">Financial Dashboard</span>
+          <span className="text-[#111827] font-medium">
+            Financial Dashboard
+          </span>
         </nav>
         <h1 className="text-2xl font-bold tracking-tight text-[#111827] flex items-center gap-2.5">
           <BarChart3 className="h-6 w-6 text-[#003B95]" />
@@ -333,8 +443,8 @@ export function FinancialDashboardPage() {
               <Button
                 variant="outline"
                 className={cn(
-                  "h-9 gap-2 text-sm min-w-[140px] justify-start",
-                  !dateFrom && "text-muted-foreground"
+                  "h-10 gap-2 text-sm min-w-[140px] justify-start",
+                  !dateFrom && "text-muted-foreground",
                 )}
               >
                 <CalendarIcon className="h-3.5 w-3.5" />
@@ -359,8 +469,8 @@ export function FinancialDashboardPage() {
               <Button
                 variant="outline"
                 className={cn(
-                  "h-9 gap-2 text-sm min-w-[140px] justify-start",
-                  !dateTo && "text-muted-foreground"
+                  "h-10 gap-2 text-sm min-w-[140px] justify-start",
+                  !dateTo && "text-muted-foreground",
                 )}
               >
                 <CalendarIcon className="h-3.5 w-3.5" />
@@ -394,7 +504,7 @@ export function FinancialDashboardPage() {
                 "h-8 text-xs",
                 activePreset === p.value
                   ? "bg-[#003B95] text-white hover:bg-[#002a6b] hover:text-white"
-                  : "text-[#6B7280] hover:bg-gray-100"
+                  : "text-[#6B7280] hover:bg-gray-100",
               )}
             >
               {p.label}
@@ -406,16 +516,27 @@ export function FinancialDashboardPage() {
         <div className="ml-auto">
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button variant="outline" size="sm" className="gap-2" aria-label="Export financial report">
+              <Button
+                variant="outline"
+                size="sm"
+                className="gap-2"
+                aria-label="Export financial report"
+              >
                 <Download className="h-3.5 w-3.5" />
                 Export Report
                 <ChevronDown className="h-3 w-3" />
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => handleExport("csv")}>Export as CSV</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("xls")}>Export as XLS</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => handleExport("pdf")}>Export as PDF</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("csv")}>
+                Export as CSV
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("xls")}>
+                Export as XLS
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => handleExport("pdf")}>
+                Export as PDF
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -463,12 +584,18 @@ export function FinancialDashboardPage() {
       <div className="grid grid-cols-1 xl:grid-cols-[65%_35%] gap-6">
         {/* Revenue Trend Line Chart */}
         <div className="bg-white border rounded-xl p-5">
-          <h2 className="text-base font-semibold text-[#111827] mb-1">Revenue Trend</h2>
+          <h2 className="text-base font-semibold text-[#111827] mb-1">
+            Revenue Trend
+          </h2>
           {/* Legend */}
           <div className="flex items-center gap-4 mb-4">
             {[
               { key: "revenue" as const, label: "Revenue", color: "#003B95" },
-              { key: "commission" as const, label: "Commission", color: "#3B82F6" },
+              {
+                key: "commission" as const,
+                label: "Commission",
+                color: "#3B82F6",
+              },
               { key: "tax" as const, label: "Tax", color: "#F59E0B" },
             ].map((item) => (
               <button
@@ -476,7 +603,7 @@ export function FinancialDashboardPage() {
                 onClick={() => toggleLine(item.key)}
                 className={cn(
                   "flex items-center gap-1.5 text-xs transition-opacity",
-                  lineVisibility[item.key] ? "opacity-100" : "opacity-40"
+                  lineVisibility[item.key] ? "opacity-100" : "opacity-40",
                 )}
               >
                 <span
@@ -548,11 +675,13 @@ export function FinancialDashboardPage() {
 
         {/* Commission by Provider Type Donut Chart */}
         <div className="bg-white border rounded-xl p-5">
-          <h2 className="text-base font-semibold text-[#111827] mb-4">Commission by Provider Type</h2>
+          <h2 className="text-base font-semibold text-[#111827] mb-4">
+            Commission by Provider Type
+          </h2>
           <div
             role="img"
             aria-label={`Commission distribution by provider type. ${COMMISSION_BY_PROVIDER.map(
-              (p) => `${p.name}: ${p.percentage}%`
+              (p) => `${p.name}: ${p.percentage}%`,
             ).join(", ")}.`}
           >
             <SafeChart height={260}>
@@ -599,7 +728,10 @@ export function FinancialDashboardPage() {
           {/* Legend */}
           <div className="space-y-2 mt-3">
             {COMMISSION_BY_PROVIDER.map((entry, idx) => (
-              <div key={entry.name} className="flex items-center justify-between text-xs">
+              <div
+                key={entry.name}
+                className="flex items-center justify-between text-xs"
+              >
                 <div className="flex items-center gap-2">
                   <span
                     className="w-3 h-3 rounded-sm"
@@ -618,7 +750,9 @@ export function FinancialDashboardPage() {
 
       {/* ── Charts Row 2: Booking Revenue by Type (full width) ── */}
       <div className="bg-white border rounded-xl p-5">
-        <h2 className="text-base font-semibold text-[#111827] mb-1">Booking Revenue by Type</h2>
+        <h2 className="text-base font-semibold text-[#111827] mb-1">
+          Booking Revenue by Type
+        </h2>
         {/* Legend */}
         <div className="flex items-center gap-4 mb-4">
           {[
@@ -640,7 +774,11 @@ export function FinancialDashboardPage() {
           aria-label="Booking revenue breakdown by type showing revenue, commission, and tax."
         >
           <SafeChart height={320}>
-            <BarChart data={BOOKING_REVENUE_BY_TYPE} barGap={4} barCategoryGap="20%">
+            <BarChart
+              data={BOOKING_REVENUE_BY_TYPE}
+              barGap={4}
+              barCategoryGap="20%"
+            >
               <CartesianGrid strokeDasharray="3 3" vertical={false} />
               <XAxis
                 dataKey="type"
@@ -655,9 +793,24 @@ export function FinancialDashboardPage() {
                 tickFormatter={(v) => `${(v / 1000).toFixed(0)}K`}
               />
               <RechartsTooltip content={<ChartTooltip />} />
-              <Bar dataKey="revenue" name="Revenue" fill="#003B95" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="commission" name="Commission" fill="#3B82F6" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="tax" name="Tax" fill="#F59E0B" radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="revenue"
+                name="Revenue"
+                fill="#003B95"
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="commission"
+                name="Commission"
+                fill="#3B82F6"
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="tax"
+                name="Tax"
+                fill="#F59E0B"
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </SafeChart>
         </div>
@@ -666,7 +819,9 @@ export function FinancialDashboardPage() {
       {/* ── Recent Transactions Summary ──────────────────────── */}
       <div className="bg-white border rounded-xl overflow-hidden">
         <div className="p-5 border-b border-gray-200 flex items-center justify-between">
-          <h2 className="text-base font-semibold text-[#111827]">Recent Transactions</h2>
+          <h2 className="text-base font-semibold text-[#111827]">
+            Recent Transactions
+          </h2>
           <Link
             to="/payments"
             className="text-sm font-medium text-[#003B95] hover:underline flex items-center gap-1"
@@ -679,21 +834,38 @@ export function FinancialDashboardPage() {
           <Table>
             <TableHeader>
               <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
-                <TableHead className="text-xs text-[#6B7280] font-semibold px-4">Transaction ID</TableHead>
-                <TableHead className="text-xs text-[#6B7280] font-semibold px-4">Type</TableHead>
-                <TableHead className="text-xs text-[#6B7280] font-semibold px-4 text-right">Amount (SAR)</TableHead>
-                <TableHead className="text-xs text-[#6B7280] font-semibold px-4">Status</TableHead>
-                <TableHead className="text-xs text-[#6B7280] font-semibold px-4">Date (UTC)</TableHead>
+                <TableHead className="text-xs text-[#6B7280] font-semibold px-4">
+                  Transaction ID
+                </TableHead>
+                <TableHead className="text-xs text-[#6B7280] font-semibold px-4">
+                  Type
+                </TableHead>
+                <TableHead className="text-xs text-[#6B7280] font-semibold px-4 text-right">
+                  Amount (SAR)
+                </TableHead>
+                <TableHead className="text-xs text-[#6B7280] font-semibold px-4">
+                  Status
+                </TableHead>
+                <TableHead className="text-xs text-[#6B7280] font-semibold px-4">
+                  Date (UTC)
+                </TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {RECENT_TRANSACTIONS.map((txn) => (
                 <TableRow key={txn.id} className="hover:bg-gray-50/50">
                   <TableCell className="px-4">
-                    <span className="text-sm font-medium text-[#003B95]">{txn.id}</span>
+                    <span className="text-sm font-medium text-[#003B95]">
+                      {txn.id}
+                    </span>
                   </TableCell>
                   <TableCell className="px-4">
-                    <Badge className={cn("text-xs font-medium", TXN_TYPE_STYLES[txn.type])}>
+                    <Badge
+                      className={cn(
+                        "text-xs font-medium",
+                        TXN_TYPE_STYLES[txn.type],
+                      )}
+                    >
                       {txn.type}
                     </Badge>
                   </TableCell>
@@ -701,7 +873,12 @@ export function FinancialDashboardPage() {
                     {formatSAR(txn.amount)}
                   </TableCell>
                   <TableCell className="px-4">
-                    <Badge className={cn("text-xs font-medium", TXN_STATUS_STYLES[txn.status])}>
+                    <Badge
+                      className={cn(
+                        "text-xs font-medium",
+                        TXN_STATUS_STYLES[txn.status],
+                      )}
+                    >
                       {txn.status}
                     </Badge>
                   </TableCell>

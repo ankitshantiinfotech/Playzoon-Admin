@@ -54,11 +54,7 @@ import {
   TableHeader,
   TableRow,
 } from "../../ui/table";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-} from "../../ui/tooltip";
+import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import type {
   CommissionRule,
   ChangeHistoryRecord,
@@ -121,7 +117,7 @@ function ProviderTypeBadge({ type }: { type: ProviderType }) {
         "text-[11px] gap-1 border shrink-0",
         cfg.bg,
         cfg.text,
-        cfg.border
+        cfg.border,
       )}
     >
       <Icon className="h-2.5 w-2.5" />
@@ -138,13 +134,13 @@ function StatusBadge({ status }: { status: CommissionStatus }) {
         "text-[11px] gap-1.5 border shrink-0",
         status === "Active"
           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-          : "bg-gray-100 text-gray-500 border-gray-200"
+          : "bg-gray-100 text-gray-500 border-gray-200",
       )}
     >
       <span
         className={cn(
           "h-1.5 w-1.5 rounded-full shrink-0",
-          status === "Active" ? "bg-emerald-500" : "bg-gray-400"
+          status === "Active" ? "bg-emerald-500" : "bg-gray-400",
         )}
       />
       {status}
@@ -161,7 +157,8 @@ function SortIcon({
   sortField: SortField;
   sortDir: SortDir;
 }) {
-  if (sortField !== field) return <ArrowUpDown className="h-3 w-3 text-gray-400" />;
+  if (sortField !== field)
+    return <ArrowUpDown className="h-3 w-3 text-gray-400" />;
   return sortDir === "asc" ? (
     <ArrowUp className="h-3 w-3 text-[#003B95]" />
   ) : (
@@ -182,11 +179,16 @@ function ChangeHistoryModal({
 }) {
   const sorted = useMemo(
     () => [...records].sort((a, b) => b.timestamp.localeCompare(a.timestamp)),
-    [records]
+    [records],
   );
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
@@ -244,7 +246,10 @@ function ChangeHistoryModal({
                       {rec.newRate.toFixed(2)}%
                     </TableCell>
                     <TableCell className="text-gray-600 text-xs">
-                      {format(parseISO(rec.effectiveFrom), "dd MMM yyyy, HH:mm")}
+                      {format(
+                        parseISO(rec.effectiveFrom),
+                        "dd MMM yyyy, HH:mm",
+                      )}
                     </TableCell>
                     <TableCell className="text-gray-700 text-xs">
                       {rec.modifiedBy}
@@ -288,14 +293,19 @@ function ConfirmStatusModal({
   const isDeactivating = rule.status === "Active";
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v && !isSaving) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v && !isSaving) onClose();
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle className="flex items-center gap-2 text-base">
             <div
               className={cn(
                 "flex items-center justify-center h-8 w-8 rounded-lg",
-                isDeactivating ? "bg-red-100" : "bg-amber-100"
+                isDeactivating ? "bg-red-100" : "bg-amber-100",
               )}
             >
               {isDeactivating ? (
@@ -326,13 +336,23 @@ function ConfirmStatusModal({
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Provider</span>
-            <span className={cn("text-gray-900", !rule.providerId && "italic text-gray-500")}>
+            <span
+              className={cn(
+                "text-gray-900",
+                !rule.providerId && "italic text-gray-500",
+              )}
+            >
               {rule.providerName}
             </span>
           </div>
           <div className="flex justify-between">
             <span className="text-gray-500">Country</span>
-            <span className={cn("text-gray-900", !rule.countryCode && "italic text-gray-500")}>
+            <span
+              className={cn(
+                "text-gray-900",
+                !rule.countryCode && "italic text-gray-500",
+              )}
+            >
               {rule.country}
             </span>
           </div>
@@ -353,7 +373,7 @@ function ConfirmStatusModal({
             onClick={onConfirm}
             disabled={isSaving}
             className={cn(
-              !isDeactivating && "bg-[#003B95] hover:bg-[#002d73] text-white"
+              !isDeactivating && "bg-[#003B95] hover:bg-[#002d73] text-white",
             )}
           >
             {isSaving && <Loader2 className="h-4 w-4 animate-spin mr-1" />}
@@ -443,7 +463,7 @@ export function CommissionsPage() {
       data = data.filter(
         (r) =>
           r.providerName.toLowerCase().includes(q) ||
-          r.country.toLowerCase().includes(q)
+          r.country.toLowerCase().includes(q),
       );
     }
 
@@ -515,7 +535,7 @@ export function CommissionsPage() {
   const safePage = Math.min(page, totalPages);
   const pagedRules = filteredRules.slice(
     (safePage - 1) * pageSize,
-    safePage * pageSize
+    safePage * pageSize,
   );
 
   const handleSort = useCallback(
@@ -527,17 +547,14 @@ export function CommissionsPage() {
         setSortDir("asc");
       }
     },
-    [sortField]
+    [sortField],
   );
 
   // Toggle status
-  const handleToggleStatus = useCallback(
-    (rule: CommissionRule) => {
-      setConfirmRule(rule);
-      setConfirmModalOpen(true);
-    },
-    []
-  );
+  const handleToggleStatus = useCallback((rule: CommissionRule) => {
+    setConfirmRule(rule);
+    setConfirmModalOpen(true);
+  }, []);
 
   const handleConfirmToggle = useCallback(() => {
     if (!confirmRule) return;
@@ -548,13 +565,13 @@ export function CommissionsPage() {
         confirmRule.status === "Active" ? "Inactive" : "Active";
       setRules((prev) =>
         prev.map((r) =>
-          r.id === confirmRule.id ? { ...r, status: newStatus } : r
-        )
+          r.id === confirmRule.id ? { ...r, status: newStatus } : r,
+        ),
       );
       toast.success(
         newStatus === "Active"
           ? "Commission rule activated. It will apply to future bookings."
-          : "Commission rule deactivated. Existing bookings retain their locked rates."
+          : "Commission rule deactivated. Existing bookings retain their locked rates.",
       );
       setIsSaving(false);
       setConfirmModalOpen(false);
@@ -570,11 +587,16 @@ export function CommissionsPage() {
   // ─── Render ───────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Header */}
       <div>
         <nav className="text-xs text-gray-500 mb-1">
-          <span className="hover:text-[#003B95] cursor-pointer" onClick={() => navigate("/")}>Admin</span>
+          <span
+            className="hover:text-[#003B95] cursor-pointer"
+            onClick={() => navigate("/")}
+          >
+            Admin
+          </span>
           <span className="mx-1.5">/</span>
           <span className="text-gray-400">Configuration</span>
           <span className="mx-1.5">/</span>
@@ -636,7 +658,7 @@ export function CommissionsPage() {
               setPage(1);
             }}
             placeholder="Search by provider name or country..."
-            className="pl-9 text-sm h-9"
+            className="pl-9 text-sm h-10"
             aria-label="Search commission rules"
           />
           {search && (
@@ -654,9 +676,12 @@ export function CommissionsPage() {
 
         <Select
           value={filterProviderType}
-          onValueChange={(v) => { setFilterProviderType(v); setPage(1); }}
+          onValueChange={(v) => {
+            setFilterProviderType(v);
+            setPage(1);
+          }}
         >
-          <SelectTrigger className="w-[180px] h-9 text-sm">
+          <SelectTrigger className="w-[180px] h-10 text-sm">
             <SelectValue placeholder="All Provider Types" />
           </SelectTrigger>
           <SelectContent>
@@ -671,9 +696,12 @@ export function CommissionsPage() {
 
         <Select
           value={filterServiceType}
-          onValueChange={(v) => { setFilterServiceType(v); setPage(1); }}
+          onValueChange={(v) => {
+            setFilterServiceType(v);
+            setPage(1);
+          }}
         >
-          <SelectTrigger className="w-[160px] h-9 text-sm">
+          <SelectTrigger className="w-[160px] h-10 text-sm">
             <SelectValue placeholder="All Service Types" />
           </SelectTrigger>
           <SelectContent>
@@ -688,9 +716,12 @@ export function CommissionsPage() {
 
         <Select
           value={filterProvider}
-          onValueChange={(v) => { setFilterProvider(v); setPage(1); }}
+          onValueChange={(v) => {
+            setFilterProvider(v);
+            setPage(1);
+          }}
         >
-          <SelectTrigger className="w-[180px] h-9 text-sm">
+          <SelectTrigger className="w-[180px] h-10 text-sm">
             <SelectValue placeholder="All Providers" />
           </SelectTrigger>
           <SelectContent>
@@ -705,9 +736,12 @@ export function CommissionsPage() {
 
         <Select
           value={filterCountry}
-          onValueChange={(v) => { setFilterCountry(v); setPage(1); }}
+          onValueChange={(v) => {
+            setFilterCountry(v);
+            setPage(1);
+          }}
         >
-          <SelectTrigger className="w-[160px] h-9 text-sm">
+          <SelectTrigger className="w-[160px] h-10 text-sm">
             <SelectValue placeholder="All Countries" />
           </SelectTrigger>
           <SelectContent>
@@ -722,9 +756,12 @@ export function CommissionsPage() {
 
         <Select
           value={filterStatus}
-          onValueChange={(v) => { setFilterStatus(v); setPage(1); }}
+          onValueChange={(v) => {
+            setFilterStatus(v);
+            setPage(1);
+          }}
         >
-          <SelectTrigger className="w-[140px] h-9 text-sm">
+          <SelectTrigger className="w-[140px] h-10 text-sm">
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -735,7 +772,12 @@ export function CommissionsPage() {
         </Select>
 
         {hasActiveFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="text-gray-500 gap-1.5">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={clearFilters}
+            className="text-gray-500 gap-1.5"
+          >
             <X className="h-3.5 w-3.5" />
             Clear Filters
           </Button>
@@ -806,21 +848,53 @@ export function CommissionsPage() {
               <TableRow className="bg-gray-50">
                 {(
                   [
-                    { key: "providerType" as SortField, label: "Provider Type", w: "w-[140px]" },
-                    { key: "serviceType" as SortField, label: "Service Type", w: "w-[130px]" },
-                    { key: "providerName" as SortField, label: "Provider Name", w: "w-[180px]" },
-                    { key: "country" as SortField, label: "Country", w: "w-[130px]" },
-                    { key: "commissionRate" as SortField, label: "Commission %", w: "w-[110px]" },
-                    { key: "taxRate" as SortField, label: "Tax %", w: "w-[100px]" },
-                    { key: "payoutDuration" as SortField, label: "Payout Duration", w: "w-[130px]" },
-                    { key: "status" as SortField, label: "Status", w: "w-[100px]" },
+                    {
+                      key: "providerType" as SortField,
+                      label: "Provider Type",
+                      w: "w-[140px]",
+                    },
+                    {
+                      key: "serviceType" as SortField,
+                      label: "Service Type",
+                      w: "w-[130px]",
+                    },
+                    {
+                      key: "providerName" as SortField,
+                      label: "Provider Name",
+                      w: "w-[180px]",
+                    },
+                    {
+                      key: "country" as SortField,
+                      label: "Country",
+                      w: "w-[130px]",
+                    },
+                    {
+                      key: "commissionRate" as SortField,
+                      label: "Commission %",
+                      w: "w-[110px]",
+                    },
+                    {
+                      key: "taxRate" as SortField,
+                      label: "Tax %",
+                      w: "w-[100px]",
+                    },
+                    {
+                      key: "payoutDuration" as SortField,
+                      label: "Payout Duration",
+                      w: "w-[130px]",
+                    },
+                    {
+                      key: "status" as SortField,
+                      label: "Status",
+                      w: "w-[100px]",
+                    },
                   ] as const
                 ).map((col) => (
                   <TableHead
                     key={col.key}
                     className={cn(
                       "text-[11px] font-semibold uppercase tracking-wider text-gray-500 cursor-pointer select-none",
-                      col.w
+                      col.w,
                     )}
                     onClick={() => handleSort(col.key)}
                     aria-sort={
@@ -852,7 +926,7 @@ export function CommissionsPage() {
                   key={rule.id}
                   className={cn(
                     "cursor-pointer hover:bg-gray-50 transition-colors",
-                    idx % 2 === 1 && "bg-gray-50/50"
+                    idx % 2 === 1 && "bg-gray-50/50",
                   )}
                 >
                   <TableCell>
@@ -869,7 +943,7 @@ export function CommissionsPage() {
                             "text-sm truncate block max-w-[160px]",
                             !rule.providerId
                               ? "italic text-gray-500"
-                              : "text-gray-900"
+                              : "text-gray-900",
                           )}
                         >
                           {rule.providerName}
@@ -884,7 +958,7 @@ export function CommissionsPage() {
                         "text-sm",
                         !rule.countryCode
                           ? "italic text-gray-500"
-                          : "text-gray-900"
+                          : "text-gray-900",
                       )}
                     >
                       {rule.country}
@@ -920,7 +994,7 @@ export function CommissionsPage() {
                           "text-sm cursor-pointer hover:underline",
                           rule.status === "Active"
                             ? "text-red-600"
-                            : "text-emerald-600"
+                            : "text-emerald-600",
                         )}
                         onClick={(e) => {
                           e.stopPropagation();
@@ -981,18 +1055,20 @@ export function CommissionsPage() {
             {Array.from({ length: totalPages }, (_, i) => i + 1)
               .filter(
                 (p) =>
-                  p === 1 ||
-                  p === totalPages ||
-                  Math.abs(p - safePage) <= 1
+                  p === 1 || p === totalPages || Math.abs(p - safePage) <= 1,
               )
               .reduce<(number | "dots")[]>((acc, p, idx, arr) => {
-                if (idx > 0 && p - (arr[idx - 1] as number) > 1) acc.push("dots");
+                if (idx > 0 && p - (arr[idx - 1] as number) > 1)
+                  acc.push("dots");
                 acc.push(p);
                 return acc;
               }, [])
               .map((item, idx) =>
                 item === "dots" ? (
-                  <span key={`dots-${idx}`} className="px-1 text-gray-400 text-sm">
+                  <span
+                    key={`dots-${idx}`}
+                    className="px-1 text-gray-400 text-sm"
+                  >
                     ...
                   </span>
                 ) : (
@@ -1003,13 +1079,13 @@ export function CommissionsPage() {
                     className={cn(
                       "h-8 w-8 text-xs",
                       item === safePage &&
-                        "bg-[#003B95] hover:bg-[#002d73] text-white"
+                        "bg-[#003B95] hover:bg-[#002d73] text-white",
                     )}
                     onClick={() => setPage(item as number)}
                   >
                     {item}
                   </Button>
-                )
+                ),
               )}
             <Button
               variant="outline"

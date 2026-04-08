@@ -44,7 +44,11 @@ import { Calendar } from "../../ui/calendar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { toast } from "sonner";
 
-import type { AuditLogEntry, AuditAction, AuditEntityType } from "./audit-types";
+import type {
+  AuditLogEntry,
+  AuditAction,
+  AuditEntityType,
+} from "./audit-types";
 import {
   MOCK_AUDIT_LOGS,
   ALL_ACTIONS,
@@ -56,7 +60,13 @@ import {
 
 // ─── Constants ───────────────────────────────────────────────────────────────
 
-type SortField = "timestamp" | "adminUser" | "action" | "entityType" | "entityId" | "ipAddress";
+type SortField =
+  | "timestamp"
+  | "adminUser"
+  | "action"
+  | "entityType"
+  | "entityId"
+  | "ipAddress";
 type SortDir = "asc" | "desc";
 
 const PAGE_SIZES = [25, 50, 100] as const;
@@ -75,7 +85,7 @@ export function AuditTrailPage() {
   const [actionFilter, setActionFilter] = useState<string>("all");
   const [adminUserFilter, setAdminUserFilter] = useState<string>("all");
   const [entityTypeFilter, setEntityTypeFilter] = useState<string>(
-    deepEntityType || "all"
+    deepEntityType || "all",
   );
   const [dateFrom, setDateFrom] = useState<Date | undefined>(undefined);
   const [dateTo, setDateTo] = useState<Date | undefined>(undefined);
@@ -92,13 +102,21 @@ export function AuditTrailPage() {
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
 
   // ── Active filter chips ────────────────────────────────────────────────────
-  const activeFilters: { key: string; label: string; value: string; clear: () => void }[] = [];
+  const activeFilters: {
+    key: string;
+    label: string;
+    value: string;
+    clear: () => void;
+  }[] = [];
   if (actionFilter !== "all") {
     activeFilters.push({
       key: "action",
       label: "Action Type",
       value: actionFilter,
-      clear: () => { setActionFilter("all"); setPage(1); },
+      clear: () => {
+        setActionFilter("all");
+        setPage(1);
+      },
     });
   }
   if (adminUserFilter !== "all") {
@@ -106,7 +124,10 @@ export function AuditTrailPage() {
       key: "adminUser",
       label: "Admin User",
       value: adminUserFilter,
-      clear: () => { setAdminUserFilter("all"); setPage(1); },
+      clear: () => {
+        setAdminUserFilter("all");
+        setPage(1);
+      },
     });
   }
   if (entityTypeFilter !== "all") {
@@ -114,7 +135,10 @@ export function AuditTrailPage() {
       key: "entityType",
       label: "Entity Type",
       value: entityTypeFilter,
-      clear: () => { setEntityTypeFilter("all"); setPage(1); },
+      clear: () => {
+        setEntityTypeFilter("all");
+        setPage(1);
+      },
     });
   }
   if (dateFrom) {
@@ -122,7 +146,10 @@ export function AuditTrailPage() {
       key: "dateFrom",
       label: "From",
       value: format(dateFrom, "MMM d, yyyy"),
-      clear: () => { setDateFrom(undefined); setPage(1); },
+      clear: () => {
+        setDateFrom(undefined);
+        setPage(1);
+      },
     });
   }
   if (dateTo) {
@@ -130,7 +157,10 @@ export function AuditTrailPage() {
       key: "dateTo",
       label: "To",
       value: format(dateTo, "MMM d, yyyy"),
-      clear: () => { setDateTo(undefined); setPage(1); },
+      clear: () => {
+        setDateTo(undefined);
+        setPage(1);
+      },
     });
   }
 
@@ -149,8 +179,10 @@ export function AuditTrailPage() {
         }
       }
       if (actionFilter !== "all" && entry.action !== actionFilter) return false;
-      if (adminUserFilter !== "all" && entry.adminUser !== adminUserFilter) return false;
-      if (entityTypeFilter !== "all" && entry.entityType !== entityTypeFilter) return false;
+      if (adminUserFilter !== "all" && entry.adminUser !== adminUserFilter)
+        return false;
+      if (entityTypeFilter !== "all" && entry.entityType !== entityTypeFilter)
+        return false;
       if (dateFrom) {
         const d = new Date(dateFrom);
         d.setHours(0, 0, 0, 0);
@@ -163,7 +195,14 @@ export function AuditTrailPage() {
       }
       return true;
     });
-  }, [search, actionFilter, adminUserFilter, entityTypeFilter, dateFrom, dateTo]);
+  }, [
+    search,
+    actionFilter,
+    adminUserFilter,
+    entityTypeFilter,
+    dateFrom,
+    dateTo,
+  ]);
 
   // ── Sorting ────────────────────────────────────────────────────────────────
   const sorted = useMemo(() => {
@@ -246,7 +285,16 @@ export function AuditTrailPage() {
     if (sorted.length > 10000) {
       toast.warning("Large export in progress. This may take a moment.");
     }
-    const headers = ["Timestamp (UTC)", "Admin User", "Admin Email", "Action", "Entity Type", "Entity ID", "Details", "IP Address"];
+    const headers = [
+      "Timestamp (UTC)",
+      "Admin User",
+      "Admin Email",
+      "Action",
+      "Entity Type",
+      "Entity ID",
+      "Details",
+      "IP Address",
+    ];
     const rows = sorted.map((entry) => [
       format(entry.timestamp, "dd MMM yyyy, HH:mm:ss") + " UTC",
       entry.adminUser,
@@ -257,7 +305,10 @@ export function AuditTrailPage() {
       `"${entry.details.replace(/"/g, '""')}"`,
       entry.ipAddress,
     ]);
-    const csvContent = [headers.join(","), ...rows.map((r) => r.join(","))].join("\n");
+    const csvContent = [
+      headers.join(","),
+      ...rows.map((r) => r.join(",")),
+    ].join("\n");
     const blob = new Blob([csvContent], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -337,7 +388,10 @@ export function AuditTrailPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9" aria-label="Filter by action type">
+              <SelectTrigger
+                className="h-10"
+                aria-label="Filter by action type"
+              >
                 <SelectValue placeholder="All Actions" />
               </SelectTrigger>
               <SelectContent>
@@ -361,7 +415,7 @@ export function AuditTrailPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9" aria-label="Filter by admin user">
+              <SelectTrigger className="h-10" aria-label="Filter by admin user">
                 <SelectValue placeholder="All Admins" />
               </SelectTrigger>
               <SelectContent>
@@ -385,7 +439,10 @@ export function AuditTrailPage() {
                 setPage(1);
               }}
             >
-              <SelectTrigger className="h-9" aria-label="Filter by entity type">
+              <SelectTrigger
+                className="h-10"
+                aria-label="Filter by entity type"
+              >
                 <SelectValue placeholder="All Entity Types" />
               </SelectTrigger>
               <SelectContent>
@@ -407,8 +464,8 @@ export function AuditTrailPage() {
                 <Button
                   variant="outline"
                   className={cn(
-                    "h-9 gap-2 text-sm min-w-[130px] justify-start",
-                    !dateFrom && "text-muted-foreground"
+                    "h-10 gap-2 text-sm min-w-[130px] justify-start",
+                    !dateFrom && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="h-3.5 w-3.5" />
@@ -437,8 +494,8 @@ export function AuditTrailPage() {
                 <Button
                   variant="outline"
                   className={cn(
-                    "h-9 gap-2 text-sm min-w-[130px] justify-start",
-                    !dateTo && "text-muted-foreground"
+                    "h-10 gap-2 text-sm min-w-[130px] justify-start",
+                    !dateTo && "text-muted-foreground",
                   )}
                 >
                   <CalendarIcon className="h-3.5 w-3.5" />
@@ -465,7 +522,7 @@ export function AuditTrailPage() {
               variant="ghost"
               size="sm"
               onClick={clearFilters}
-              className="gap-1 text-xs text-red-500 hover:text-red-700 h-9"
+              className="gap-1 text-xs text-red-500 hover:text-red-700 h-10"
             >
               <X className="h-3.5 w-3.5" />
               Clear Filters
@@ -603,14 +660,15 @@ export function AuditTrailPage() {
                       key={entry.id}
                       className={cn(
                         "transition-colors",
-                        idx % 2 === 0 ? "bg-white" : "bg-gray-50/40"
+                        idx % 2 === 0 ? "bg-white" : "bg-gray-50/40",
                       )}
                     >
                       {/* Timestamp */}
                       <TableCell className="px-4">
                         <div>
                           <p className="text-xs text-[#111827] tabular-nums">
-                            {format(entry.timestamp, "dd MMM yyyy, HH:mm:ss")} UTC
+                            {format(entry.timestamp, "dd MMM yyyy, HH:mm:ss")}{" "}
+                            UTC
                           </p>
                         </div>
                       </TableCell>
@@ -676,7 +734,9 @@ export function AuditTrailPage() {
                         <div className="text-xs text-[#6B7280]">
                           {isLongDetail && !isExpanded ? (
                             <>
-                              <span>{entry.details.slice(0, DETAIL_TRUNCATE)}...</span>
+                              <span>
+                                {entry.details.slice(0, DETAIL_TRUNCATE)}...
+                              </span>
                               <button
                                 onClick={() => toggleExpand(entry.id)}
                                 className="ml-1 text-[#003B95] hover:underline font-medium"
@@ -782,7 +842,10 @@ export function AuditTrailPage() {
               </Button>
               {getPageNumbers().map((p, i) =>
                 p === "..." ? (
-                  <span key={`ellipsis-${i}`} className="px-1 text-xs text-[#9CA3AF]">
+                  <span
+                    key={`ellipsis-${i}`}
+                    className="px-1 text-xs text-[#9CA3AF]"
+                  >
                     ...
                   </span>
                 ) : (
@@ -793,12 +856,12 @@ export function AuditTrailPage() {
                     onClick={() => setPage(p)}
                     className={cn(
                       "h-7 w-7 p-0 text-xs",
-                      p === safePage && "bg-[#003B95] hover:bg-[#002a6b]"
+                      p === safePage && "bg-[#003B95] hover:bg-[#002a6b]",
                     )}
                   >
                     {p}
                   </Button>
-                )
+                ),
               )}
               <Button
                 variant="outline"

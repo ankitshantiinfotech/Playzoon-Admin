@@ -18,10 +18,7 @@ function ToggleRow({ label, description, checked, onChange }: ToggleRowProps) {
         <h3 className="text-sm font-medium text-gray-900">{label}</h3>
         <p className="text-sm text-gray-500 mt-1">{description}</p>
       </div>
-      <Switch
-        checked={checked}
-        onCheckedChange={onChange}
-      />
+      <Switch checked={checked} onCheckedChange={onChange} />
     </div>
   );
 }
@@ -44,9 +41,11 @@ export function CommunicationSettings() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900">Communication Settings</h2>
+        <h2 className="text-lg font-semibold text-gray-900">
+          Communication Settings
+        </h2>
         <p className="text-sm text-gray-500 mt-1">
           Manage chat features, messaging policies, and moderation controls.
         </p>
@@ -83,16 +82,22 @@ export function CommunicationSettings() {
 
         <div className="flex items-center justify-between py-4">
           <div className="flex-1 pr-4">
-            <h3 className="text-sm font-medium text-gray-900">Max Message Length</h3>
-            <p className="text-sm text-gray-500 mt-1">Maximum characters allowed per chat message.</p>
+            <h3 className="text-sm font-medium text-gray-900">
+              Max Message Length
+            </h3>
+            <p className="text-sm text-gray-500 mt-1">
+              Maximum characters allowed per chat message.
+            </p>
           </div>
           <div className="w-32">
-             <input
+            <input
               type="number"
               min={100}
               max={10000}
               value={maxMessageLength}
-              onChange={(e) => setMaxMessageLength(parseInt(e.target.value) || 0)}
+              onChange={(e) =>
+                setMaxMessageLength(parseInt(e.target.value) || 0)
+              }
               className="block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500 sm:text-sm px-3 py-2 border"
             />
           </div>
@@ -101,7 +106,10 @@ export function CommunicationSettings() {
 
       <div className="flex items-center gap-2 text-sm text-blue-600 bg-blue-50 p-4 rounded-md border border-blue-100">
         <Info className="w-4 h-4 flex-shrink-0" />
-        <p>Changes to communication settings take effect immediately for new messages.</p>
+        <p>
+          Changes to communication settings take effect immediately for new
+          messages.
+        </p>
       </div>
 
       <div className="flex justify-end pt-4">

@@ -1,11 +1,7 @@
 import { useState, useMemo, useEffect, useCallback } from "react";
 import { ReviewTable } from "./ReviewTable";
 import { Review } from "./types";
-import {
-  MessageSquare,
-  EyeOff,
-  Flag,
-} from "lucide-react";
+import { MessageSquare, EyeOff, Flag } from "lucide-react";
 import { adminService } from "@/services/admin.service";
 import { toast } from "sonner";
 
@@ -17,11 +13,19 @@ interface StatCardProps {
   valueColor?: string;
 }
 
-function StatCard({ label, value, icon, iconBg, valueColor = "text-gray-900" }: StatCardProps) {
+function StatCard({
+  label,
+  value,
+  icon,
+  iconBg,
+  valueColor = "text-gray-900",
+}: StatCardProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 shadow-sm p-5 flex items-center justify-between gap-4">
       <div>
-        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">{label}</p>
+        <p className="text-xs font-semibold text-gray-400 uppercase tracking-wide">
+          {label}
+        </p>
         <p className={`text-3xl font-bold mt-1 ${valueColor}`}>{value}</p>
       </div>
       <div className={`p-3 rounded-xl shrink-0 ${iconBg}`}>{icon}</div>
@@ -35,7 +39,10 @@ export function AdminReviewPage() {
 
   const mapReview = useCallback((r: Record<string, unknown>): Review => {
     const typeMap: Record<string, Review["target"]["type"]> = {
-      facility: "Facility", training: "Training", coach: "Coach", tournament: "Tournament",
+      facility: "Facility",
+      training: "Training",
+      coach: "Coach",
+      tournament: "Tournament",
     };
     return {
       id: String(r.id || ""),
@@ -72,7 +79,9 @@ export function AdminReviewPage() {
     }
   }, [mapReview]);
 
-  useEffect(() => { fetchReviews(); }, [fetchReviews]);
+  useEffect(() => {
+    fetchReviews();
+  }, [fetchReviews]);
 
   const handleUpdate = async (reviewId: string, updates: Partial<Review>) => {
     try {
@@ -86,7 +95,7 @@ export function AdminReviewPage() {
       console.error("Review update API failed:", err);
     }
     setReviews((prev) =>
-      prev.map((r) => (r.id === reviewId ? { ...r, ...updates } : r))
+      prev.map((r) => (r.id === reviewId ? { ...r, ...updates } : r)),
     );
   };
 
@@ -98,7 +107,7 @@ export function AdminReviewPage() {
   }, [reviews]);
 
   return (
-    <div className="flex flex-col gap-6 h-full">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* ── Header ────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
         <div>
@@ -107,7 +116,8 @@ export function AdminReviewPage() {
             Reviews &amp; Ratings
           </h1>
           <p className="text-gray-500 mt-1 text-sm">
-            Moderate player reviews across all categories — hide flagged reviews or unflag provider disputes.
+            Moderate player reviews across all categories — hide flagged reviews
+            or unflag provider disputes.
           </p>
         </div>
       </div>

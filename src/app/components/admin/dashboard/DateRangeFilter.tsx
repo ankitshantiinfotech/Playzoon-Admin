@@ -38,7 +38,7 @@ export function DateRangeFilter() {
   return (
     <div className="flex items-center gap-2">
       <Select value={filterType} onValueChange={handleFilterChange}>
-        <SelectTrigger className="w-[180px] bg-white">
+        <SelectTrigger className="w-[180px]">
           <SelectValue placeholder="Select period" />
         </SelectTrigger>
         <SelectContent>
@@ -56,7 +56,7 @@ export function DateRangeFilter() {
               id="date"
               variant={"outline"}
               className={cn(
-                "w-[260px] justify-start text-left font-normal bg-white",
+                "w-[260px] justify-start text-left font-normal",
                 !date && "text-muted-foreground"
               )}
             >

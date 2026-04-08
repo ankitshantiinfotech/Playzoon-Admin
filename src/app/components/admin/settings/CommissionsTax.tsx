@@ -22,7 +22,13 @@ import {
 } from "../../ui/select";
 import { toast } from "sonner";
 import { Plus, Trash2 } from "lucide-react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -38,11 +44,23 @@ const commissionSchema = z.object({
   countries: z.array(
     z.object({
       country: z.string().min(1, "Country is required"),
-      fpCommission: z.coerce.number().min(0, "Commission must be between 0% and 100%").max(100, "Commission must be between 0% and 100%"),
-      tpCommission: z.coerce.number().min(0, "Commission must be between 0% and 100%").max(100, "Commission must be between 0% and 100%"),
-      fcCommission: z.coerce.number().min(0, "Commission must be between 0% and 100%").max(100, "Commission must be between 0% and 100%"),
-      vat: z.coerce.number().min(0, "Tax rate must be between 0% and 100%").max(100, "Tax rate must be between 0% and 100%"),
-    })
+      fpCommission: z.coerce
+        .number()
+        .min(0, "Commission must be between 0% and 100%")
+        .max(100, "Commission must be between 0% and 100%"),
+      tpCommission: z.coerce
+        .number()
+        .min(0, "Commission must be between 0% and 100%")
+        .max(100, "Commission must be between 0% and 100%"),
+      fcCommission: z.coerce
+        .number()
+        .min(0, "Commission must be between 0% and 100%")
+        .max(100, "Commission must be between 0% and 100%"),
+      vat: z.coerce
+        .number()
+        .min(0, "Tax rate must be between 0% and 100%")
+        .max(100, "Tax rate must be between 0% and 100%"),
+    }),
   ),
 });
 
@@ -67,8 +85,20 @@ export function CommissionsTax() {
     resolver: zodResolver(commissionSchema),
     defaultValues: {
       countries: [
-        { country: "Saudi Arabia", fpCommission: 15, tpCommission: 10, fcCommission: 5, vat: 15 },
-        { country: "UAE", fpCommission: 15, tpCommission: 10, fcCommission: 5, vat: 5 },
+        {
+          country: "Saudi Arabia",
+          fpCommission: 15,
+          tpCommission: 10,
+          fcCommission: 5,
+          vat: 15,
+        },
+        {
+          country: "UAE",
+          fpCommission: 15,
+          tpCommission: 10,
+          fcCommission: 5,
+          vat: 5,
+        },
       ],
     },
   });
@@ -93,10 +123,12 @@ export function CommissionsTax() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">Commissions & Tax</h2>
-        <p className="text-muted-foreground">Manage commission rates and tax percentages per country.</p>
+        <p className="text-muted-foreground">
+          Manage commission rates and tax percentages per country.
+        </p>
       </div>
 
       <Card>
@@ -126,7 +158,9 @@ export function CommissionsTax() {
                       <TableCell>
                         <Select
                           defaultValue={field.country}
-                          onValueChange={(value) => form.setValue(`countries.${index}.country`, value)}
+                          onValueChange={(value) =>
+                            form.setValue(`countries.${index}.country`, value)
+                          }
                         >
                           <SelectTrigger>
                             <SelectValue placeholder="Select Country" />
@@ -140,40 +174,69 @@ export function CommissionsTax() {
                           </SelectContent>
                         </Select>
                         {form.formState.errors.countries?.[index]?.country && (
-                          <p className="text-xs text-red-500 mt-1">{form.formState.errors.countries[index]?.country?.message}</p>
+                          <p className="text-xs text-red-500 mt-1">
+                            {
+                              form.formState.errors.countries[index]?.country
+                                ?.message
+                            }
+                          </p>
                         )}
                       </TableCell>
                       <TableCell>
                         <Input
                           type="number"
-                          {...form.register(`countries.${index}.fpCommission` as const)}
+                          {...form.register(
+                            `countries.${index}.fpCommission` as const,
+                          )}
                           min={0}
                           max={100}
                         />
-                         {form.formState.errors.countries?.[index]?.fpCommission && (
-                          <p className="text-xs text-red-500 mt-1">{form.formState.errors.countries[index]?.fpCommission?.message}</p>
+                        {form.formState.errors.countries?.[index]
+                          ?.fpCommission && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {
+                              form.formState.errors.countries[index]
+                                ?.fpCommission?.message
+                            }
+                          </p>
                         )}
                       </TableCell>
                       <TableCell>
                         <Input
                           type="number"
-                          {...form.register(`countries.${index}.tpCommission` as const)}
+                          {...form.register(
+                            `countries.${index}.tpCommission` as const,
+                          )}
                           min={0}
                           max={100}
                         />
-                         {form.formState.errors.countries?.[index]?.tpCommission && (
-                          <p className="text-xs text-red-500 mt-1">{form.formState.errors.countries[index]?.tpCommission?.message}</p>
+                        {form.formState.errors.countries?.[index]
+                          ?.tpCommission && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {
+                              form.formState.errors.countries[index]
+                                ?.tpCommission?.message
+                            }
+                          </p>
                         )}
                       </TableCell>
                       <TableCell>
                         <Input
                           type="number"
-                          {...form.register(`countries.${index}.fcCommission` as const)}
+                          {...form.register(
+                            `countries.${index}.fcCommission` as const,
+                          )}
                           min={0}
                           max={100}
                         />
-                         {form.formState.errors.countries?.[index]?.fcCommission && (
-                          <p className="text-xs text-red-500 mt-1">{form.formState.errors.countries[index]?.fcCommission?.message}</p>
+                        {form.formState.errors.countries?.[index]
+                          ?.fcCommission && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {
+                              form.formState.errors.countries[index]
+                                ?.fcCommission?.message
+                            }
+                          </p>
                         )}
                       </TableCell>
                       <TableCell>
@@ -183,8 +246,13 @@ export function CommissionsTax() {
                           min={0}
                           max={100}
                         />
-                         {form.formState.errors.countries?.[index]?.vat && (
-                          <p className="text-xs text-red-500 mt-1">{form.formState.errors.countries[index]?.vat?.message}</p>
+                        {form.formState.errors.countries?.[index]?.vat && (
+                          <p className="text-xs text-red-500 mt-1">
+                            {
+                              form.formState.errors.countries[index]?.vat
+                                ?.message
+                            }
+                          </p>
                         )}
                       </TableCell>
                       <TableCell>
@@ -208,7 +276,15 @@ export function CommissionsTax() {
               <Button
                 type="button"
                 variant="outline"
-                onClick={() => append({ country: "", fpCommission: 0, tpCommission: 0, fcCommission: 0, vat: 0 })}
+                onClick={() =>
+                  append({
+                    country: "",
+                    fpCommission: 0,
+                    tpCommission: 0,
+                    fcCommission: 0,
+                    vat: 0,
+                  })
+                }
                 className="gap-2"
               >
                 <Plus className="h-4 w-4" /> Add Country
@@ -218,13 +294,17 @@ export function CommissionsTax() {
             <div className="bg-blue-50 dark:bg-blue-900/20 p-4 rounded-md text-sm text-blue-800 dark:text-blue-200">
               <p className="font-medium">Example Calculation:</p>
               <p>
-                For facility bookings in Saudi Arabia: Provider receives 85% (15% commission), plus 15% VAT applied to player.
+                For facility bookings in Saudi Arabia: Provider receives 85%
+                (15% commission), plus 15% VAT applied to player.
               </p>
             </div>
-            
-             <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-md text-sm text-yellow-800 dark:text-yellow-200">
-               <p className="font-medium">Note:</p>
-               <p>Updating commissions affects all new bookings. Existing bookings retain their original commission rates.</p>
+
+            <div className="bg-yellow-50 dark:bg-yellow-900/20 p-4 rounded-md text-sm text-yellow-800 dark:text-yellow-200">
+              <p className="font-medium">Note:</p>
+              <p>
+                Updating commissions affects all new bookings. Existing bookings
+                retain their original commission rates.
+              </p>
             </div>
 
             <div className="flex justify-end">
@@ -239,12 +319,18 @@ export function CommissionsTax() {
               <AlertDialogHeader>
                 <AlertDialogTitle>Save Commissions?</AlertDialogTitle>
                 <AlertDialogDescription>
-                  Updating commissions affects all new bookings. Existing bookings retain their original commission rates.
+                  Updating commissions affects all new bookings. Existing
+                  bookings retain their original commission rates.
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleConfirmSave} className="bg-[#003B95] hover:bg-[#002a6b]">Confirm</AlertDialogAction>
+                <AlertDialogAction
+                  onClick={handleConfirmSave}
+                  className="bg-[#003B95] hover:bg-[#002a6b]"
+                >
+                  Confirm
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>

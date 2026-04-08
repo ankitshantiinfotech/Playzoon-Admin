@@ -42,7 +42,13 @@ const TYPE_COLORS: Record<string, string> = {
 
 // ─── Star Rating Component ────────────────────────────────────────────────────
 
-function StarRating({ rating, size = "lg" }: { rating: number; size?: "sm" | "lg" }) {
+function StarRating({
+  rating,
+  size = "lg",
+}: {
+  rating: number;
+  size?: "sm" | "lg";
+}) {
   const cls = size === "lg" ? "w-6 h-6" : "w-4 h-4";
   return (
     <div className="flex items-center gap-1">
@@ -53,7 +59,7 @@ function StarRating({ rating, size = "lg" }: { rating: number; size?: "sm" | "lg
             cls,
             i < rating
               ? "fill-amber-400 text-amber-400"
-              : "text-gray-200 fill-gray-200"
+              : "text-gray-200 fill-gray-200",
           )}
         />
       ))}
@@ -129,7 +135,8 @@ function HideReviewModal({
 
           <div>
             <label className="block text-sm font-medium text-gray-700 mb-1.5">
-              Reason <span className="text-gray-400 font-normal">(optional)</span>
+              Reason{" "}
+              <span className="text-gray-400 font-normal">(optional)</span>
             </label>
             <textarea
               value={reason}
@@ -188,8 +195,8 @@ export function ReviewDetailPage() {
           </h2>
           <p className="text-sm text-gray-500 mb-6">
             The review with ID{" "}
-            <span className="font-mono text-gray-700">{id}</span> does not
-            exist or has been permanently deleted.
+            <span className="font-mono text-gray-700">{id}</span> does not exist
+            or has been permanently deleted.
           </p>
           <button
             onClick={() => navigate("/reviews")}
@@ -252,7 +259,7 @@ export function ReviewDetailPage() {
   // ── Render ──────────────────────────────────────────────────────────────────
 
   return (
-    <div className="flex flex-col gap-6 h-full">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* ── Header ─────────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         {/* Back button */}
@@ -348,101 +355,99 @@ export function ReviewDetailPage() {
           </div>
 
           {/* Flag Alert Card (only if Flagged) */}
-          {review.status === "Flagged" &&
-            review.flaggedByProvider && (
-              <div className="bg-amber-50 border border-amber-200 rounded-xl shadow-sm p-5">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-amber-100 rounded-lg shrink-0">
-                    <Flag className="w-5 h-5 text-amber-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-amber-900 mb-1">
-                      Provider Flag Alert
-                    </h3>
-                    <div className="space-y-2">
+          {review.status === "Flagged" && review.flaggedByProvider && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl shadow-sm p-5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-amber-100 rounded-lg shrink-0">
+                  <Flag className="w-5 h-5 text-amber-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-amber-900 mb-1">
+                    Provider Flag Alert
+                  </h3>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-amber-600 uppercase tracking-wide font-medium">
+                        Flagged By
+                      </p>
+                      <p className="text-sm font-medium text-amber-800">
+                        {review.flaggedByProvider}
+                      </p>
+                    </div>
+                    {review.flaggedReason && (
                       <div>
                         <p className="text-xs text-amber-600 uppercase tracking-wide font-medium">
-                          Flagged By
+                          Reason
                         </p>
-                        <p className="text-sm font-medium text-amber-800">
-                          {review.flaggedByProvider}
+                        <p className="text-sm text-amber-800">
+                          {review.flaggedReason}
                         </p>
                       </div>
-                      {review.flaggedReason && (
-                        <div>
-                          <p className="text-xs text-amber-600 uppercase tracking-wide font-medium">
-                            Reason
-                          </p>
-                          <p className="text-sm text-amber-800">
-                            {review.flaggedReason}
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
 
           {/* Hide Info Card (only if Hidden) */}
-          {review.status === "Hidden" &&
-            review.hideReasonCategory && (
-              <div className="bg-red-50 border border-red-200 rounded-xl shadow-sm p-5">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-red-100 rounded-lg shrink-0">
-                    <ShieldAlert className="w-5 h-5 text-red-600" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="text-sm font-semibold text-red-900 mb-1">
-                      Review Hidden
-                    </h3>
-                    <div className="space-y-2">
+          {review.status === "Hidden" && review.hideReasonCategory && (
+            <div className="bg-red-50 border border-red-200 rounded-xl shadow-sm p-5">
+              <div className="flex items-start gap-3">
+                <div className="p-2 bg-red-100 rounded-lg shrink-0">
+                  <ShieldAlert className="w-5 h-5 text-red-600" />
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-semibold text-red-900 mb-1">
+                    Review Hidden
+                  </h3>
+                  <div className="space-y-2">
+                    <div>
+                      <p className="text-xs text-red-500 uppercase tracking-wide font-medium">
+                        Reason Category
+                      </p>
+                      <p className="text-sm font-medium text-red-800">
+                        {review.hideReasonCategory}
+                      </p>
+                    </div>
+                    {review.hideAdditionalNotes && (
                       <div>
                         <p className="text-xs text-red-500 uppercase tracking-wide font-medium">
-                          Reason Category
+                          Additional Notes
                         </p>
-                        <p className="text-sm font-medium text-red-800">
-                          {review.hideReasonCategory}
+                        <p className="text-sm text-red-800">
+                          {review.hideAdditionalNotes}
                         </p>
                       </div>
-                      {review.hideAdditionalNotes && (
-                        <div>
-                          <p className="text-xs text-red-500 uppercase tracking-wide font-medium">
-                            Additional Notes
-                          </p>
-                          <p className="text-sm text-red-800">
-                            {review.hideAdditionalNotes}
-                          </p>
-                        </div>
-                      )}
-                      {review.hiddenBy && (
-                        <div>
-                          <p className="text-xs text-red-500 uppercase tracking-wide font-medium">
-                            Hidden By
-                          </p>
-                          <p className="text-sm text-red-800">
-                            {review.hiddenBy}
-                          </p>
-                        </div>
-                      )}
-                      {review.hiddenAt && (
-                        <div>
-                          <p className="text-xs text-red-500 uppercase tracking-wide font-medium">
-                            Hidden At
-                          </p>
-                          <p className="text-sm text-red-800">
-                            {format(
-                              new Date(review.hiddenAt),
-                              "MMM d, yyyy · HH:mm"
-                            )}
-                          </p>
-                        </div>
-                      )}
-                    </div>
+                    )}
+                    {review.hiddenBy && (
+                      <div>
+                        <p className="text-xs text-red-500 uppercase tracking-wide font-medium">
+                          Hidden By
+                        </p>
+                        <p className="text-sm text-red-800">
+                          {review.hiddenBy}
+                        </p>
+                      </div>
+                    )}
+                    {review.hiddenAt && (
+                      <div>
+                        <p className="text-xs text-red-500 uppercase tracking-wide font-medium">
+                          Hidden At
+                        </p>
+                        <p className="text-sm text-red-800">
+                          {format(
+                            new Date(review.hiddenAt),
+                            "MMM d, yyyy · HH:mm",
+                          )}
+                        </p>
+                      </div>
+                    )}
                   </div>
                 </div>
               </div>
-            )}
+            </div>
+          )}
         </div>
 
         {/* ── Right Column (35%) ─────────────────────────────────────────── */}
@@ -490,7 +495,7 @@ export function ReviewDetailPage() {
                   <span
                     className={cn(
                       "text-xs font-medium px-2.5 py-0.5 rounded-full mt-1 inline-block",
-                      TYPE_COLORS[review.target.type]
+                      TYPE_COLORS[review.target.type],
                     )}
                   >
                     {review.target.type}
@@ -530,7 +535,7 @@ export function ReviewDetailPage() {
                 <span
                   className={cn(
                     "text-xs font-medium px-3 py-1 rounded-full",
-                    STATUS_STYLES[review.status]
+                    STATUS_STYLES[review.status],
                   )}
                 >
                   {review.status}

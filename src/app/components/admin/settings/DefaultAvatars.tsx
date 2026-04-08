@@ -76,17 +76,9 @@ const GENDER_CONFIG: {
 
 function PlaceholderAvatar({ gender }: { gender: GenderKey }) {
   const bgColor =
-    gender === "male"
-      ? "#E0ECFF"
-      : gender === "female"
-        ? "#FCE4EC"
-        : "#F3F4F6";
+    gender === "male" ? "#E0ECFF" : gender === "female" ? "#FCE4EC" : "#F3F4F6";
   const iconColor =
-    gender === "male"
-      ? "#003B95"
-      : gender === "female"
-        ? "#EC407A"
-        : "#6B7280";
+    gender === "male" ? "#003B95" : gender === "female" ? "#EC407A" : "#6B7280";
 
   return (
     <div
@@ -139,7 +131,20 @@ function AvatarUploadArea({
   return (
     <div className="flex flex-col items-center text-center space-y-4 p-5 rounded-xl border border-gray-200 bg-white">
       {/* Top accent bar */}
-      <div className={cn("h-1 w-full rounded-t-xl -mt-5 -mx-5", config.accentColor)} style={{ width: "calc(100% + 2.5rem)", marginLeft: "-1.25rem", marginRight: "-1.25rem", marginTop: "-1.25rem", borderTopLeftRadius: "0.75rem", borderTopRightRadius: "0.75rem" }} />
+      <div
+        className={cn(
+          "h-1 w-full rounded-t-xl -mt-5 -mx-5",
+          config.accentColor,
+        )}
+        style={{
+          width: "calc(100% + 2.5rem)",
+          marginLeft: "-1.25rem",
+          marginRight: "-1.25rem",
+          marginTop: "-1.25rem",
+          borderTopLeftRadius: "0.75rem",
+          borderTopRightRadius: "0.75rem",
+        }}
+      />
 
       {/* Label */}
       <div className="space-y-0.5 pt-1">
@@ -155,7 +160,7 @@ function AvatarUploadArea({
         <div
           className={cn(
             "w-[100px] h-[100px] rounded-full overflow-hidden border-4 transition-colors",
-            hasPending ? "border-[#003B95]/30" : "border-gray-100"
+            hasPending ? "border-[#003B95]/30" : "border-gray-100",
           )}
         >
           {displayUrl ? (
@@ -224,7 +229,9 @@ function AvatarUploadArea({
             Remove
           </button>
         )}
-        <p className="text-[10px] text-gray-400">JPEG/PNG, max {MAX_SIZE_LABEL}</p>
+        <p className="text-[10px] text-gray-400">
+          JPEG/PNG, max {MAX_SIZE_LABEL}
+        </p>
       </div>
 
       {/* Hidden file input */}
@@ -274,7 +281,7 @@ export function DefaultProfilePictures({
     setAvatars((prev) => {
       const next = { ...prev, [key]: { ...prev[key], ...update } };
       const hasChanges = Object.values(next).some(
-        (s) => s.pendingFile !== null || s.removed
+        (s) => s.pendingFile !== null || s.removed,
       );
       onChangeDetected?.(hasChanges);
       return next;
@@ -374,11 +381,13 @@ export function DefaultProfilePictures({
     <Card>
       <CardHeader>
         <div className="flex items-center gap-3">
-          <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-violet-100">
+          <div className="flex items-center justify-center h-10 w-9 rounded-lg bg-violet-100">
             <UserCircle className="h-4.5 w-4.5 text-violet-600" />
           </div>
           <div>
-            <CardTitle className="text-base">Default Profile Pictures</CardTitle>
+            <CardTitle className="text-base">
+              Default Profile Pictures
+            </CardTitle>
             <CardDescription className="text-xs mt-0.5">
               Set gender-specific default profile pictures for players
             </CardDescription>
@@ -405,8 +414,9 @@ export function DefaultProfilePictures({
         <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
           <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
           <span>
-            These will be used as default profile pictures based on gender selected by the player.
-            &apos;Rather Not Say&apos; is also used when no gender is selected or no image is uploaded.
+            These will be used as default profile pictures based on gender
+            selected by the player. &apos;Rather Not Say&apos; is also used when
+            no gender is selected or no image is uploaded.
           </span>
         </div>
       </CardContent>

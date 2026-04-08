@@ -68,7 +68,12 @@ function formatDate(dateStr: string): string {
   });
 }
 
-type SortField = "country" | "startOfWeek" | "isActive" | "createdAt" | "updatedAt";
+type SortField =
+  | "country"
+  | "startOfWeek"
+  | "isActive"
+  | "createdAt"
+  | "updatedAt";
 type StatusFilter = "all" | "active" | "inactive";
 
 // ─── Edit Modal ─────────────────────────────────────────────────────────────
@@ -92,7 +97,12 @@ function EditStartOfWeekModal({
   }
 
   return (
-    <Dialog open={open} onOpenChange={(v) => { if (!v) onClose(); }}>
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) onClose();
+      }}
+    >
       <DialogContent className="max-w-md">
         <DialogHeader>
           <DialogTitle>Edit Start of Week</DialogTitle>
@@ -112,9 +122,14 @@ function EditStartOfWeekModal({
           </div>
 
           <div className="space-y-1.5">
-            <Label htmlFor="start-day">Start of Week <span className="text-red-500">*</span></Label>
-            <Select value={selectedDay} onValueChange={(v) => setSelectedDay(v as DayOfWeek)}>
-              <SelectTrigger className="h-9 text-sm" id="start-day">
+            <Label htmlFor="start-day">
+              Start of Week <span className="text-red-500">*</span>
+            </Label>
+            <Select
+              value={selectedDay}
+              onValueChange={(v) => setSelectedDay(v as DayOfWeek)}
+            >
+              <SelectTrigger className="h-10 text-sm" id="start-day">
                 <SelectValue placeholder="Select day" />
               </SelectTrigger>
               <SelectContent>
@@ -129,8 +144,13 @@ function EditStartOfWeekModal({
         </div>
 
         <DialogFooter>
-          <Button variant="outline" onClick={onClose}>Cancel</Button>
-          <Button onClick={handleSubmit} className="bg-[#003B95] hover:bg-[#002a6b]">
+          <Button variant="outline" onClick={onClose}>
+            Cancel
+          </Button>
+          <Button
+            onClick={handleSubmit}
+            className="bg-[#003B95] hover:bg-[#002a6b]"
+          >
             Save Changes
           </Button>
         </DialogFooter>
@@ -152,7 +172,9 @@ const EXPORT_FORMATS = [
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export function StartOfWeekPage() {
-  const [entries, setEntries] = useState<StartOfWeekEntry[]>(INITIAL_START_OF_WEEK_DATA);
+  const [entries, setEntries] = useState<StartOfWeekEntry[]>(
+    INITIAL_START_OF_WEEK_DATA,
+  );
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState<StatusFilter>("all");
   const [sortField, setSortField] = useState<SortField>("country");
@@ -162,7 +184,9 @@ export function StartOfWeekPage() {
 
   // Edit modal
   const [editModalOpen, setEditModalOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<StartOfWeekEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<StartOfWeekEntry | null>(
+    null,
+  );
 
   // ─── Derived Data ──────────────────────────────────────────
 
@@ -176,7 +200,7 @@ export function StartOfWeekPage() {
         (e) =>
           e.country.toLowerCase().includes(q) ||
           e.countryCode.toLowerCase().includes(q) ||
-          e.startOfWeek.toLowerCase().includes(q)
+          e.startOfWeek.toLowerCase().includes(q),
       );
     }
 
@@ -244,9 +268,13 @@ export function StartOfWeekPage() {
     setEntries((prev) =>
       prev.map((e) =>
         e.id === id
-          ? { ...e, startOfWeek: day, updatedAt: new Date().toISOString().split("T")[0] }
-          : e
-      )
+          ? {
+              ...e,
+              startOfWeek: day,
+              updatedAt: new Date().toISOString().split("T")[0],
+            }
+          : e,
+      ),
     );
     toast.success("Start of week updated successfully.");
   }
@@ -262,13 +290,15 @@ export function StartOfWeekPage() {
   }
 
   function handleExport(format: string) {
-    toast.success(`Export as ${format.toUpperCase()} started. File will be downloaded shortly.`);
+    toast.success(
+      `Export as ${format.toUpperCase()} started. File will be downloaded shortly.`,
+    );
   }
 
   // ─── Render ────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Page header + breadcrumb */}
       <div>
         <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
@@ -280,7 +310,9 @@ export function StartOfWeekPage() {
         </div>
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-[#111827]">Start of Week Management</h1>
+            <h1 className="text-2xl font-bold text-[#111827]">
+              Start of Week Management
+            </h1>
             <p className="text-sm text-[#6B7280] mt-1">
               Configure the start of week per country for booking calendars
             </p>
@@ -296,13 +328,19 @@ export function StartOfWeekPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
             <Input
               value={search}
-              onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setPage(1);
+              }}
               placeholder="Search countries..."
-              className="pl-9 h-9 text-sm"
+              className="pl-9 h-10 text-sm"
             />
             {search && (
               <button
-                onClick={() => { setSearch(""); setPage(1); }}
+                onClick={() => {
+                  setSearch("");
+                  setPage(1);
+                }}
                 className="absolute right-2.5 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
               >
                 <X className="h-3 w-3" />
@@ -311,8 +349,14 @@ export function StartOfWeekPage() {
           </div>
 
           {/* Status Filter */}
-          <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v as StatusFilter); setPage(1); }}>
-            <SelectTrigger className="h-9 w-[140px] text-sm">
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => {
+              setStatusFilter(v as StatusFilter);
+              setPage(1);
+            }}
+          >
+            <SelectTrigger className="h-10 w-[140px] text-sm">
               <SelectValue placeholder="Status" />
             </SelectTrigger>
             <SelectContent>
@@ -326,7 +370,7 @@ export function StartOfWeekPage() {
         {/* Export Dropdown */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" className="gap-2 h-9">
+            <Button variant="outline" className="gap-2 h-10">
               <Download className="h-3.5 w-3.5" />
               Export
             </Button>
@@ -349,9 +393,7 @@ export function StartOfWeekPage() {
       {/* Info note */}
       <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
         <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-        <span>
-          If not set for a country, the system defaults to Monday.
-        </span>
+        <span>If not set for a country, the system defaults to Monday.</span>
       </div>
 
       {/* Table */}
@@ -359,31 +401,46 @@ export function StartOfWeekPage() {
         <Table>
           <TableHeader>
             <TableRow className="bg-gray-50">
-              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("country")}>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => toggleSort("country")}
+              >
                 <div className="flex items-center gap-1">
                   Country
                   <ArrowUpDown className="h-3 w-3 text-gray-400" />
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("startOfWeek")}>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => toggleSort("startOfWeek")}
+              >
                 <div className="flex items-center gap-1">
                   Current Start of Week
                   <ArrowUpDown className="h-3 w-3 text-gray-400" />
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("isActive")}>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => toggleSort("isActive")}
+              >
                 <div className="flex items-center gap-1">
                   Status
                   <ArrowUpDown className="h-3 w-3 text-gray-400" />
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("createdAt")}>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => toggleSort("createdAt")}
+              >
                 <div className="flex items-center gap-1">
                   Creation Date
                   <ArrowUpDown className="h-3 w-3 text-gray-400" />
                 </div>
               </TableHead>
-              <TableHead className="cursor-pointer select-none" onClick={() => toggleSort("updatedAt")}>
+              <TableHead
+                className="cursor-pointer select-none"
+                onClick={() => toggleSort("updatedAt")}
+              >
                 <div className="flex items-center gap-1">
                   Updated Date
                   <ArrowUpDown className="h-3 w-3 text-gray-400" />
@@ -398,7 +455,9 @@ export function StartOfWeekPage() {
                 <TableCell colSpan={6} className="text-center py-16">
                   <div className="flex flex-col items-center gap-2">
                     <Calendar className="h-10 w-10 text-gray-200" />
-                    <p className="text-sm font-medium text-gray-900">No entries found</p>
+                    <p className="text-sm font-medium text-gray-900">
+                      No entries found
+                    </p>
                     <p className="text-xs text-gray-500">
                       {search || statusFilter !== "all"
                         ? "Try adjusting your search or filters."
@@ -412,7 +471,9 @@ export function StartOfWeekPage() {
                 <TableRow key={entry.id} className="hover:bg-gray-50/50">
                   <TableCell>
                     <div className="flex items-center gap-2">
-                      <span className="font-medium text-gray-900">{entry.country}</span>
+                      <span className="font-medium text-gray-900">
+                        {entry.country}
+                      </span>
                       <span className="text-[10px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded font-mono">
                         {entry.countryCode}
                       </span>
@@ -421,7 +482,9 @@ export function StartOfWeekPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <Calendar className="h-3.5 w-3.5 text-gray-400" />
-                      <span className="text-sm text-gray-700">{entry.startOfWeek}</span>
+                      <span className="text-sm text-gray-700">
+                        {entry.startOfWeek}
+                      </span>
                     </div>
                   </TableCell>
                   <TableCell>
@@ -431,7 +494,7 @@ export function StartOfWeekPage() {
                         "text-[11px]",
                         entry.isActive
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                          : "bg-gray-100 text-gray-500 border-gray-200"
+                          : "bg-gray-100 text-gray-500 border-gray-200",
                       )}
                     >
                       {entry.isActive ? "Active" : "Inactive"}
@@ -464,7 +527,13 @@ export function StartOfWeekPage() {
           <div className="px-6 py-3 border-t border-gray-200 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <span className="text-xs text-gray-500">Rows per page:</span>
-              <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setPage(1); }}>
+              <Select
+                value={String(pageSize)}
+                onValueChange={(v) => {
+                  setPageSize(Number(v));
+                  setPage(1);
+                }}
+              >
                 <SelectTrigger className="h-8 w-[70px] text-xs">
                   <SelectValue />
                 </SelectTrigger>
@@ -475,7 +544,8 @@ export function StartOfWeekPage() {
                 </SelectContent>
               </Select>
               <span className="text-xs text-gray-500">
-                Showing {(page - 1) * pageSize + 1}–{Math.min(page * pageSize, totalEntries)} of {totalEntries}
+                Showing {(page - 1) * pageSize + 1}–
+                {Math.min(page * pageSize, totalEntries)} of {totalEntries}
               </span>
             </div>
             <div className="flex items-center gap-1">
@@ -493,7 +563,10 @@ export function StartOfWeekPage() {
                   key={pg}
                   variant={pg === page ? "default" : "outline"}
                   size="icon"
-                  className={cn("h-8 w-8 text-xs", pg === page && "bg-[#003B95] hover:bg-[#002a6b]")}
+                  className={cn(
+                    "h-8 w-8 text-xs",
+                    pg === page && "bg-[#003B95] hover:bg-[#002a6b]",
+                  )}
                   onClick={() => setPage(pg)}
                 >
                   {pg}

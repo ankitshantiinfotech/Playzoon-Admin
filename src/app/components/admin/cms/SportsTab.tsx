@@ -120,143 +120,275 @@ interface FormErrors {
 
 const INITIAL_SPORTS: Sport[] = [
   {
-    id: "SPT-001", nameEN: "Football", status: "Active",
+    id: "SPT-001",
+    nameEN: "Football",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1760890518049-47b9822e1c89?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2025-06-15T10:00:00Z", updatedDate: "2025-11-20T14:30:00Z",
+    createdDate: "2025-06-15T10:00:00Z",
+    updatedDate: "2025-11-20T14:30:00Z",
   },
   {
-    id: "SPT-002", nameEN: "Padel", status: "Active",
+    id: "SPT-002",
+    nameEN: "Padel",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1657704022321-105c8d9723ed?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2025-06-15T10:00:00Z", updatedDate: "2025-10-01T09:00:00Z",
+    createdDate: "2025-06-15T10:00:00Z",
+    updatedDate: "2025-10-01T09:00:00Z",
   },
   {
-    id: "SPT-003", nameEN: "Tennis", status: "Active",
+    id: "SPT-003",
+    nameEN: "Tennis",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1591100463799-a9ef12226ba4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2025-06-20T14:00:00Z", updatedDate: "2025-12-05T11:00:00Z",
+    createdDate: "2025-06-20T14:00:00Z",
+    updatedDate: "2025-12-05T11:00:00Z",
   },
   {
-    id: "SPT-004", nameEN: "Basketball", status: "Active",
+    id: "SPT-004",
+    nameEN: "Basketball",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1610359155992-81ad957de6ec?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2025-07-01T09:00:00Z", updatedDate: "2025-07-01T09:00:00Z",
+    createdDate: "2025-07-01T09:00:00Z",
+    updatedDate: "2025-07-01T09:00:00Z",
   },
   {
-    id: "SPT-005", nameEN: "Swimming", status: "Active",
+    id: "SPT-005",
+    nameEN: "Swimming",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1707401252805-9019f342604b?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2025-07-10T11:00:00Z", updatedDate: "2025-07-10T11:00:00Z",
+    createdDate: "2025-07-10T11:00:00Z",
+    updatedDate: "2025-07-10T11:00:00Z",
   },
   {
-    id: "SPT-006", nameEN: "Cricket", status: "Active",
+    id: "SPT-006",
+    nameEN: "Cricket",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1630740451344-3ee2cdcfe070?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2025-08-05T10:00:00Z", updatedDate: "2025-08-05T10:00:00Z",
+    createdDate: "2025-08-05T10:00:00Z",
+    updatedDate: "2025-08-05T10:00:00Z",
   },
   {
-    id: "SPT-007", nameEN: "Badminton", status: "Active",
+    id: "SPT-007",
+    nameEN: "Badminton",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1599391398131-cd12dfc6c24e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2025-09-12T14:00:00Z", updatedDate: "2025-09-12T14:00:00Z",
+    createdDate: "2025-09-12T14:00:00Z",
+    updatedDate: "2025-09-12T14:00:00Z",
   },
   {
-    id: "SPT-008", nameEN: "Volleyball", status: "Inactive",
+    id: "SPT-008",
+    nameEN: "Volleyball",
+    status: "Inactive",
     icon: "https://images.unsplash.com/photo-1765910226872-e8811bd45d3e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2025-10-01T09:30:00Z", updatedDate: "2026-01-15T08:00:00Z",
+    createdDate: "2025-10-01T09:30:00Z",
+    updatedDate: "2026-01-15T08:00:00Z",
   },
   {
-    id: "SPT-009", nameEN: "Boxing", status: "Active",
+    id: "SPT-009",
+    nameEN: "Boxing",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1651707999601-cba87015439c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2025-11-20T08:00:00Z", updatedDate: "2025-11-20T08:00:00Z",
+    createdDate: "2025-11-20T08:00:00Z",
+    updatedDate: "2025-11-20T08:00:00Z",
   },
   {
-    id: "SPT-010", nameEN: "Yoga", status: "Inactive",
+    id: "SPT-010",
+    nameEN: "Yoga",
+    status: "Inactive",
     icon: "https://images.unsplash.com/photo-1625865020971-581242d0ead6?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2026-01-05T11:00:00Z", updatedDate: "2026-01-05T11:00:00Z",
+    createdDate: "2026-01-05T11:00:00Z",
+    updatedDate: "2026-01-05T11:00:00Z",
   },
   {
-    id: "SPT-011", nameEN: "Table Tennis", status: "Active",
+    id: "SPT-011",
+    nameEN: "Table Tennis",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1591100463799-a9ef12226ba4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2026-02-01T10:00:00Z", updatedDate: "2026-02-01T10:00:00Z",
+    createdDate: "2026-02-01T10:00:00Z",
+    updatedDate: "2026-02-01T10:00:00Z",
   },
   {
-    id: "SPT-012", nameEN: "Squash", status: "Active",
+    id: "SPT-012",
+    nameEN: "Squash",
+    status: "Active",
     icon: "https://images.unsplash.com/photo-1599391398131-cd12dfc6c24e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&w=64&h=64",
-    createdDate: "2026-02-10T14:00:00Z", updatedDate: "2026-02-10T14:00:00Z",
+    createdDate: "2026-02-10T14:00:00Z",
+    updatedDate: "2026-02-10T14:00:00Z",
   },
 ];
 
 const INITIAL_COURT_TYPES: CourtType[] = [
   {
-    id: "CT-001", nameEN: "Football Field", nameAR: "\u0645\u0644\u0639\u0628 \u0643\u0631\u0629 \u0642\u062f\u0645", description: "Standard 11-a-side football field with natural or artificial grass.",
-    associatedSportIds: ["SPT-001"], status: "Active", sortOrder: 1,
-    createdDate: "2025-06-15T10:00:00Z", updatedDate: "2025-11-20T14:30:00Z",
+    id: "CT-001",
+    nameEN: "Football Field",
+    nameAR: "\u0645\u0644\u0639\u0628 \u0643\u0631\u0629 \u0642\u062f\u0645",
+    description:
+      "Standard 11-a-side football field with natural or artificial grass.",
+    associatedSportIds: ["SPT-001"],
+    status: "Active",
+    sortOrder: 1,
+    createdDate: "2025-06-15T10:00:00Z",
+    updatedDate: "2025-11-20T14:30:00Z",
   },
   {
-    id: "CT-002", nameEN: "5-a-side Pitch", nameAR: "\u0645\u0644\u0639\u0628 \u062e\u0645\u0627\u0633\u064a", description: "Smaller enclosed pitch for 5-a-side football games.",
-    associatedSportIds: ["SPT-001"], status: "Active", sortOrder: 2,
-    createdDate: "2025-06-20T09:00:00Z", updatedDate: "2025-06-20T09:00:00Z",
+    id: "CT-002",
+    nameEN: "5-a-side Pitch",
+    nameAR: "\u0645\u0644\u0639\u0628 \u062e\u0645\u0627\u0633\u064a",
+    description: "Smaller enclosed pitch for 5-a-side football games.",
+    associatedSportIds: ["SPT-001"],
+    status: "Active",
+    sortOrder: 2,
+    createdDate: "2025-06-20T09:00:00Z",
+    updatedDate: "2025-06-20T09:00:00Z",
   },
   {
-    id: "CT-003", nameEN: "Padel Court", nameAR: "\u0645\u0644\u0639\u0628 \u0628\u0627\u062f\u0644", description: "Enclosed court with glass walls for padel games.",
-    associatedSportIds: ["SPT-002"], status: "Active", sortOrder: 3,
-    createdDate: "2025-07-01T10:00:00Z", updatedDate: "2025-10-01T09:00:00Z",
+    id: "CT-003",
+    nameEN: "Padel Court",
+    nameAR: "\u0645\u0644\u0639\u0628 \u0628\u0627\u062f\u0644",
+    description: "Enclosed court with glass walls for padel games.",
+    associatedSportIds: ["SPT-002"],
+    status: "Active",
+    sortOrder: 3,
+    createdDate: "2025-07-01T10:00:00Z",
+    updatedDate: "2025-10-01T09:00:00Z",
   },
   {
-    id: "CT-004", nameEN: "Tennis Court", nameAR: "\u0645\u0644\u0639\u0628 \u062a\u0646\u0633", description: "Standard tennis court with hard, clay, or grass surface.",
-    associatedSportIds: ["SPT-003"], status: "Active", sortOrder: 4,
-    createdDate: "2025-07-10T14:00:00Z", updatedDate: "2025-12-05T11:00:00Z",
+    id: "CT-004",
+    nameEN: "Tennis Court",
+    nameAR: "\u0645\u0644\u0639\u0628 \u062a\u0646\u0633",
+    description: "Standard tennis court with hard, clay, or grass surface.",
+    associatedSportIds: ["SPT-003"],
+    status: "Active",
+    sortOrder: 4,
+    createdDate: "2025-07-10T14:00:00Z",
+    updatedDate: "2025-12-05T11:00:00Z",
   },
   {
-    id: "CT-005", nameEN: "Basketball Court", nameAR: "\u0645\u0644\u0639\u0628 \u0643\u0631\u0629 \u0633\u0644\u0629", description: "Indoor or outdoor basketball court.",
-    associatedSportIds: ["SPT-004"], status: "Active", sortOrder: 5,
-    createdDate: "2025-07-15T09:00:00Z", updatedDate: "2025-07-15T09:00:00Z",
+    id: "CT-005",
+    nameEN: "Basketball Court",
+    nameAR: "\u0645\u0644\u0639\u0628 \u0643\u0631\u0629 \u0633\u0644\u0629",
+    description: "Indoor or outdoor basketball court.",
+    associatedSportIds: ["SPT-004"],
+    status: "Active",
+    sortOrder: 5,
+    createdDate: "2025-07-15T09:00:00Z",
+    updatedDate: "2025-07-15T09:00:00Z",
   },
   {
-    id: "CT-006", nameEN: "Swimming Pool", nameAR: "\u0645\u0633\u0628\u062d", description: "Olympic or recreational-size swimming pool.",
-    associatedSportIds: ["SPT-005"], status: "Active", sortOrder: 6,
-    createdDate: "2025-08-01T10:00:00Z", updatedDate: "2025-08-01T10:00:00Z",
+    id: "CT-006",
+    nameEN: "Swimming Pool",
+    nameAR: "\u0645\u0633\u0628\u062d",
+    description: "Olympic or recreational-size swimming pool.",
+    associatedSportIds: ["SPT-005"],
+    status: "Active",
+    sortOrder: 6,
+    createdDate: "2025-08-01T10:00:00Z",
+    updatedDate: "2025-08-01T10:00:00Z",
   },
   {
-    id: "CT-007", nameEN: "Cricket Ground", nameAR: "\u0645\u0644\u0639\u0628 \u0643\u0631\u064a\u0643\u062a", description: "Turf or artificial cricket ground with pitch.",
-    associatedSportIds: ["SPT-006"], status: "Active", sortOrder: 7,
-    createdDate: "2025-08-15T08:00:00Z", updatedDate: "2025-08-15T08:00:00Z",
+    id: "CT-007",
+    nameEN: "Cricket Ground",
+    nameAR: "\u0645\u0644\u0639\u0628 \u0643\u0631\u064a\u0643\u062a",
+    description: "Turf or artificial cricket ground with pitch.",
+    associatedSportIds: ["SPT-006"],
+    status: "Active",
+    sortOrder: 7,
+    createdDate: "2025-08-15T08:00:00Z",
+    updatedDate: "2025-08-15T08:00:00Z",
   },
   {
-    id: "CT-008", nameEN: "Badminton Court", nameAR: "\u0645\u0644\u0639\u0628 \u0631\u064a\u0634\u0629 \u0637\u0627\u0626\u0631\u0629", description: "Indoor court with net for badminton.",
-    associatedSportIds: ["SPT-007"], status: "Active", sortOrder: 8,
-    createdDate: "2025-09-01T11:00:00Z", updatedDate: "2025-09-01T11:00:00Z",
+    id: "CT-008",
+    nameEN: "Badminton Court",
+    nameAR:
+      "\u0645\u0644\u0639\u0628 \u0631\u064a\u0634\u0629 \u0637\u0627\u0626\u0631\u0629",
+    description: "Indoor court with net for badminton.",
+    associatedSportIds: ["SPT-007"],
+    status: "Active",
+    sortOrder: 8,
+    createdDate: "2025-09-01T11:00:00Z",
+    updatedDate: "2025-09-01T11:00:00Z",
   },
   {
-    id: "CT-009", nameEN: "Multi-Purpose Hall", nameAR: "\u0642\u0627\u0639\u0629 \u0645\u062a\u0639\u062f\u062f\u0629 \u0627\u0644\u0627\u0633\u062a\u062e\u062f\u0627\u0645\u0627\u062a",
+    id: "CT-009",
+    nameEN: "Multi-Purpose Hall",
+    nameAR:
+      "\u0642\u0627\u0639\u0629 \u0645\u062a\u0639\u062f\u062f\u0629 \u0627\u0644\u0627\u0633\u062a\u062e\u062f\u0627\u0645\u0627\u062a",
     description: "Versatile indoor hall suitable for multiple sports.",
-    associatedSportIds: ["SPT-004", "SPT-007", "SPT-008"], status: "Active", sortOrder: 9,
-    createdDate: "2025-09-15T10:00:00Z", updatedDate: "2025-11-10T16:00:00Z",
+    associatedSportIds: ["SPT-004", "SPT-007", "SPT-008"],
+    status: "Active",
+    sortOrder: 9,
+    createdDate: "2025-09-15T10:00:00Z",
+    updatedDate: "2025-11-10T16:00:00Z",
   },
   {
-    id: "CT-010", nameEN: "Boxing Ring", nameAR: "\u062d\u0644\u0628\u0629 \u0645\u0644\u0627\u0643\u0645\u0629", description: "Standard boxing ring within a gym facility.",
-    associatedSportIds: ["SPT-009"], status: "Active", sortOrder: 10,
-    createdDate: "2025-10-01T09:00:00Z", updatedDate: "2025-10-01T09:00:00Z",
+    id: "CT-010",
+    nameEN: "Boxing Ring",
+    nameAR: "\u062d\u0644\u0628\u0629 \u0645\u0644\u0627\u0643\u0645\u0629",
+    description: "Standard boxing ring within a gym facility.",
+    associatedSportIds: ["SPT-009"],
+    status: "Active",
+    sortOrder: 10,
+    createdDate: "2025-10-01T09:00:00Z",
+    updatedDate: "2025-10-01T09:00:00Z",
   },
   {
-    id: "CT-011", nameEN: "Volleyball Court", nameAR: "\u0645\u0644\u0639\u0628 \u0643\u0631\u0629 \u0637\u0627\u0626\u0631\u0629", description: "Indoor or beach volleyball court.",
-    associatedSportIds: ["SPT-008"], status: "Inactive", sortOrder: 11,
-    createdDate: "2025-10-15T14:00:00Z", updatedDate: "2026-01-15T08:00:00Z",
+    id: "CT-011",
+    nameEN: "Volleyball Court",
+    nameAR:
+      "\u0645\u0644\u0639\u0628 \u0643\u0631\u0629 \u0637\u0627\u0626\u0631\u0629",
+    description: "Indoor or beach volleyball court.",
+    associatedSportIds: ["SPT-008"],
+    status: "Inactive",
+    sortOrder: 11,
+    createdDate: "2025-10-15T14:00:00Z",
+    updatedDate: "2026-01-15T08:00:00Z",
   },
   {
-    id: "CT-012", nameEN: "Squash Court", nameAR: "\u0645\u0644\u0639\u0628 \u0627\u0633\u0643\u0648\u0627\u0634", description: "Enclosed indoor squash court with glass back wall.",
-    associatedSportIds: ["SPT-012"], status: "Active", sortOrder: 12,
-    createdDate: "2026-02-10T14:00:00Z", updatedDate: "2026-02-10T14:00:00Z",
+    id: "CT-012",
+    nameEN: "Squash Court",
+    nameAR: "\u0645\u0644\u0639\u0628 \u0627\u0633\u0643\u0648\u0627\u0634",
+    description: "Enclosed indoor squash court with glass back wall.",
+    associatedSportIds: ["SPT-012"],
+    status: "Active",
+    sortOrder: 12,
+    createdDate: "2026-02-10T14:00:00Z",
+    updatedDate: "2026-02-10T14:00:00Z",
   },
   {
-    id: "CT-013", nameEN: "Yoga Studio", nameAR: "\u0627\u0633\u062a\u0648\u062f\u064a\u0648 \u064a\u0648\u063a\u0627", description: "Climate-controlled studio for yoga and wellness classes.",
-    associatedSportIds: ["SPT-010"], status: "Inactive", sortOrder: 13,
-    createdDate: "2026-01-10T10:00:00Z", updatedDate: "2026-01-10T10:00:00Z",
+    id: "CT-013",
+    nameEN: "Yoga Studio",
+    nameAR:
+      "\u0627\u0633\u062a\u0648\u062f\u064a\u0648 \u064a\u0648\u063a\u0627",
+    description: "Climate-controlled studio for yoga and wellness classes.",
+    associatedSportIds: ["SPT-010"],
+    status: "Inactive",
+    sortOrder: 13,
+    createdDate: "2026-01-10T10:00:00Z",
+    updatedDate: "2026-01-10T10:00:00Z",
   },
   {
-    id: "CT-014", nameEN: "Table Tennis Hall", nameAR: "\u0642\u0627\u0639\u0629 \u062a\u0646\u0633 \u0627\u0644\u0637\u0627\u0648\u0644\u0629", description: "Indoor hall with professional table tennis tables.",
-    associatedSportIds: ["SPT-011"], status: "Active", sortOrder: 14,
-    createdDate: "2026-02-05T08:00:00Z", updatedDate: "2026-02-05T08:00:00Z",
+    id: "CT-014",
+    nameEN: "Table Tennis Hall",
+    nameAR:
+      "\u0642\u0627\u0639\u0629 \u062a\u0646\u0633 \u0627\u0644\u0637\u0627\u0648\u0644\u0629",
+    description: "Indoor hall with professional table tennis tables.",
+    associatedSportIds: ["SPT-011"],
+    status: "Active",
+    sortOrder: 14,
+    createdDate: "2026-02-05T08:00:00Z",
+    updatedDate: "2026-02-05T08:00:00Z",
   },
   {
-    id: "CT-015", nameEN: "Futsal Court", nameAR: "\u0645\u0644\u0639\u0628 \u0643\u0631\u0629 \u0635\u0627\u0644\u0627\u062a", description: "Indoor or covered futsal court with hard surface.",
-    associatedSportIds: ["SPT-001"], status: "Active", sortOrder: 15,
-    createdDate: "2026-02-20T10:00:00Z", updatedDate: "2026-02-20T10:00:00Z",
+    id: "CT-015",
+    nameEN: "Futsal Court",
+    nameAR:
+      "\u0645\u0644\u0639\u0628 \u0643\u0631\u0629 \u0635\u0627\u0644\u0627\u062a",
+    description: "Indoor or covered futsal court with hard surface.",
+    associatedSportIds: ["SPT-001"],
+    status: "Active",
+    sortOrder: 15,
+    createdDate: "2026-02-20T10:00:00Z",
+    updatedDate: "2026-02-20T10:00:00Z",
   },
 ];
 
@@ -282,7 +414,7 @@ const SPORT_COLORS: Record<string, string> = {
 function exportData(
   data: Array<Record<string, string>>,
   entityName: string,
-  formatType: string
+  formatType: string,
 ) {
   let content = "";
   let filename = `${entityName}_export_${new Date().toISOString().slice(0, 10)}`;
@@ -299,7 +431,11 @@ function exportData(
     }
     case "TXT": {
       content = data
-        .map((r) => Object.entries(r).map(([k, v]) => `${k}: ${v}`).join(" | "))
+        .map((r) =>
+          Object.entries(r)
+            .map(([k, v]) => `${k}: ${v}`)
+            .join(" | "),
+        )
         .join("\n");
       filename += ".txt";
       break;
@@ -313,7 +449,7 @@ function exportData(
               .map((k) => k.replace(/\s+/g, "_").toLowerCase())
               .join(", ")}) VALUES (${Object.values(r)
               .map((v) => `'${v}'`)
-              .join(", ")});`
+              .join(", ")});`,
         )
         .join("\n");
       filename += ".sql";
@@ -321,7 +457,9 @@ function exportData(
     }
     default: {
       // XLS and PDF: fallback to CSV
-      toast.info(`${formatType} export would be server-side. CSV fallback provided.`);
+      toast.info(
+        `${formatType} export would be server-side. CSV fallback provided.`,
+      );
       const headers = Object.keys(data[0] || {}).join(",");
       const body = data.map((r) => Object.values(r).join(",")).join("\n");
       content = headers + "\n" + body;
@@ -344,7 +482,8 @@ function exportData(
 
 export function SportsTab() {
   const [sports, setSports] = useState<Sport[]>(INITIAL_SPORTS);
-  const [courtTypes, setCourtTypes] = useState<CourtType[]>(INITIAL_COURT_TYPES);
+  const [courtTypes, setCourtTypes] =
+    useState<CourtType[]>(INITIAL_COURT_TYPES);
   const [activeTab, setActiveTab] = useState<ActiveTab>("sports");
 
   // Common state
@@ -358,9 +497,11 @@ export function SportsTab() {
   const [pageSize, setPageSize] = useState(10);
 
   // Sorting
-  const [sportSortField, setSportSortField] = useState<SportSortField>("nameEN");
+  const [sportSortField, setSportSortField] =
+    useState<SportSortField>("nameEN");
   const [sportSortDir, setSportSortDir] = useState<"asc" | "desc">("asc");
-  const [courtSortField, setCourtSortField] = useState<CourtSortField>("nameEN");
+  const [courtSortField, setCourtSortField] =
+    useState<CourtSortField>("nameEN");
   const [courtSortDir, setCourtSortDir] = useState<"asc" | "desc">("asc");
 
   // Form
@@ -373,7 +514,11 @@ export function SportsTab() {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Delete + Status toggle
-  const [deleteTarget, setDeleteTarget] = useState<{ id: string; name: string; type: "sport" | "court" } | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{
+    id: string;
+    name: string;
+    type: "sport" | "court";
+  } | null>(null);
   const [statusToggleTarget, setStatusToggleTarget] = useState<{
     id: string;
     name: string;
@@ -385,15 +530,18 @@ export function SportsTab() {
 
   const getSportName = useCallback(
     (id: string) => sports.find((s) => s.id === id)?.nameEN || "Unknown",
-    [sports]
+    [sports],
   );
 
   const getSportStatus = useCallback(
     (id: string) => sports.find((s) => s.id === id)?.status || "Inactive",
-    [sports]
+    [sports],
   );
 
-  const activeSports = useMemo(() => sports.filter((s) => s.status === "Active"), [sports]);
+  const activeSports = useMemo(
+    () => sports.filter((s) => s.status === "Active"),
+    [sports],
+  );
 
   // ─── Filtered Sports ──────────────────────────────────────
 
@@ -401,8 +549,7 @@ export function SportsTab() {
     const q = search.toLowerCase();
     return sports
       .filter((s) => {
-        if (q && !s.nameEN.toLowerCase().includes(q))
-          return false;
+        if (q && !s.nameEN.toLowerCase().includes(q)) return false;
         if (statusFilter !== "all" && s.status !== statusFilter) return false;
         return true;
       })
@@ -413,10 +560,14 @@ export function SportsTab() {
             cmp = a.nameEN.localeCompare(b.nameEN);
             break;
           case "createdDate":
-            cmp = new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime();
+            cmp =
+              new Date(a.createdDate).getTime() -
+              new Date(b.createdDate).getTime();
             break;
           case "updatedDate":
-            cmp = new Date(a.updatedDate).getTime() - new Date(b.updatedDate).getTime();
+            cmp =
+              new Date(a.updatedDate).getTime() -
+              new Date(b.updatedDate).getTime();
             break;
         }
         return sportSortDir === "asc" ? cmp : -cmp;
@@ -429,10 +580,17 @@ export function SportsTab() {
     const q = search.toLowerCase();
     return courtTypes
       .filter((ct) => {
-        if (q && !ct.nameEN.toLowerCase().includes(q) && !ct.nameAR.toLowerCase().includes(q))
+        if (
+          q &&
+          !ct.nameEN.toLowerCase().includes(q) &&
+          !ct.nameAR.toLowerCase().includes(q)
+        )
           return false;
         if (statusFilter !== "all" && ct.status !== statusFilter) return false;
-        if (sportAssocFilter !== "all" && !ct.associatedSportIds.includes(sportAssocFilter))
+        if (
+          sportAssocFilter !== "all" &&
+          !ct.associatedSportIds.includes(sportAssocFilter)
+        )
           return false;
         return true;
       })
@@ -446,21 +604,35 @@ export function SportsTab() {
             cmp = a.nameAR.localeCompare(b.nameAR);
             break;
           case "createdDate":
-            cmp = new Date(a.createdDate).getTime() - new Date(b.createdDate).getTime();
+            cmp =
+              new Date(a.createdDate).getTime() -
+              new Date(b.createdDate).getTime();
             break;
           case "updatedDate":
-            cmp = new Date(a.updatedDate).getTime() - new Date(b.updatedDate).getTime();
+            cmp =
+              new Date(a.updatedDate).getTime() -
+              new Date(b.updatedDate).getTime();
             break;
         }
         return courtSortDir === "asc" ? cmp : -cmp;
       });
-  }, [courtTypes, search, statusFilter, sportAssocFilter, courtSortField, courtSortDir]);
+  }, [
+    courtTypes,
+    search,
+    statusFilter,
+    sportAssocFilter,
+    courtSortField,
+    courtSortDir,
+  ]);
 
   // ─── Pagination ───────────────────────────────────────────
 
   const currentData = activeTab === "sports" ? filteredSports : filteredCourts;
   const totalPages = Math.max(1, Math.ceil(currentData.length / pageSize));
-  const paginatedData = currentData.slice((currentPage - 1) * pageSize, currentPage * pageSize);
+  const paginatedData = currentData.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
 
   // ─── Sorting Helpers ──────────────────────────────────────
 
@@ -483,7 +655,8 @@ export function SportsTab() {
   };
 
   function SportSortIcon({ field }: { field: SportSortField }) {
-    if (sportSortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
+    if (sportSortField !== field)
+      return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
     return sportSortDir === "asc" ? (
       <ArrowUp className="w-3 h-3 text-[#003B95]" />
     ) : (
@@ -492,7 +665,8 @@ export function SportsTab() {
   }
 
   function CourtSortIcon({ field }: { field: CourtSortField }) {
-    if (courtSortField !== field) return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
+    if (courtSortField !== field)
+      return <ArrowUpDown className="w-3 h-3 text-gray-300" />;
     return courtSortDir === "asc" ? (
       <ArrowUp className="w-3 h-3 text-[#003B95]" />
     ) : (
@@ -612,7 +786,9 @@ export function SportsTab() {
         errs.nameEN = "Name cannot exceed 100 characters.";
       } else if (
         sports.some(
-          (s) => s.id !== editingId && s.nameEN.toLowerCase() === sportForm.nameEN.trim().toLowerCase()
+          (s) =>
+            s.id !== editingId &&
+            s.nameEN.toLowerCase() === sportForm.nameEN.trim().toLowerCase(),
         )
       ) {
         errs.nameEN = "A sport with this name already exists.";
@@ -632,7 +808,9 @@ export function SportsTab() {
         errs.nameEN = "Name cannot exceed 100 characters.";
       } else if (
         courtTypes.some(
-          (c) => c.id !== editingId && c.nameEN.toLowerCase() === courtForm.nameEN.trim().toLowerCase()
+          (c) =>
+            c.id !== editingId &&
+            c.nameEN.toLowerCase() === courtForm.nameEN.trim().toLowerCase(),
         )
       ) {
         errs.nameEN = "A court type with this name already exists.";
@@ -679,8 +857,8 @@ export function SportsTab() {
                     status: sportForm.status,
                     updatedDate: now,
                   }
-                : s
-            )
+                : s,
+            ),
           );
           toast.success("Sport updated successfully.");
         } else {
@@ -714,8 +892,8 @@ export function SportsTab() {
                     sortOrder: courtForm.sortOrder,
                     updatedDate: now,
                   }
-                : c
-            )
+                : c,
+            ),
           );
           toast.success("Court type updated successfully.");
         } else {
@@ -751,10 +929,12 @@ export function SportsTab() {
     if (!deleteTarget) return;
     if (deleteTarget.type === "sport") {
       // Check if sport is referenced by court types
-      const referencedBy = courtTypes.filter((ct) => ct.associatedSportIds.includes(deleteTarget.id));
+      const referencedBy = courtTypes.filter((ct) =>
+        ct.associatedSportIds.includes(deleteTarget.id),
+      );
       if (referencedBy.length > 0) {
         toast.error(
-          `Unable to delete '${deleteTarget.name}'. It is associated with court types: ${referencedBy.map((ct) => ct.nameEN).join(", ")}.`
+          `Unable to delete '${deleteTarget.name}'. It is associated with court types: ${referencedBy.map((ct) => ct.nameEN).join(", ")}.`,
         );
         setDeleteTarget(null);
         return;
@@ -776,17 +956,25 @@ export function SportsTab() {
       setSports((prev) =>
         prev.map((s) =>
           s.id === statusToggleTarget.id
-            ? { ...s, status: statusToggleTarget.newStatus, updatedDate: new Date().toISOString() }
-            : s
-        )
+            ? {
+                ...s,
+                status: statusToggleTarget.newStatus,
+                updatedDate: new Date().toISOString(),
+              }
+            : s,
+        ),
       );
     } else {
       setCourtTypes((prev) =>
         prev.map((c) =>
           c.id === statusToggleTarget.id
-            ? { ...c, status: statusToggleTarget.newStatus, updatedDate: new Date().toISOString() }
-            : c
-        )
+            ? {
+                ...c,
+                status: statusToggleTarget.newStatus,
+                updatedDate: new Date().toISOString(),
+              }
+            : c,
+        ),
       );
     }
     toast.success(`Status updated to ${statusToggleTarget.newStatus}.`);
@@ -825,7 +1013,10 @@ export function SportsTab() {
     if (!courtForm) return;
     const current = courtForm.associatedSportIds;
     if (current.includes(sportId)) {
-      setCourtForm({ ...courtForm, associatedSportIds: current.filter((id) => id !== sportId) });
+      setCourtForm({
+        ...courtForm,
+        associatedSportIds: current.filter((id) => id !== sportId),
+      });
     } else {
       setCourtForm({ ...courtForm, associatedSportIds: [...current, sportId] });
     }
@@ -849,7 +1040,7 @@ export function SportsTab() {
             <Button
               variant="outline"
               size="sm"
-              className="gap-1.5 h-9"
+              className="gap-1.5 h-10"
               onClick={() => setExportOpen(!exportOpen)}
               aria-label={`Export ${activeTab === "sports" ? "sports" : "court types"} data`}
             >
@@ -859,7 +1050,10 @@ export function SportsTab() {
             </Button>
             {exportOpen && (
               <>
-                <div className="fixed inset-0 z-10" onClick={() => setExportOpen(false)} />
+                <div
+                  className="fixed inset-0 z-10"
+                  onClick={() => setExportOpen(false)}
+                />
                 <div className="absolute right-0 top-full mt-1 bg-white border border-gray-200 rounded-lg shadow-lg z-20 py-1 w-32">
                   {["CSV", "XLS", "PDF", "TXT", "SQL"].map((fmt) => (
                     <button
@@ -878,7 +1072,7 @@ export function SportsTab() {
           {/* Create New */}
           <Button
             onClick={activeTab === "sports" ? openCreateSport : openCreateCourt}
-            className="bg-[#003B95] hover:bg-[#002a6b] gap-2 h-9"
+            className="bg-[#003B95] hover:bg-[#002a6b] gap-2 h-10"
           >
             <Plus className="h-4 w-4" />
             Create New {entityLabel}
@@ -897,7 +1091,7 @@ export function SportsTab() {
               "flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 transition-colors",
               activeTab === "sports"
                 ? "border-[#003B95] text-[#003B95] font-medium"
-                : "border-transparent text-[#6B7280] hover:text-[#111827] hover:border-gray-300"
+                : "border-transparent text-[#6B7280] hover:text-[#111827] hover:border-gray-300",
             )}
           >
             Sports
@@ -907,7 +1101,7 @@ export function SportsTab() {
                 "text-[10px] h-5 min-w-[20px] justify-center",
                 activeTab === "sports"
                   ? "bg-[#003B95]/10 text-[#003B95]"
-                  : "bg-gray-100 text-gray-500"
+                  : "bg-gray-100 text-gray-500",
               )}
             >
               {sports.length}
@@ -921,7 +1115,7 @@ export function SportsTab() {
               "flex items-center gap-2 px-4 py-2.5 text-sm border-b-2 transition-colors",
               activeTab === "court-types"
                 ? "border-[#003B95] text-[#003B95] font-medium"
-                : "border-transparent text-[#6B7280] hover:text-[#111827] hover:border-gray-300"
+                : "border-transparent text-[#6B7280] hover:text-[#111827] hover:border-gray-300",
             )}
           >
             Court Types
@@ -931,7 +1125,7 @@ export function SportsTab() {
                 "text-[10px] h-5 min-w-[20px] justify-center",
                 activeTab === "court-types"
                   ? "bg-[#003B95]/10 text-[#003B95]"
-                  : "bg-gray-100 text-gray-500"
+                  : "bg-gray-100 text-gray-500",
               )}
             >
               {courtTypes.length}
@@ -951,7 +1145,7 @@ export function SportsTab() {
               setCurrentPage(1);
             }}
             placeholder="Search by name..."
-            className="pl-8 h-9 text-sm"
+            className="pl-8 h-10 text-sm"
             role="search"
             aria-label={`Search ${activeTab === "sports" ? "sports" : "court types"} by name`}
           />
@@ -975,7 +1169,10 @@ export function SportsTab() {
             setCurrentPage(1);
           }}
         >
-          <SelectTrigger className="w-36 h-9 text-sm" aria-label="Filter by status">
+          <SelectTrigger
+            className="w-36 h-10 text-sm"
+            aria-label="Filter by status"
+          >
             <SelectValue placeholder="All Statuses" />
           </SelectTrigger>
           <SelectContent>
@@ -993,7 +1190,10 @@ export function SportsTab() {
               setCurrentPage(1);
             }}
           >
-            <SelectTrigger className="w-44 h-9 text-sm" aria-label="Filter by associated sport">
+            <SelectTrigger
+              className="w-44 h-10 text-sm"
+              aria-label="Filter by associated sport"
+            >
               <SelectValue placeholder="All Sports" />
             </SelectTrigger>
             <SelectContent>
@@ -1022,7 +1222,9 @@ export function SportsTab() {
           </p>
           {!search && statusFilter === "all" && sportAssocFilter === "all" && (
             <Button
-              onClick={activeTab === "sports" ? openCreateSport : openCreateCourt}
+              onClick={
+                activeTab === "sports" ? openCreateSport : openCreateCourt
+              }
               variant="outline"
               size="sm"
               className="mt-4 gap-2"
@@ -1064,14 +1266,19 @@ export function SportsTab() {
                       Updated <SportSortIcon field="updatedDate" />
                     </button>
                   </TableHead>
-                  <TableHead className="px-3 text-right w-28">Actions</TableHead>
+                  <TableHead className="px-3 text-right w-28">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(paginatedData as Sport[]).map((sport) => (
                   <TableRow
                     key={sport.id}
-                    className={cn("group", sport.status === "Inactive" && "opacity-60")}
+                    className={cn(
+                      "group",
+                      sport.status === "Inactive" && "opacity-60",
+                    )}
                   >
                     <TableCell className="px-3">
                       <div className="w-8 h-8 rounded-lg overflow-hidden border border-gray-200 bg-gray-50">
@@ -1083,7 +1290,9 @@ export function SportsTab() {
                       </div>
                     </TableCell>
                     <TableCell className="px-3">
-                      <span className="text-sm font-medium text-[#111827]">{sport.nameEN}</span>
+                      <span className="text-sm font-medium text-[#111827]">
+                        {sport.nameEN}
+                      </span>
                     </TableCell>
                     <TableCell className="px-3">
                       <Switch
@@ -1092,7 +1301,8 @@ export function SportsTab() {
                           setStatusToggleTarget({
                             id: sport.id,
                             name: sport.nameEN,
-                            newStatus: sport.status === "Active" ? "Inactive" : "Active",
+                            newStatus:
+                              sport.status === "Active" ? "Inactive" : "Active",
                             type: "sport",
                           })
                         }
@@ -1123,7 +1333,11 @@ export function SportsTab() {
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            setDeleteTarget({ id: sport.id, name: sport.nameEN, type: "sport" })
+                            setDeleteTarget({
+                              id: sport.id,
+                              name: sport.nameEN,
+                              type: "sport",
+                            })
                           }
                           className="h-7 w-7 p-0 text-gray-400 hover:text-red-600"
                           aria-label={`Delete ${sport.nameEN}`}
@@ -1175,20 +1389,31 @@ export function SportsTab() {
                       Updated <CourtSortIcon field="updatedDate" />
                     </button>
                   </TableHead>
-                  <TableHead className="px-3 text-right w-28">Actions</TableHead>
+                  <TableHead className="px-3 text-right w-28">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
                 {(paginatedData as CourtType[]).map((court) => (
                   <TableRow
                     key={court.id}
-                    className={cn("group", court.status === "Inactive" && "opacity-60")}
+                    className={cn(
+                      "group",
+                      court.status === "Inactive" && "opacity-60",
+                    )}
                   >
                     <TableCell className="px-3">
-                      <span className="text-sm font-medium text-[#111827]">{court.nameEN}</span>
+                      <span className="text-sm font-medium text-[#111827]">
+                        {court.nameEN}
+                      </span>
                     </TableCell>
                     <TableCell className="px-3">
-                      <span className="text-sm text-[#6B7280]" dir="rtl" lang="ar">
+                      <span
+                        className="text-sm text-[#6B7280]"
+                        dir="rtl"
+                        lang="ar"
+                      >
                         {court.nameAR}
                       </span>
                     </TableCell>
@@ -1207,7 +1432,8 @@ export function SportsTab() {
                                 "text-[10px]",
                                 isInactive
                                   ? "bg-gray-100 text-gray-400 border-gray-200 line-through"
-                                  : SPORT_COLORS[sid] || "bg-gray-100 text-gray-600 border-gray-200"
+                                  : SPORT_COLORS[sid] ||
+                                      "bg-gray-100 text-gray-600 border-gray-200",
                               )}
                             >
                               {getSportName(sid)}
@@ -1223,7 +1449,8 @@ export function SportsTab() {
                           setStatusToggleTarget({
                             id: court.id,
                             name: court.nameEN,
-                            newStatus: court.status === "Active" ? "Inactive" : "Active",
+                            newStatus:
+                              court.status === "Active" ? "Inactive" : "Active",
                             type: "court",
                           })
                         }
@@ -1254,7 +1481,11 @@ export function SportsTab() {
                           variant="ghost"
                           size="sm"
                           onClick={() =>
-                            setDeleteTarget({ id: court.id, name: court.nameEN, type: "court" })
+                            setDeleteTarget({
+                              id: court.id,
+                              name: court.nameEN,
+                              type: "court",
+                            })
                           }
                           className="h-7 w-7 p-0 text-gray-400 hover:text-red-600"
                           aria-label={`Delete ${court.nameEN}`}
@@ -1273,8 +1504,10 @@ export function SportsTab() {
           <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50/50">
             <div className="flex items-center gap-2 text-xs text-[#6B7280]">
               <span>
-                Showing {Math.min((currentPage - 1) * pageSize + 1, currentData.length)}-
-                {Math.min(currentPage * pageSize, currentData.length)} of {currentData.length}
+                Showing{" "}
+                {Math.min((currentPage - 1) * pageSize + 1, currentData.length)}
+                -{Math.min(currentPage * pageSize, currentData.length)} of{" "}
+                {currentData.length}
               </span>
               <span className="text-gray-300">|</span>
               <span>Rows per page:</span>
@@ -1303,7 +1536,10 @@ export function SportsTab() {
               </Button>
               {Array.from({ length: totalPages }, (_, i) => i + 1)
                 .filter(
-                  (p) => p === 1 || p === totalPages || Math.abs(p - currentPage) <= 1
+                  (p) =>
+                    p === 1 ||
+                    p === totalPages ||
+                    Math.abs(p - currentPage) <= 1,
                 )
                 .map((p, i, arr) => {
                   const showEllipsis = i > 0 && p - arr[i - 1] > 1;
@@ -1318,7 +1554,8 @@ export function SportsTab() {
                         onClick={() => setCurrentPage(p)}
                         className={cn(
                           "h-7 w-7 p-0 text-xs",
-                          currentPage === p && "bg-[#003B95] hover:bg-[#002a6b]"
+                          currentPage === p &&
+                            "bg-[#003B95] hover:bg-[#002a6b]",
                         )}
                       >
                         {p}
@@ -1382,7 +1619,10 @@ export function SportsTab() {
                     }}
                     placeholder="Enter sport name in English"
                     maxLength={100}
-                    className={cn("text-sm", formErrors.nameEN && "border-red-400")}
+                    className={cn(
+                      "text-sm",
+                      formErrors.nameEN && "border-red-400",
+                    )}
                     aria-required="true"
                   />
                   <div className="flex items-center justify-between">
@@ -1394,14 +1634,17 @@ export function SportsTab() {
                     ) : (
                       <span />
                     )}
-                    <span className="text-[10px] text-gray-400">{sportForm.nameEN.length}/100</span>
+                    <span className="text-[10px] text-gray-400">
+                      {sportForm.nameEN.length}/100
+                    </span>
                   </div>
                 </div>
 
                 {/* Icon Upload */}
                 <div className="space-y-2">
                   <Label>
-                    Sport Icon {!editingId && <span className="text-red-500">*</span>}
+                    Sport Icon{" "}
+                    {!editingId && <span className="text-red-500">*</span>}
                   </Label>
                   {sportForm.icon ? (
                     <div className="flex items-center gap-4">
@@ -1422,7 +1665,9 @@ export function SportsTab() {
                           <Upload className="h-3 w-3" /> Change Icon
                         </Button>
                         <button
-                          onClick={() => setSportForm({ ...sportForm, icon: "" })}
+                          onClick={() =>
+                            setSportForm({ ...sportForm, icon: "" })
+                          }
                           className="text-xs text-red-500 hover:text-red-700 flex items-center gap-1"
                         >
                           <X className="h-3 w-3" /> Remove
@@ -1434,12 +1679,18 @@ export function SportsTab() {
                       onClick={() => fileInputRef.current?.click()}
                       className={cn(
                         "w-full h-24 rounded-lg border-2 border-dashed flex flex-col items-center justify-center cursor-pointer hover:border-[#003B95] hover:bg-blue-50/30 transition-colors",
-                        formErrors.icon ? "border-red-400 bg-red-50/30" : "border-gray-300"
+                        formErrors.icon
+                          ? "border-red-400 bg-red-50/30"
+                          : "border-gray-300",
                       )}
                     >
                       <Upload className="h-6 w-6 text-gray-400 mb-1.5" />
-                      <p className="text-xs text-gray-500">Click to upload icon</p>
-                      <p className="text-[10px] text-gray-400 mt-0.5">JPEG, PNG, or SVG (max 2MB)</p>
+                      <p className="text-xs text-gray-500">
+                        Click to upload icon
+                      </p>
+                      <p className="text-[10px] text-gray-400 mt-0.5">
+                        JPEG, PNG, or SVG (max 2MB)
+                      </p>
                     </div>
                   )}
                   <input
@@ -1460,22 +1711,27 @@ export function SportsTab() {
                 {/* Status */}
                 <div className="space-y-2">
                   <Label>Status</Label>
-                  <div className="flex items-center gap-3 h-9">
+                  <div className="flex items-center gap-3 h-10">
                     <Switch
                       checked={sportForm.status === "Active"}
                       onCheckedChange={(v) =>
-                        setSportForm({ ...sportForm, status: v ? "Active" : "Inactive" })
+                        setSportForm({
+                          ...sportForm,
+                          status: v ? "Active" : "Inactive",
+                        })
                       }
                       className="data-[state=checked]:bg-[#003B95]"
                     />
-                    <span className="text-sm text-[#6B7280]">{sportForm.status}</span>
+                    <span className="text-sm text-[#6B7280]">
+                      {sportForm.status}
+                    </span>
                   </div>
                 </div>
 
                 {sportForm.status === "Inactive" && (
                   <p className="text-[11px] text-amber-600 bg-amber-50 border border-amber-200 rounded px-2 py-1">
-                    Inactive sports are hidden from platform dropdowns but remain in the admin
-                    listing.
+                    Inactive sports are hidden from platform dropdowns but
+                    remain in the admin listing.
                   </p>
                 )}
               </>
@@ -1498,7 +1754,10 @@ export function SportsTab() {
                     }}
                     placeholder="Enter court type name in English"
                     maxLength={100}
-                    className={cn("text-sm", formErrors.nameEN && "border-red-400")}
+                    className={cn(
+                      "text-sm",
+                      formErrors.nameEN && "border-red-400",
+                    )}
                     aria-required="true"
                   />
                   <div className="flex items-center justify-between">
@@ -1510,7 +1769,9 @@ export function SportsTab() {
                     ) : (
                       <span />
                     )}
-                    <span className="text-[10px] text-gray-400">{courtForm.nameEN.length}/100</span>
+                    <span className="text-[10px] text-gray-400">
+                      {courtForm.nameEN.length}/100
+                    </span>
                   </div>
                 </div>
 
@@ -1528,7 +1789,10 @@ export function SportsTab() {
                     maxLength={100}
                     dir="rtl"
                     lang="ar"
-                    className={cn("text-sm text-right", formErrors.nameAR && "border-red-400")}
+                    className={cn(
+                      "text-sm text-right",
+                      formErrors.nameAR && "border-red-400",
+                    )}
                   />
                   <div className="flex items-center justify-between">
                     {formErrors.nameAR ? (
@@ -1539,7 +1803,9 @@ export function SportsTab() {
                     ) : (
                       <span />
                     )}
-                    <span className="text-[10px] text-gray-400">{courtForm.nameAR.length}/100</span>
+                    <span className="text-[10px] text-gray-400">
+                      {courtForm.nameAR.length}/100
+                    </span>
                   </div>
                 </div>
 
@@ -1550,13 +1816,19 @@ export function SportsTab() {
                     id="court-desc"
                     value={courtForm.description}
                     onChange={(e) => {
-                      setCourtForm({ ...courtForm, description: e.target.value });
+                      setCourtForm({
+                        ...courtForm,
+                        description: e.target.value,
+                      });
                       setFormErrors((p) => ({ ...p, description: undefined }));
                     }}
                     placeholder="Enter description (optional)"
                     maxLength={500}
                     rows={3}
-                    className={cn("text-sm", formErrors.description && "border-red-400")}
+                    className={cn(
+                      "text-sm",
+                      formErrors.description && "border-red-400",
+                    )}
                   />
                   <div className="flex items-center justify-between">
                     {formErrors.description ? (
@@ -1593,7 +1865,8 @@ export function SportsTab() {
                               variant="secondary"
                               className={cn(
                                 "text-xs gap-1.5 pr-1",
-                                SPORT_COLORS[sid] || "bg-gray-100 text-gray-600 border-gray-200"
+                                SPORT_COLORS[sid] ||
+                                  "bg-gray-100 text-gray-600 border-gray-200",
                               )}
                             >
                               {getSportName(sid)}
@@ -1611,14 +1884,15 @@ export function SportsTab() {
                       {/* Dropdown checkboxes */}
                       <div className="border rounded-lg max-h-40 overflow-y-auto">
                         {activeSports.map((sport) => {
-                          const isSelected = courtForm.associatedSportIds.includes(sport.id);
+                          const isSelected =
+                            courtForm.associatedSportIds.includes(sport.id);
                           return (
                             <button
                               key={sport.id}
                               onClick={() => toggleSportSelection(sport.id)}
                               className={cn(
                                 "w-full flex items-center gap-2 px-3 py-2 text-sm text-left hover:bg-gray-50 transition-colors",
-                                isSelected && "bg-blue-50/50"
+                                isSelected && "bg-blue-50/50",
                               )}
                             >
                               <div
@@ -1626,14 +1900,18 @@ export function SportsTab() {
                                   "w-4 h-4 rounded border flex items-center justify-center",
                                   isSelected
                                     ? "bg-[#003B95] border-[#003B95]"
-                                    : "border-gray-300"
+                                    : "border-gray-300",
                                 )}
                               >
                                 {isSelected && (
                                   <CheckCircle2 className="h-3 w-3 text-white" />
                                 )}
                               </div>
-                              <span className={cn(isSelected && "font-medium text-[#003B95]")}>
+                              <span
+                                className={cn(
+                                  isSelected && "font-medium text-[#003B95]",
+                                )}
+                              >
                                 {sport.nameEN}
                               </span>
                             </button>
@@ -1654,15 +1932,20 @@ export function SportsTab() {
                 <div className="grid grid-cols-2 gap-4">
                   <div className="space-y-2">
                     <Label>Status</Label>
-                    <div className="flex items-center gap-3 h-9">
+                    <div className="flex items-center gap-3 h-10">
                       <Switch
                         checked={courtForm.status === "Active"}
                         onCheckedChange={(v) =>
-                          setCourtForm({ ...courtForm, status: v ? "Active" : "Inactive" })
+                          setCourtForm({
+                            ...courtForm,
+                            status: v ? "Active" : "Inactive",
+                          })
                         }
                         className="data-[state=checked]:bg-[#003B95]"
                       />
-                      <span className="text-sm text-[#6B7280]">{courtForm.status}</span>
+                      <span className="text-sm text-[#6B7280]">
+                        {courtForm.status}
+                      </span>
                     </div>
                   </div>
                   <div className="space-y-2">
@@ -1673,10 +1956,16 @@ export function SportsTab() {
                       min={1}
                       value={courtForm.sortOrder}
                       onChange={(e) => {
-                        setCourtForm({ ...courtForm, sortOrder: parseInt(e.target.value) || 0 });
+                        setCourtForm({
+                          ...courtForm,
+                          sortOrder: parseInt(e.target.value) || 0,
+                        });
                         setFormErrors((p) => ({ ...p, sortOrder: undefined }));
                       }}
-                      className={cn("text-sm", formErrors.sortOrder && "border-red-400")}
+                      className={cn(
+                        "text-sm",
+                        formErrors.sortOrder && "border-red-400",
+                      )}
                     />
                     {formErrors.sortOrder && (
                       <p className="text-xs text-red-500 flex items-center gap-1">
@@ -1691,7 +1980,11 @@ export function SportsTab() {
           </div>
 
           <SheetFooter className="px-4 pb-4 flex gap-2">
-            <Button variant="outline" onClick={() => setPanelOpen(false)} className="flex-1">
+            <Button
+              variant="outline"
+              onClick={() => setPanelOpen(false)}
+              className="flex-1"
+            >
               Cancel
             </Button>
             <Button
@@ -1709,19 +2002,26 @@ export function SportsTab() {
       </Sheet>
 
       {/* ─── Delete Confirmation ───────────────────────────── */}
-      <AlertDialog open={!!deleteTarget} onOpenChange={(open) => !open && setDeleteTarget(null)}>
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(open) => !open && setDeleteTarget(null)}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>
               Delete {deleteTarget?.type === "sport" ? "Sport" : "Court Type"}
             </AlertDialogTitle>
             <AlertDialogDescription>
-              Permanently delete &ldquo;{deleteTarget?.name}&rdquo;? This action cannot be undone.
+              Permanently delete &ldquo;{deleteTarget?.name}&rdquo;? This action
+              cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete} className="bg-red-600 hover:bg-red-700">
+            <AlertDialogAction
+              onClick={confirmDelete}
+              className="bg-red-600 hover:bg-red-700"
+            >
               Delete
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -1737,7 +2037,10 @@ export function SportsTab() {
           <AlertDialogHeader>
             <AlertDialogTitle>Change Status</AlertDialogTitle>
             <AlertDialogDescription>
-              {statusToggleTarget?.newStatus === "Active" ? "Activate" : "Deactivate"} &ldquo;
+              {statusToggleTarget?.newStatus === "Active"
+                ? "Activate"
+                : "Deactivate"}{" "}
+              &ldquo;
               {statusToggleTarget?.name}&rdquo;?{" "}
               {statusToggleTarget?.newStatus === "Inactive"
                 ? "Inactive items are hidden from dropdowns."

@@ -13,7 +13,13 @@ import {
   SelectValue,
 } from "../../ui/select";
 import { toast } from "sonner";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "../../ui/card";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -45,7 +51,9 @@ type GeneralSettingsValues = z.infer<typeof generalSettingsSchema>;
 
 export function GeneralSettings() {
   const [isConfirmOpen, setIsConfirmOpen] = useState(false);
-  const [pendingData, setPendingData] = useState<GeneralSettingsValues | null>(null);
+  const [pendingData, setPendingData] = useState<GeneralSettingsValues | null>(
+    null,
+  );
 
   const form = useForm<GeneralSettingsValues>({
     resolver: zodResolver(generalSettingsSchema),
@@ -81,10 +89,12 @@ export function GeneralSettings() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       <div>
         <h2 className="text-2xl font-bold tracking-tight">General Settings</h2>
-        <p className="text-muted-foreground">Manage basic platform information and contact details.</p>
+        <p className="text-muted-foreground">
+          Manage basic platform information and contact details.
+        </p>
       </div>
 
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
@@ -97,16 +107,33 @@ export function GeneralSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="platformNameEn">Platform Name (EN)</Label>
-                <Input id="platformNameEn" {...form.register("platformNameEn")} />
+                <Input
+                  id="platformNameEn"
+                  {...form.register("platformNameEn")}
+                />
                 {form.formState.errors.platformNameEn && (
-                  <p className="text-sm text-red-500">{form.formState.errors.platformNameEn.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.platformNameEn.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
-                <Label htmlFor="platformNameAr" className="text-right block" style={{ direction: "rtl" }}>Platform Name (AR)</Label>
-                <Input id="platformNameAr" {...form.register("platformNameAr")} dir="rtl" />
+                <Label
+                  htmlFor="platformNameAr"
+                  className="text-right block"
+                  style={{ direction: "rtl" }}
+                >
+                  Platform Name (AR)
+                </Label>
+                <Input
+                  id="platformNameAr"
+                  {...form.register("platformNameAr")}
+                  dir="rtl"
+                />
                 {form.formState.errors.platformNameAr && (
-                  <p className="text-sm text-red-500">{form.formState.errors.platformNameAr.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.platformNameAr.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -116,7 +143,9 @@ export function GeneralSettings() {
                 <Label htmlFor="defaultCurrency">Default Currency</Label>
                 <Select
                   defaultValue={form.getValues("defaultCurrency")}
-                  onValueChange={(value) => form.setValue("defaultCurrency", value)}
+                  onValueChange={(value) =>
+                    form.setValue("defaultCurrency", value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select currency" />
@@ -134,7 +163,9 @@ export function GeneralSettings() {
                 <Label htmlFor="defaultLanguage">Default Language</Label>
                 <Select
                   defaultValue={form.getValues("defaultLanguage")}
-                  onValueChange={(value) => form.setValue("defaultLanguage", value)}
+                  onValueChange={(value) =>
+                    form.setValue("defaultLanguage", value)
+                  }
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select language" />
@@ -158,16 +189,24 @@ export function GeneralSettings() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="supportEmail">Support Email</Label>
-                <Input id="supportEmail" type="email" {...form.register("supportEmail")} />
+                <Input
+                  id="supportEmail"
+                  type="email"
+                  {...form.register("supportEmail")}
+                />
                 {form.formState.errors.supportEmail && (
-                  <p className="text-sm text-red-500">{form.formState.errors.supportEmail.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.supportEmail.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="supportPhone">Support Phone</Label>
                 <Input id="supportPhone" {...form.register("supportPhone")} />
                 {form.formState.errors.supportPhone && (
-                  <p className="text-sm text-red-500">{form.formState.errors.supportPhone.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.supportPhone.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -177,43 +216,75 @@ export function GeneralSettings() {
         <Card>
           <CardHeader>
             <CardTitle>Social Media Links</CardTitle>
-            <CardDescription>Links to your social media profiles.</CardDescription>
+            <CardDescription>
+              Links to your social media profiles.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="facebookUrl">Facebook URL</Label>
-                <Input id="facebookUrl" placeholder="https://facebook.com/..." {...form.register("facebookUrl")} />
+                <Input
+                  id="facebookUrl"
+                  placeholder="https://facebook.com/..."
+                  {...form.register("facebookUrl")}
+                />
                 {form.formState.errors.facebookUrl && (
-                  <p className="text-sm text-red-500">{form.formState.errors.facebookUrl.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.facebookUrl.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="instagramUrl">Instagram URL</Label>
-                <Input id="instagramUrl" placeholder="https://instagram.com/..." {...form.register("instagramUrl")} />
+                <Input
+                  id="instagramUrl"
+                  placeholder="https://instagram.com/..."
+                  {...form.register("instagramUrl")}
+                />
                 {form.formState.errors.instagramUrl && (
-                  <p className="text-sm text-red-500">{form.formState.errors.instagramUrl.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.instagramUrl.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="twitterUrl">Twitter URL</Label>
-                <Input id="twitterUrl" placeholder="https://twitter.com/..." {...form.register("twitterUrl")} />
+                <Input
+                  id="twitterUrl"
+                  placeholder="https://twitter.com/..."
+                  {...form.register("twitterUrl")}
+                />
                 {form.formState.errors.twitterUrl && (
-                  <p className="text-sm text-red-500">{form.formState.errors.twitterUrl.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.twitterUrl.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="youtubeUrl">YouTube URL</Label>
-                <Input id="youtubeUrl" placeholder="https://youtube.com/..." {...form.register("youtubeUrl")} />
+                <Input
+                  id="youtubeUrl"
+                  placeholder="https://youtube.com/..."
+                  {...form.register("youtubeUrl")}
+                />
                 {form.formState.errors.youtubeUrl && (
-                  <p className="text-sm text-red-500">{form.formState.errors.youtubeUrl.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.youtubeUrl.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="tiktokUrl">TikTok URL</Label>
-                <Input id="tiktokUrl" placeholder="https://tiktok.com/..." {...form.register("tiktokUrl")} />
+                <Input
+                  id="tiktokUrl"
+                  placeholder="https://tiktok.com/..."
+                  {...form.register("tiktokUrl")}
+                />
                 {form.formState.errors.tiktokUrl && (
-                  <p className="text-sm text-red-500">{form.formState.errors.tiktokUrl.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.tiktokUrl.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -223,22 +294,36 @@ export function GeneralSettings() {
         <Card>
           <CardHeader>
             <CardTitle>App Store Links</CardTitle>
-            <CardDescription>Links to download the mobile apps.</CardDescription>
+            <CardDescription>
+              Links to download the mobile apps.
+            </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="space-y-2">
                 <Label htmlFor="iosAppUrl">iOS App Store URL</Label>
-                <Input id="iosAppUrl" placeholder="https://apps.apple.com/..." {...form.register("iosAppUrl")} />
+                <Input
+                  id="iosAppUrl"
+                  placeholder="https://apps.apple.com/..."
+                  {...form.register("iosAppUrl")}
+                />
                 {form.formState.errors.iosAppUrl && (
-                  <p className="text-sm text-red-500">{form.formState.errors.iosAppUrl.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.iosAppUrl.message}
+                  </p>
                 )}
               </div>
               <div className="space-y-2">
                 <Label htmlFor="androidAppUrl">Google Play URL</Label>
-                <Input id="androidAppUrl" placeholder="https://play.google.com/..." {...form.register("androidAppUrl")} />
+                <Input
+                  id="androidAppUrl"
+                  placeholder="https://play.google.com/..."
+                  {...form.register("androidAppUrl")}
+                />
                 {form.formState.errors.androidAppUrl && (
-                  <p className="text-sm text-red-500">{form.formState.errors.androidAppUrl.message}</p>
+                  <p className="text-sm text-red-500">
+                    {form.formState.errors.androidAppUrl.message}
+                  </p>
                 )}
               </div>
             </div>
@@ -257,12 +342,18 @@ export function GeneralSettings() {
           <AlertDialogHeader>
             <AlertDialogTitle>Save General Settings?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will update the platform configuration. Are you sure you want to continue?
+              This will update the platform configuration. Are you sure you want
+              to continue?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleConfirmSave} className="bg-[#003B95] hover:bg-[#002a6b]">Confirm</AlertDialogAction>
+            <AlertDialogAction
+              onClick={handleConfirmSave}
+              className="bg-[#003B95] hover:bg-[#002a6b]"
+            >
+              Confirm
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

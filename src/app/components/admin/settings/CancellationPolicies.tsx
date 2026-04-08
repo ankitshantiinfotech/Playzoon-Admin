@@ -332,9 +332,9 @@ function DatePickerField({
           <Button
             variant="outline"
             className={cn(
-              "w-full justify-start text-left h-9 px-3",
+              "w-full justify-start text-left h-10 px-3",
               !value && "text-muted-foreground",
-              error && "border-red-400 ring-red-100 ring-2"
+              error && "border-red-400 ring-red-100 ring-2",
             )}
           >
             <CalendarDays className="h-4 w-4 mr-2 text-gray-400" />
@@ -431,7 +431,7 @@ function PolicyCard({
                 }
                 className={cn(
                   "pr-12",
-                  hasWindowError && "border-red-400 ring-red-100 ring-2"
+                  hasWindowError && "border-red-400 ring-red-100 ring-2",
                 )}
                 placeholder="e.g. 24"
               />
@@ -480,7 +480,7 @@ function PolicyCard({
                   }}
                   className={cn(
                     "text-center pr-6",
-                    hasChargeError && "border-red-400 ring-red-100 ring-2"
+                    hasChargeError && "border-red-400 ring-red-100 ring-2",
                   )}
                 />
                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-xs text-gray-400">
@@ -517,15 +517,10 @@ function PolicyCard({
 
 // ─── Policy History Timeline ────────────────────────────────
 
-function PolicyHistoryTimeline({
-  history,
-}: {
-  history: PolicyHistoryEntry[];
-}) {
+function PolicyHistoryTimeline({ history }: { history: PolicyHistoryEntry[] }) {
   const sorted = [...history].sort(
     (a, b) =>
-      new Date(b.effectiveFrom).getTime() -
-      new Date(a.effectiveFrom).getTime()
+      new Date(b.effectiveFrom).getTime() - new Date(a.effectiveFrom).getTime(),
   );
 
   return (
@@ -549,7 +544,7 @@ function PolicyHistoryTimeline({
                       ? "bg-emerald-500"
                       : isScheduled
                         ? "bg-[#003B95]"
-                        : "bg-gray-300"
+                        : "bg-gray-300",
                   )}
                   style={{ marginLeft: "15px" }}
                 />
@@ -563,7 +558,7 @@ function PolicyHistoryTimeline({
                     ? "bg-emerald-50/50 border-emerald-200"
                     : isScheduled
                       ? "bg-blue-50/50 border-blue-200"
-                      : "bg-white border-gray-200"
+                      : "bg-white border-gray-200",
                 )}
               >
                 <div className="flex items-start justify-between gap-3 mb-2">
@@ -579,7 +574,7 @@ function PolicyHistoryTimeline({
                           ? "bg-emerald-100 text-emerald-700 border-emerald-200"
                           : isScheduled
                             ? "bg-blue-100 text-[#003B95] border-blue-200"
-                            : "bg-gray-100 text-gray-500 border-gray-200"
+                            : "bg-gray-100 text-gray-500 border-gray-200",
                       )}
                     >
                       {isActive
@@ -590,36 +585,26 @@ function PolicyHistoryTimeline({
                     </Badge>
                   </div>
                   <span className="text-[10px] text-gray-400 whitespace-nowrap">
-                    Set on{" "}
-                    {format(new Date(entry.createdAt), "MMM d, yyyy")}
+                    Set on {format(new Date(entry.createdAt), "MMM d, yyyy")}
                   </span>
                 </div>
 
                 <div className="flex flex-wrap gap-x-5 gap-y-1 text-xs">
                   <span className="text-gray-500">
                     Window:{" "}
-                    <span className="text-gray-700">
-                      {entry.windowHours}h
-                    </span>
+                    <span className="text-gray-700">{entry.windowHours}h</span>
                   </span>
                   <span className="text-gray-500">
                     Charge:{" "}
-                    <span className="text-gray-700">
-                      {entry.chargePct}%
-                    </span>
+                    <span className="text-gray-700">{entry.chargePct}%</span>
                   </span>
                   <span className="text-gray-500">
                     Effective:{" "}
                     <span className="text-gray-700">
-                      {format(
-                        new Date(entry.effectiveFrom),
-                        "MMM d, yyyy"
-                      )}
+                      {format(new Date(entry.effectiveFrom), "MMM d, yyyy")}
                     </span>
                   </span>
-                  <span className="text-gray-400">
-                    by {entry.createdBy}
-                  </span>
+                  <span className="text-gray-400">by {entry.createdBy}</span>
                 </div>
               </div>
             </div>
@@ -645,8 +630,8 @@ export function CancellationPolicies() {
     (id: string, changes: Partial<DraftPolicy>) => {
       setPolicies((prev) =>
         prev.map((p) =>
-          p.id === id ? { ...p, draft: { ...p.draft, ...changes } } : p
-        )
+          p.id === id ? { ...p, draft: { ...p.draft, ...changes } } : p,
+        ),
       );
       // Clear relevant errors on change
       setErrors((prev) => {
@@ -661,7 +646,7 @@ export function CancellationPolicies() {
         return updated;
       });
     },
-    []
+    [],
   );
 
   // ─── Validation & Save ─────────────────────────────────
@@ -711,9 +696,7 @@ export function CancellationPolicies() {
   const handleSave = () => {
     if (!validateAll()) {
       // Find first error type for toast message
-      const allErrors = Object.values(errors).flatMap((e) =>
-        Object.values(e)
-      );
+      const allErrors = Object.values(errors).flatMap((e) => Object.values(e));
       const firstNewErrors: string[] = [];
       const tomorrow = startOfDay(addDays(new Date(), 1));
 
@@ -735,8 +718,7 @@ export function CancellationPolicies() {
       });
 
       toast.error(
-        firstNewErrors[0] ||
-          "Please fix the validation errors before saving."
+        firstNewErrors[0] || "Please fix the validation errors before saving.",
       );
       return;
     }
@@ -789,11 +771,11 @@ export function CancellationPolicies() {
     (p) =>
       p.draft.effectiveFrom !== undefined ||
       Number(p.draft.windowHours) !== p.activePolicy.windowHours ||
-      p.draft.chargePct !== p.activePolicy.chargePct
+      p.draft.chargePct !== p.activePolicy.chargePct,
   ).length;
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Header */}
       <div>
         <h2 className="text-2xl font-bold tracking-tight text-gray-900">
@@ -811,8 +793,8 @@ export function CancellationPolicies() {
         <div className="text-sm text-[#003B95]/80">
           <span className="text-[#003B95]">Time-versioned policies:</span>{" "}
           Policy changes require a future effective date and will never apply
-          retroactively to existing bookings. The current active policy
-          remains in effect until the new date arrives.
+          retroactively to existing bookings. The current active policy remains
+          in effect until the new date arrives.
         </div>
       </div>
 
@@ -834,8 +816,7 @@ export function CancellationPolicies() {
           {changedCount > 0 ? (
             <span>
               <span className="text-[#003B95]">{changedCount}</span> policy{" "}
-              {changedCount === 1 ? "card has" : "cards have"} pending
-              changes
+              {changedCount === 1 ? "card has" : "cards have"} pending changes
             </span>
           ) : (
             <span>Configure new policies above and click save</span>
@@ -880,7 +861,7 @@ export function CancellationPolicies() {
                     <ChevronDown
                       className={cn(
                         "h-5 w-5 text-gray-400 transition-transform duration-200",
-                        historyOpen && "rotate-180"
+                        historyOpen && "rotate-180",
                       )}
                     />
                   </div>
@@ -911,7 +892,7 @@ export function CancellationPolicies() {
                     className={cn(
                       "h-7 text-xs",
                       historyFilter === filter.id &&
-                        "bg-[#003B95] hover:bg-[#002a6b]"
+                        "bg-[#003B95] hover:bg-[#002a6b]",
                     )}
                   >
                     {filter.label}

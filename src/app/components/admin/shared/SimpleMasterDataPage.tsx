@@ -90,7 +90,7 @@ function Modal({
       <div
         className={cn(
           "relative w-full rounded-lg bg-white shadow-xl sm:my-8",
-          maxWidth
+          maxWidth,
         )}
       >
         <div className="flex items-center justify-between border-b border-[#E5E7EB] px-6 py-4">
@@ -134,14 +134,15 @@ export function SimpleMasterDataPage({
   // Modal states
   const [isAddEditOpen, setIsAddEditOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<SimpleMasterDataItem | null>(
-    null
+    null,
   );
   const [isDeactivateOpen, setIsDeactivateOpen] = useState(false);
   const [itemToDeactivate, setItemToDeactivate] =
     useState<SimpleMasterDataItem | null>(null);
   const [isDeleteWarningOpen, setIsDeleteWarningOpen] = useState(false);
-  const [itemToDelete, setItemToDelete] =
-    useState<SimpleMasterDataItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<SimpleMasterDataItem | null>(
+    null,
+  );
 
   // Export dropdown
   const [isExportOpen, setIsExportOpen] = useState(false);
@@ -160,7 +161,7 @@ export function SimpleMasterDataPage({
       let matchesExtra = false;
       if (!matchesSearch && item.extraFields) {
         matchesExtra = Object.values(item.extraFields).some((v) =>
-          v.toLowerCase().includes(searchTerm.toLowerCase())
+          v.toLowerCase().includes(searchTerm.toLowerCase()),
         );
       }
 
@@ -208,7 +209,7 @@ export function SimpleMasterDataPage({
   const totalPages = Math.max(1, Math.ceil(sortedData.length / itemsPerPage));
   const currentData = sortedData.slice(
     (currentPage - 1) * itemsPerPage,
-    currentPage * itemsPerPage
+    currentPage * itemsPerPage,
   );
 
   // Reset page when filter/search changes
@@ -218,7 +219,11 @@ export function SimpleMasterDataPage({
 
   const requestSort = (key: string) => {
     let direction: "asc" | "desc" = "asc";
-    if (sortConfig && sortConfig.key === key && sortConfig.direction === "asc") {
+    if (
+      sortConfig &&
+      sortConfig.key === key &&
+      sortConfig.direction === "asc"
+    ) {
       direction = "desc";
     }
     setSortConfig({ key, direction });
@@ -259,8 +264,8 @@ export function SimpleMasterDataPage({
                 status: "active" as const,
                 updatedAt: new Date().toISOString().split("T")[0],
               }
-            : d
-        )
+            : d,
+        ),
       );
       toast.success(`${item.name} activated successfully`);
     }
@@ -277,8 +282,8 @@ export function SimpleMasterDataPage({
               status: "inactive" as const,
               updatedAt: new Date().toISOString().split("T")[0],
             }
-          : d
-      )
+          : d,
+      ),
     );
     toast.success(`${itemToDeactivate.name} deactivated`);
   };
@@ -299,8 +304,8 @@ export function SimpleMasterDataPage({
                 updatedAt: today,
                 extraFields: extractExtraFields(formData),
               }
-            : d
-        )
+            : d,
+        ),
       );
       toast.success(`${config.entityName} updated successfully`);
     } else {
@@ -319,7 +324,7 @@ export function SimpleMasterDataPage({
   };
 
   const extractExtraFields = (
-    formData: Record<string, string>
+    formData: Record<string, string>,
   ): Record<string, string> | undefined => {
     if (!config.extraFields || config.extraFields.length === 0)
       return undefined;
@@ -359,7 +364,7 @@ export function SimpleMasterDataPage({
         "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
         status === "active"
           ? "bg-green-100 text-green-800"
-          : "bg-gray-100 text-gray-800"
+          : "bg-gray-100 text-gray-800",
       )}
     >
       {status === "active" ? "Active" : "Inactive"}
@@ -369,7 +374,7 @@ export function SimpleMasterDataPage({
   // ── Render ─────────────────────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Header */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -450,14 +455,14 @@ export function SimpleMasterDataPage({
                 statusFilter === status
                   ? "bg-[#003B95] text-white border-[#003B95]"
                   : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50",
-                status !== "all" && "-ml-px"
+                status !== "all" && "-ml-px",
               )}
             >
               {status === "all"
                 ? "All"
                 : status === "active"
-                ? "Active"
-                : "Inactive"}
+                  ? "Active"
+                  : "Inactive"}
             </button>
           ))}
         </div>
@@ -499,7 +504,7 @@ export function SimpleMasterDataPage({
                           sortConfig?.key === col.key &&
                             sortConfig.direction === "desc"
                             ? "rotate-180"
-                            : ""
+                            : "",
                         )}
                       />
                     </div>
@@ -562,14 +567,12 @@ export function SimpleMasterDataPage({
                             "relative inline-flex h-5 w-9 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:ring-offset-2",
                             item.status === "active"
                               ? "bg-[#003B95]"
-                              : "bg-gray-200"
+                              : "bg-gray-200",
                           )}
                           role="switch"
                           aria-checked={item.status === "active"}
                           title={
-                            item.status === "active"
-                              ? "Deactivate"
-                              : "Activate"
+                            item.status === "active" ? "Deactivate" : "Activate"
                           }
                         >
                           <span
@@ -578,7 +581,7 @@ export function SimpleMasterDataPage({
                               "pointer-events-none inline-block h-4 w-4 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
                               item.status === "active"
                                 ? "translate-x-4"
-                                : "translate-x-0"
+                                : "translate-x-0",
                             )}
                           />
                         </button>
@@ -635,22 +638,19 @@ export function SimpleMasterDataPage({
                   <ChevronLeft className="h-4 w-4" aria-hidden="true" />
                 </button>
 
-                {Array.from(
-                  { length: Math.min(5, totalPages) },
-                  (_, i) => {
-                    let pageNum: number;
-                    if (totalPages <= 5) {
-                      pageNum = i + 1;
-                    } else if (currentPage <= 3) {
-                      pageNum = i + 1;
-                    } else if (currentPage >= totalPages - 2) {
-                      pageNum = totalPages - 4 + i;
-                    } else {
-                      pageNum = currentPage - 2 + i;
-                    }
-                    return pageNum;
+                {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                  let pageNum: number;
+                  if (totalPages <= 5) {
+                    pageNum = i + 1;
+                  } else if (currentPage <= 3) {
+                    pageNum = i + 1;
+                  } else if (currentPage >= totalPages - 2) {
+                    pageNum = totalPages - 4 + i;
+                  } else {
+                    pageNum = currentPage - 2 + i;
                   }
-                ).map((pageNum) => (
+                  return pageNum;
+                }).map((pageNum) => (
                   <button
                     key={pageNum}
                     onClick={() => setCurrentPage(pageNum)}
@@ -659,7 +659,7 @@ export function SimpleMasterDataPage({
                       "relative inline-flex items-center px-4 py-2 border text-sm font-medium",
                       currentPage === pageNum
                         ? "z-10 bg-[#EEF0FF] border-[#003B95] text-[#003B95]"
-                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50"
+                        : "bg-white border-gray-300 text-gray-500 hover:bg-gray-50",
                     )}
                   >
                     {pageNum}
@@ -823,7 +823,7 @@ function AddEditSimpleModal({
               id="name"
               className={cn(
                 "block w-full rounded-md border shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2",
-                errors.name ? "border-red-300" : "border-gray-300"
+                errors.name ? "border-red-300" : "border-gray-300",
               )}
               placeholder={config.nameField.placeholder}
               {...register("name")}
@@ -853,7 +853,7 @@ function AddEditSimpleModal({
                   rows={3}
                   className={cn(
                     "block w-full rounded-md border shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2",
-                    errors[field.key] ? "border-red-300" : "border-gray-300"
+                    errors[field.key] ? "border-red-300" : "border-gray-300",
                   )}
                   placeholder={field.placeholder}
                   {...register(field.key)}
@@ -864,7 +864,7 @@ function AddEditSimpleModal({
                   id={field.key}
                   className={cn(
                     "block w-full rounded-md border shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2",
-                    errors[field.key] ? "border-red-300" : "border-gray-300"
+                    errors[field.key] ? "border-red-300" : "border-gray-300",
                   )}
                   placeholder={field.placeholder}
                   {...register(field.key)}
@@ -895,13 +895,13 @@ function AddEditSimpleModal({
                 type="button"
                 className={cn(
                   "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:ring-offset-2",
-                  field.value === "active" ? "bg-[#003B95]" : "bg-gray-200"
+                  field.value === "active" ? "bg-[#003B95]" : "bg-gray-200",
                 )}
                 role="switch"
                 aria-checked={field.value === "active"}
                 onClick={() =>
                   field.onChange(
-                    field.value === "active" ? "inactive" : "active"
+                    field.value === "active" ? "inactive" : "active",
                   )
                 }
               >
@@ -909,7 +909,9 @@ function AddEditSimpleModal({
                   aria-hidden="true"
                   className={cn(
                     "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                    field.value === "active" ? "translate-x-5" : "translate-x-0"
+                    field.value === "active"
+                      ? "translate-x-5"
+                      : "translate-x-0",
                   )}
                 />
               </button>

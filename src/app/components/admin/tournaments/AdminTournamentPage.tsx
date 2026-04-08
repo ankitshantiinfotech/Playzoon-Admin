@@ -56,12 +56,12 @@ const DEFAULT_PAGE_SIZE = 20;
 // ─── Badge Styles ─────────────────────────────────────────────────────────────
 
 const STATUS_BADGE: Record<TournamentStatus, string> = {
-  Tentative:  "bg-sky-100 text-sky-700 border-sky-200",
-  Confirmed:  "bg-emerald-100 text-emerald-700 border-emerald-200",
-  Full:       "bg-amber-100 text-amber-700 border-amber-200",
-  Cancelled:  "bg-red-100 text-red-700 border-red-200",
-  Completed:  "bg-emerald-50 text-emerald-600 border-emerald-200",
-  Expired:    "bg-gray-100 text-gray-500 border-gray-200",
+  Tentative: "bg-sky-100 text-sky-700 border-sky-200",
+  Confirmed: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  Full: "bg-amber-100 text-amber-700 border-amber-200",
+  Cancelled: "bg-red-100 text-red-700 border-red-200",
+  Completed: "bg-emerald-50 text-emerald-600 border-emerald-200",
+  Expired: "bg-gray-100 text-gray-500 border-gray-200",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -75,17 +75,34 @@ function fmtCurrency(amount: number) {
 
 function exportCSV(tournaments: Tournament[]) {
   const headers = [
-    "ID", "Name", "Sport", "Location", "Date/Time", "Fee", "Status",
-    "Facility", "Host", "Registered",
+    "ID",
+    "Name",
+    "Sport",
+    "Location",
+    "Date/Time",
+    "Fee",
+    "Status",
+    "Facility",
+    "Host",
+    "Registered",
   ];
   const rows = tournaments.map((t) => [
-    t.id, t.name, t.sport, t.facility.location,
+    t.id,
+    t.name,
+    t.sport,
+    t.facility.location,
     fmtDateTime(t.date),
-    t.financials.feeType === "Free" ? "Free" : `SAR ${t.financials.entryFee.toFixed(2)}`,
-    t.status, t.facility.name, t.host.name,
+    t.financials.feeType === "Free"
+      ? "Free"
+      : `SAR ${t.financials.entryFee.toFixed(2)}`,
+    t.status,
+    t.facility.name,
+    t.host.name,
     `${t.registrationCount}/${t.maxPlayers}`,
   ]);
-  const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+  const csv = [headers, ...rows]
+    .map((r) => r.map((c) => `"${c}"`).join(","))
+    .join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -113,17 +130,28 @@ type SortDir = "asc" | "desc";
 
 function getSortValue(t: Tournament, key: SortKey): string | number {
   switch (key) {
-    case "tournamentId": return t.id;
-    case "name": return t.name;
-    case "sport": return t.sport;
-    case "location": return t.facility.location;
-    case "dateTime": return t.date;
-    case "fee": return t.financials.entryFee;
-    case "status": return t.status;
-    case "facilityName": return t.facility.name;
-    case "hostName": return t.host.name;
-    case "registrationCount": return t.registrationCount;
-    default: return "";
+    case "tournamentId":
+      return t.id;
+    case "name":
+      return t.name;
+    case "sport":
+      return t.sport;
+    case "location":
+      return t.facility.location;
+    case "dateTime":
+      return t.date;
+    case "fee":
+      return t.financials.entryFee;
+    case "status":
+      return t.status;
+    case "facilityName":
+      return t.facility.name;
+    case "hostName":
+      return t.host.name;
+    case "registrationCount":
+      return t.registrationCount;
+    default:
+      return "";
   }
 }
 
@@ -131,7 +159,9 @@ function getSortValue(t: Tournament, key: SortKey): string | number {
 
 export function AdminTournamentPage() {
   const navigate = useNavigate();
-  const [tournaments] = useState<Tournament[]>(() => generateMockTournaments(50));
+  const [tournaments] = useState<Tournament[]>(() =>
+    generateMockTournaments(50),
+  );
 
   // ── Filters ──
   const [search, setSearch] = useState("");
@@ -155,8 +185,13 @@ export function AdminTournamentPage() {
     return Array.from(set).sort();
   }, [tournaments]);
 
-  const hasFilters = search || statusFilter !== "all" || sportFilter !== "all" ||
-    dateFrom || dateTo || hostFilter !== "all";
+  const hasFilters =
+    search ||
+    statusFilter !== "all" ||
+    sportFilter !== "all" ||
+    dateFrom ||
+    dateTo ||
+    hostFilter !== "all";
 
   const clearFilters = useCallback(() => {
     setSearch("");
@@ -169,19 +204,46 @@ export function AdminTournamentPage() {
   }, []);
 
   // ── Active filter chips ──
-  const activeFilters: { label: string; value: string; clear: () => void }[] = [];
-  if (statusFilter !== "all") activeFilters.push({ label: "Status", value: statusFilter, clear: () => setStatusFilter("all") });
-  if (sportFilter !== "all") activeFilters.push({ label: "Sport", value: sportFilter, clear: () => setSportFilter("all") });
-  if (dateFrom) activeFilters.push({ label: "From", value: dateFrom, clear: () => setDateFrom("") });
-  if (dateTo) activeFilters.push({ label: "To", value: dateTo, clear: () => setDateTo("") });
-  if (hostFilter !== "all") activeFilters.push({ label: "Host", value: hostFilter, clear: () => setHostFilter("all") });
+  const activeFilters: { label: string; value: string; clear: () => void }[] =
+    [];
+  if (statusFilter !== "all")
+    activeFilters.push({
+      label: "Status",
+      value: statusFilter,
+      clear: () => setStatusFilter("all"),
+    });
+  if (sportFilter !== "all")
+    activeFilters.push({
+      label: "Sport",
+      value: sportFilter,
+      clear: () => setSportFilter("all"),
+    });
+  if (dateFrom)
+    activeFilters.push({
+      label: "From",
+      value: dateFrom,
+      clear: () => setDateFrom(""),
+    });
+  if (dateTo)
+    activeFilters.push({
+      label: "To",
+      value: dateTo,
+      clear: () => setDateTo(""),
+    });
+  if (hostFilter !== "all")
+    activeFilters.push({
+      label: "Host",
+      value: hostFilter,
+      clear: () => setHostFilter("all"),
+    });
 
   // ── Filtering ──
   const filtered = useMemo(() => {
     return tournaments.filter((t) => {
       if (search) {
         const q = search.toLowerCase();
-        const match = t.name.toLowerCase().includes(q) ||
+        const match =
+          t.name.toLowerCase().includes(q) ||
           t.sport.toLowerCase().includes(q) ||
           t.host.name.toLowerCase().includes(q) ||
           t.facility.location.toLowerCase().includes(q) ||
@@ -201,7 +263,15 @@ export function AdminTournamentPage() {
       }
       return true;
     });
-  }, [tournaments, search, statusFilter, sportFilter, dateFrom, dateTo, hostFilter]);
+  }, [
+    tournaments,
+    search,
+    statusFilter,
+    sportFilter,
+    dateFrom,
+    dateTo,
+    hostFilter,
+  ]);
 
   // ── Sorting ──
   const sorted = useMemo(() => {
@@ -216,8 +286,12 @@ export function AdminTournamentPage() {
 
   // ── Pagination ──
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const showingFrom = sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const paginated = sorted.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+  const showingFrom =
+    sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const showingTo = Math.min(currentPage * pageSize, sorted.length);
 
   const handleSort = (key: SortKey) => {
@@ -243,15 +317,26 @@ export function AdminTournamentPage() {
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col gap-6" role="main" aria-label="Tournament Management">
+      <div
+        className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen"
+        role="main"
+        aria-label="Tournament Management"
+      >
         {/* ── Page Header ── */}
         <div>
           <nav aria-label="Breadcrumb" className="text-sm text-[#6B7280] mb-1">
-            <span className="hover:text-[#003B95] cursor-pointer" onClick={() => navigate("/")}>Dashboard</span>
+            <span
+              className="hover:text-[#003B95] cursor-pointer"
+              onClick={() => navigate("/")}
+            >
+              Dashboard
+            </span>
             <span className="mx-2">/</span>
             <span className="text-[#111827] font-medium">Tournaments</span>
           </nav>
-          <h1 className="text-2xl font-bold text-[#111827]">Tournament Management</h1>
+          <h1 className="text-2xl font-bold text-[#111827]">
+            Tournament Management
+          </h1>
         </div>
 
         {/* ── Toolbar + Table Card ── */}
@@ -266,12 +351,18 @@ export function AdminTournamentPage() {
                   aria-label="Search tournaments by name, sport, host, or location"
                   className="pl-10 pr-8"
                   value={search}
-                  onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
                 {search && (
                   <button
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    onClick={() => { setSearch(""); setCurrentPage(1); }}
+                    onClick={() => {
+                      setSearch("");
+                      setCurrentPage(1);
+                    }}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -279,7 +370,12 @@ export function AdminTournamentPage() {
               </div>
               <div className="flex items-center gap-2 ml-auto">
                 {hasFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters} aria-label="Clear all active filters">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    aria-label="Clear all active filters"
+                  >
                     Clear Filters
                   </Button>
                 )}
@@ -299,54 +395,96 @@ export function AdminTournamentPage() {
 
             {/* Row 2: Filters */}
             <div className="flex items-center gap-2 flex-wrap">
-              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[150px] h-9 text-sm" aria-label="Filter by tournament status">
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger
+                  className="w-[150px] h-10 text-sm"
+                  aria-label="Filter by tournament status"
+                >
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   {TOURNAMENT_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={sportFilter} onValueChange={(v) => { setSportFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[150px] h-9 text-sm" aria-label="Filter by sport">
+              <Select
+                value={sportFilter}
+                onValueChange={(v) => {
+                  setSportFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger
+                  className="w-[150px] h-10 text-sm"
+                  aria-label="Filter by sport"
+                >
                   <SelectValue placeholder="All Sports" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Sports</SelectItem>
                   {SPORT_TYPES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center gap-1.5 text-sm" aria-label="Filter by tournament date range">
+              <div
+                className="flex items-center gap-1.5 text-sm"
+                aria-label="Filter by tournament date range"
+              >
                 <Input
                   type="date"
-                  className="h-9 w-[140px] text-sm"
+                  className="h-10 w-[140px] text-sm"
                   value={dateFrom}
-                  onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
                 <span className="text-gray-400">—</span>
                 <Input
                   type="date"
-                  className="h-9 w-[140px] text-sm"
+                  className="h-10 w-[140px] text-sm"
                   value={dateTo}
-                  onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
               </div>
 
-              <Select value={hostFilter} onValueChange={(v) => { setHostFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[180px] h-9 text-sm" aria-label="Filter by tournament host">
+              <Select
+                value={hostFilter}
+                onValueChange={(v) => {
+                  setHostFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger
+                  className="w-[180px] h-10 text-sm"
+                  aria-label="Filter by tournament host"
+                >
                   <SelectValue placeholder="All Hosts" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Hosts</SelectItem>
                   {hosts.map((h) => (
-                    <SelectItem key={h} value={h}>{h}</SelectItem>
+                    <SelectItem key={h} value={h}>
+                      {h}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -357,36 +495,127 @@ export function AdminTournamentPage() {
           {activeFilters.length > 0 && (
             <div className="px-4 pb-3 flex items-center gap-2 flex-wrap">
               {activeFilters.map((f) => (
-                <Badge key={f.label} variant="secondary" className="gap-1.5 text-xs font-medium">
+                <Badge
+                  key={f.label}
+                  variant="secondary"
+                  className="gap-1.5 text-xs font-medium"
+                >
                   {f.label}: {f.value}
-                  <button onClick={() => { f.clear(); setCurrentPage(1); }} className="ml-0.5 hover:text-red-600">
+                  <button
+                    onClick={() => {
+                      f.clear();
+                      setCurrentPage(1);
+                    }}
+                    className="ml-0.5 hover:text-red-600"
+                  >
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>
               ))}
-              <button className="text-xs text-[#003B95] hover:underline font-medium" onClick={clearFilters}>
+              <button
+                className="text-xs text-[#003B95] hover:underline font-medium"
+                onClick={clearFilters}
+              >
                 Clear All
               </button>
             </div>
           )}
 
           {/* ── DataTable ── */}
-          <div className="overflow-x-auto" role="table" aria-label="Tournaments table">
+          <div
+            className="overflow-x-auto"
+            role="table"
+            aria-label="Tournaments table"
+          >
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <SortableHead col="tournamentId" label="ID" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[100px]" />
-                  <TableHead className="text-xs font-semibold text-gray-500 min-w-[60px]">Image</TableHead>
-                  <SortableHead col="name" label="Name" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[200px]" />
-                  <SortableHead col="sport" label="Sport" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[120px]" />
-                  <SortableHead col="location" label="Location" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[160px]" />
-                  <SortableHead col="dateTime" label="Date/Time" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[150px]" />
-                  <SortableHead col="fee" label="Fee" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[120px]" />
-                  <SortableHead col="status" label="Status" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[130px]" />
-                  <SortableHead col="facilityName" label="Facility" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[160px]" />
-                  <SortableHead col="hostName" label="Host" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[150px]" />
-                  <SortableHead col="registrationCount" label="Registered" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[100px] text-center" />
-                  <TableHead className="text-xs font-semibold text-gray-500 min-w-[60px] text-center">Actions</TableHead>
+                  <SortableHead
+                    col="tournamentId"
+                    label="ID"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[100px]"
+                  />
+                  <TableHead className="text-xs font-semibold text-gray-500 min-w-[60px]">
+                    Image
+                  </TableHead>
+                  <SortableHead
+                    col="name"
+                    label="Name"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[200px]"
+                  />
+                  <SortableHead
+                    col="sport"
+                    label="Sport"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[120px]"
+                  />
+                  <SortableHead
+                    col="location"
+                    label="Location"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[160px]"
+                  />
+                  <SortableHead
+                    col="dateTime"
+                    label="Date/Time"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[150px]"
+                  />
+                  <SortableHead
+                    col="fee"
+                    label="Fee"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[120px]"
+                  />
+                  <SortableHead
+                    col="status"
+                    label="Status"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[130px]"
+                  />
+                  <SortableHead
+                    col="facilityName"
+                    label="Facility"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[160px]"
+                  />
+                  <SortableHead
+                    col="hostName"
+                    label="Host"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[150px]"
+                  />
+                  <SortableHead
+                    col="registrationCount"
+                    label="Registered"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[100px] text-center"
+                  />
+                  <TableHead className="text-xs font-semibold text-gray-500 min-w-[60px] text-center">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -396,7 +625,9 @@ export function AdminTournamentPage() {
                       <div className="flex flex-col items-center gap-3 py-12">
                         <Trophy className="w-12 h-12 text-gray-200" />
                         <p className="text-base font-medium text-gray-500">
-                          {hasFilters ? "No Tournaments Found" : "No Tournaments Yet"}
+                          {hasFilters
+                            ? "No Tournaments Found"
+                            : "No Tournaments Yet"}
                         </p>
                         <p className="text-sm text-[#6B7280] max-w-md">
                           {hasFilters
@@ -423,9 +654,16 @@ export function AdminTournamentPage() {
 
                       {/* Image */}
                       <TableCell>
-                        <div className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shrink-0" aria-hidden="true">
+                        <div
+                          className="w-10 h-10 rounded-lg overflow-hidden bg-gray-100 flex items-center justify-center shrink-0"
+                          aria-hidden="true"
+                        >
                           {t.image ? (
-                            <img src={t.image} alt="" className="w-10 h-10 object-cover" />
+                            <img
+                              src={t.image}
+                              alt=""
+                              className="w-10 h-10 object-cover"
+                            />
                           ) : (
                             <Trophy className="w-5 h-5 text-gray-300" />
                           )}
@@ -445,7 +683,9 @@ export function AdminTournamentPage() {
                       </TableCell>
 
                       {/* Sport */}
-                      <TableCell className="text-sm text-[#111827]">{t.sport}</TableCell>
+                      <TableCell className="text-sm text-[#111827]">
+                        {t.sport}
+                      </TableCell>
 
                       {/* Location */}
                       <TableCell className="text-sm text-[#6B7280] max-w-[160px] truncate">
@@ -462,13 +702,21 @@ export function AdminTournamentPage() {
                         {t.financials.feeType === "Free" ? (
                           <span className="text-[#6B7280]">Free</span>
                         ) : (
-                          <span className="font-medium text-[#111827]">{fmtCurrency(t.financials.entryFee)}</span>
+                          <span className="font-medium text-[#111827]">
+                            {fmtCurrency(t.financials.entryFee)}
+                          </span>
                         )}
                       </TableCell>
 
                       {/* Status */}
                       <TableCell>
-                        <Badge variant="outline" className={cn("text-xs font-medium border", STATUS_BADGE[t.status])}>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs font-medium border",
+                            STATUS_BADGE[t.status],
+                          )}
+                        >
                           {t.status}
                         </Badge>
                       </TableCell>
@@ -491,7 +739,10 @@ export function AdminTournamentPage() {
                       </TableCell>
 
                       {/* Actions */}
-                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                      <TableCell
+                        className="text-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <Tooltip>
                           <TooltipTrigger asChild>
                             <Button
@@ -519,23 +770,36 @@ export function AdminTournamentPage() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <span>Show</span>
-                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(v) => {
+                    setPageSize(Number(v));
+                    setCurrentPage(1);
+                  }}
+                >
                   <SelectTrigger className="h-8 w-[70px] text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {PAGE_SIZES.map((s) => (
-                      <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+                      <SelectItem key={s} value={String(s)}>
+                        {s}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <span>per page</span>
               </div>
               <span>
-                Showing <strong>{showingFrom}</strong>–<strong>{showingTo}</strong> of <strong>{sorted.length.toLocaleString()}</strong> tournaments
+                Showing <strong>{showingFrom}</strong>–
+                <strong>{showingTo}</strong> of{" "}
+                <strong>{sorted.length.toLocaleString()}</strong> tournaments
               </span>
             </div>
-            <nav aria-label="Tournaments table pagination" className="flex items-center gap-1">
+            <nav
+              aria-label="Tournaments table pagination"
+              className="flex items-center gap-1"
+            >
               <Button
                 variant="outline"
                 size="icon"
@@ -561,7 +825,10 @@ export function AdminTournamentPage() {
                     key={page}
                     variant={page === currentPage ? "default" : "outline"}
                     size="icon"
-                    className={cn("h-8 w-8 text-xs", page === currentPage && "bg-[#003B95]")}
+                    className={cn(
+                      "h-8 w-8 text-xs",
+                      page === currentPage && "bg-[#003B95]",
+                    )}
                     onClick={() => setCurrentPage(page)}
                     aria-current={page === currentPage ? "page" : undefined}
                   >
@@ -611,7 +878,9 @@ function SortableHead({
         className,
       )}
       onClick={() => onSort(col)}
-      aria-sort={isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+      aria-sort={
+        isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none"
+      }
     >
       {label}
       {isActive ? (

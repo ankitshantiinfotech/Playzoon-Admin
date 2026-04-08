@@ -136,7 +136,8 @@ const INITIAL_PAGES: Record<string, StaticPage> = {
         versionNumber: 2,
         timestamp: "2025-10-15T09:30:00Z",
         status: "published",
-        contentEn: "<h1>Terms & Conditions</h1><p>Updated booking policy section.</p>",
+        contentEn:
+          "<h1>Terms & Conditions</h1><p>Updated booking policy section.</p>",
         contentAr: "<h1>الشروط والأحكام</h1><p>تم تحديث قسم سياسة الحجز.</p>",
         author: "Fatima Hassan",
         charCount: 980,
@@ -292,7 +293,7 @@ function RteBtn({
       className={cn(
         "p-1.5 rounded hover:bg-gray-200 transition-colors",
         active ? "bg-gray-200 text-[#003B95]" : "text-gray-500",
-        disabled && "opacity-40 cursor-not-allowed hover:bg-transparent"
+        disabled && "opacity-40 cursor-not-allowed hover:bg-transparent",
       )}
     >
       <Icon className="h-4 w-4" />
@@ -304,7 +305,9 @@ function RteBtn({
 
 function SocialMediaForm() {
   const [links, setLinks] = useState<SocialMediaLinks>(INITIAL_SOCIAL_LINKS);
-  const [errors, setErrors] = useState<Partial<Record<keyof SocialMediaLinks, string>>>({});
+  const [errors, setErrors] = useState<
+    Partial<Record<keyof SocialMediaLinks, string>>
+  >({});
   const [saving, setSaving] = useState(false);
 
   const socialFields: {
@@ -313,17 +316,48 @@ function SocialMediaForm() {
     icon: React.ElementType;
     placeholder: string;
   }[] = [
-    { key: "facebook", label: "Facebook URL", icon: Facebook, placeholder: "https://facebook.com/..." },
-    { key: "twitter", label: "Twitter / X URL", icon: Twitter, placeholder: "https://x.com/..." },
-    { key: "instagram", label: "Instagram URL", icon: Instagram, placeholder: "https://instagram.com/..." },
-    { key: "linkedin", label: "LinkedIn URL", icon: Linkedin, placeholder: "https://linkedin.com/..." },
-    { key: "youtube", label: "YouTube URL", icon: Youtube, placeholder: "https://youtube.com/..." },
-    { key: "tiktok", label: "TikTok URL", icon: ExternalLink, placeholder: "https://tiktok.com/..." },
+    {
+      key: "facebook",
+      label: "Facebook URL",
+      icon: Facebook,
+      placeholder: "https://facebook.com/...",
+    },
+    {
+      key: "twitter",
+      label: "Twitter / X URL",
+      icon: Twitter,
+      placeholder: "https://x.com/...",
+    },
+    {
+      key: "instagram",
+      label: "Instagram URL",
+      icon: Instagram,
+      placeholder: "https://instagram.com/...",
+    },
+    {
+      key: "linkedin",
+      label: "LinkedIn URL",
+      icon: Linkedin,
+      placeholder: "https://linkedin.com/...",
+    },
+    {
+      key: "youtube",
+      label: "YouTube URL",
+      icon: Youtube,
+      placeholder: "https://youtube.com/...",
+    },
+    {
+      key: "tiktok",
+      label: "TikTok URL",
+      icon: ExternalLink,
+      placeholder: "https://tiktok.com/...",
+    },
   ];
 
   const validateUrl = (url: string): string | null => {
     if (!url.trim()) return null;
-    if (!url.startsWith("https://")) return "Please enter a valid URL (starting with https://).";
+    if (!url.startsWith("https://"))
+      return "Please enter a valid URL (starting with https://).";
     if (url.length > 500) return "URL cannot exceed 500 characters.";
     return null;
   };
@@ -349,12 +383,15 @@ function SocialMediaForm() {
   };
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       <div className="bg-white border rounded-lg p-6 space-y-5">
         <div>
-          <h3 className="text-sm font-semibold text-[#111827]">Social Media Links</h3>
+          <h3 className="text-sm font-semibold text-[#111827]">
+            Social Media Links
+          </h3>
           <p className="text-xs text-[#6B7280] mt-1">
-            Manage your platform's social media presence. These links appear in the app footer and about pages.
+            Manage your platform's social media presence. These links appear in
+            the app footer and about pages.
           </p>
         </div>
         <div className="space-y-4">
@@ -375,7 +412,8 @@ function SocialMediaForm() {
                   placeholder={field.placeholder}
                   className={cn(
                     "text-sm",
-                    errors[field.key] && "border-red-400 focus-visible:ring-red-400"
+                    errors[field.key] &&
+                      "border-red-400 focus-visible:ring-red-400",
                   )}
                 />
                 {errors[field.key] && (
@@ -414,10 +452,13 @@ export function StaticPagesTab() {
   const [activePageTab, setActivePageTab] = useState<PageTab>("terms");
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
-  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState<PageVersion | null>(null);
+  const [restoreConfirmOpen, setRestoreConfirmOpen] =
+    useState<PageVersion | null>(null);
   const [contentError, setContentError] = useState<string | null>(null);
   const [isVersionPreview, setIsVersionPreview] = useState(false);
-  const [previewVersion, setPreviewVersion] = useState<PageVersion | null>(null);
+  const [previewVersion, setPreviewVersion] = useState<PageVersion | null>(
+    null,
+  );
   const [hasChanges, setHasChanges] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
@@ -432,16 +473,22 @@ export function StaticPagesTab() {
           const apiPages: Record<string, StaticPage> = {};
           list.forEach((p: Record<string, unknown>) => {
             const pageType = String(p.page_type || p.id || "").toLowerCase();
-            const key = pageType.includes("term") ? "terms"
-              : pageType.includes("priv") ? "privacy"
-              : pageType.includes("about") ? "about"
-              : pageType.includes("help") ? "help"
-              : pageType;
+            const key = pageType.includes("term")
+              ? "terms"
+              : pageType.includes("priv")
+                ? "privacy"
+                : pageType.includes("about")
+                  ? "about"
+                  : pageType.includes("help")
+                    ? "help"
+                    : pageType;
             apiPages[key] = {
               id: String(p.id || key),
               title: String(p.title_en || p.title || key),
               status: String(p.status || "published") as StaticPage["status"],
-              lastUpdated: String(p.last_updated_at || new Date().toISOString()),
+              lastUpdated: String(
+                p.last_updated_at || new Date().toISOString(),
+              ),
               lastUpdatedBy: "Admin",
               lastPublished: String(p.last_updated_at || null),
               contentEn: String(p.content_en || ""),
@@ -450,7 +497,7 @@ export function StaticPagesTab() {
             };
           });
           // Merge: API pages override mock, keep mock for pages not in API
-          setPages(prev => ({ ...prev, ...apiPages }));
+          setPages((prev) => ({ ...prev, ...apiPages }));
         }
       } catch (err) {
         console.error("CMS API fetch failed, using fallback data:", err);
@@ -486,15 +533,25 @@ export function StaticPagesTab() {
   useEffect(() => {
     if (!editorRef.current || !currentPage || !isContentPage) return;
     if (isVersionPreview && previewVersion) {
-      const content = lang === "en" ? previewVersion.contentEn : previewVersion.contentAr;
+      const content =
+        lang === "en" ? previewVersion.contentEn : previewVersion.contentAr;
       editorRef.current.innerHTML = content;
       return;
     }
-    const content = lang === "en" ? currentPage.contentEn : currentPage.contentAr;
+    const content =
+      lang === "en" ? currentPage.contentEn : currentPage.contentAr;
     if (editorRef.current.innerHTML !== content) {
       editorRef.current.innerHTML = content;
     }
-  }, [lang, activePageTab, currentPage?.contentEn, currentPage?.contentAr, isVersionPreview, previewVersion, isContentPage]);
+  }, [
+    lang,
+    activePageTab,
+    currentPage?.contentEn,
+    currentPage?.contentAr,
+    isVersionPreview,
+    previewVersion,
+    isContentPage,
+  ]);
 
   // ─── Exec command helper ───────────────────────────────
 
@@ -514,7 +571,7 @@ export function StaticPagesTab() {
       setContentError(
         lang === "en"
           ? "English content is required for publishing."
-          : "Arabic content is required for publishing."
+          : "Arabic content is required for publishing.",
       );
       return false;
     }
@@ -532,7 +589,10 @@ export function StaticPagesTab() {
     const updatedContentAr = lang === "ar" ? html : currentPage.contentAr;
 
     const now = new Date().toISOString();
-    const maxVersion = Math.max(0, ...currentPage.versions.map((v) => v.versionNumber));
+    const maxVersion = Math.max(
+      0,
+      ...currentPage.versions.map((v) => v.versionNumber),
+    );
 
     const newVersion: PageVersion = {
       id: `v${Date.now()}`,
@@ -542,7 +602,8 @@ export function StaticPagesTab() {
       contentEn: updatedContentEn,
       contentAr: updatedContentAr,
       author: "Admin",
-      charCount: stripHtml(updatedContentEn).length + stripHtml(updatedContentAr).length,
+      charCount:
+        stripHtml(updatedContentEn).length + stripHtml(updatedContentAr).length,
     };
 
     setPages((curr) => ({
@@ -613,7 +674,9 @@ export function StaticPagesTab() {
 
   const handleAutoTranslate = () => {
     if (activePageTab !== "terms" || !currentPage) return;
-    toast.success("Translation auto-generated. Pending admin review before publishing.");
+    toast.success(
+      "Translation auto-generated. Pending admin review before publishing.",
+    );
     setPages((curr) => ({
       ...curr,
       terms: {
@@ -683,7 +746,7 @@ export function StaticPagesTab() {
                   "flex items-center gap-2 px-4 py-3 text-sm whitespace-nowrap border-b-2 transition-colors",
                   isActive
                     ? "border-[#003B95] text-[#003B95] font-medium"
-                    : "border-transparent text-[#6B7280] hover:text-[#111827] hover:border-gray-300"
+                    : "border-transparent text-[#6B7280] hover:text-[#111827] hover:border-gray-300",
                 )}
               >
                 <Icon className="h-4 w-4" />
@@ -707,14 +770,16 @@ export function StaticPagesTab() {
           {/* Page Header Row */}
           <div className="flex items-center justify-between px-6 py-4 border-b">
             <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold text-[#111827]">{currentPage.title}</h2>
+              <h2 className="text-lg font-semibold text-[#111827]">
+                {currentPage.title}
+              </h2>
               <Badge
                 variant="secondary"
                 className={cn(
                   "text-xs gap-1",
                   currentPage.status === "published"
                     ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-amber-50 text-amber-700 border-amber-200"
+                    : "bg-amber-50 text-amber-700 border-amber-200",
                 )}
               >
                 {currentPage.status === "published" ? (
@@ -775,7 +840,7 @@ export function StaticPagesTab() {
                       "px-3 py-1.5 rounded-md text-xs transition-all flex items-center gap-1.5",
                       lang === "en"
                         ? "bg-white text-[#003B95] shadow-sm font-medium"
-                        : "text-[#6B7280] hover:text-[#111827]"
+                        : "text-[#6B7280] hover:text-[#111827]",
                     )}
                   >
                     <Globe className="h-3 w-3" />
@@ -792,7 +857,7 @@ export function StaticPagesTab() {
                       "px-3 py-1.5 rounded-md text-xs transition-all flex items-center gap-1.5",
                       lang === "ar"
                         ? "bg-white text-[#003B95] shadow-sm font-medium"
-                        : "text-[#6B7280] hover:text-[#111827]"
+                        : "text-[#6B7280] hover:text-[#111827]",
                     )}
                   >
                     <Globe className="h-3 w-3" />
@@ -826,7 +891,8 @@ export function StaticPagesTab() {
                 <div className="px-6 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
                   <span className="text-xs text-blue-700 font-medium">
                     Previewing version v{previewVersion.versionNumber} from{" "}
-                    {formatDate(previewVersion.timestamp)} by {previewVersion.author}
+                    {formatDate(previewVersion.timestamp)} by{" "}
+                    {previewVersion.author}
                   </span>
                   <div className="flex items-center gap-2">
                     <Button
@@ -850,7 +916,12 @@ export function StaticPagesTab() {
               )}
 
               {/* Rich Text Editor */}
-              <div className={cn("border-b", contentError && "ring-1 ring-red-400")}>
+              <div
+                className={cn(
+                  "border-b",
+                  contentError && "ring-1 ring-red-400",
+                )}
+              >
                 {/* Toolbar */}
                 <div className="flex items-center gap-0.5 px-4 py-1.5 bg-gray-50 border-b flex-wrap">
                   <RteBtn
@@ -966,7 +1037,7 @@ export function StaticPagesTab() {
                     "[&_strong]:font-semibold",
                     "[&_em]:italic",
                     lang === "ar" && "text-right font-[system-ui]",
-                    isVersionPreview && "bg-gray-50 cursor-default"
+                    isVersionPreview && "bg-gray-50 cursor-default",
                   )}
                   onInput={() => setHasChanges(true)}
                   onBlur={syncEditorContent}
@@ -982,69 +1053,74 @@ export function StaticPagesTab() {
               )}
 
               {/* Translation Review Section (T&C only) */}
-              {activePageTab === "terms" && pages.terms?.hasPendingTranslation && (
-                <div className="px-6 py-4 bg-amber-50/50 border-t border-amber-200">
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                      <Languages className="h-4 w-4 text-amber-600" />
-                      <h3 className="text-sm font-medium text-amber-800">
-                        Pending Translation Review
-                      </h3>
+              {activePageTab === "terms" &&
+                pages.terms?.hasPendingTranslation && (
+                  <div className="px-6 py-4 bg-amber-50/50 border-t border-amber-200">
+                    <div className="flex items-center justify-between mb-3">
+                      <div className="flex items-center gap-2">
+                        <Languages className="h-4 w-4 text-amber-600" />
+                        <h3 className="text-sm font-medium text-amber-800">
+                          Pending Translation Review
+                        </h3>
+                      </div>
+                      <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px]">
+                        Auto-translated
+                      </Badge>
                     </div>
-                    <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px]">
-                      Auto-translated
-                    </Badge>
-                  </div>
-                  <div
-                    className="border border-amber-200 rounded-lg bg-white p-4 prose prose-sm max-w-none mb-3 text-sm text-gray-700"
-                    dir="rtl"
-                    dangerouslySetInnerHTML={{
-                      __html: pages.terms.pendingTranslationContent || "",
-                    }}
-                  />
-                  <div className="flex items-center gap-2">
-                    <Button
-                      size="sm"
-                      onClick={handleApproveTranslation}
-                      className="bg-[#003B95] hover:bg-[#002a6b] h-8 gap-1.5 text-xs"
-                    >
-                      <CheckCircle2 className="h-3 w-3" />
-                      Approve & Publish Translation
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={() => {
-                        setLang("ar");
-                        if (pages.terms.pendingTranslationContent) {
-                          setPages((curr) => ({
-                            ...curr,
-                            terms: {
-                              ...curr.terms,
-                              contentAr: curr.terms.pendingTranslationContent || curr.terms.contentAr,
-                              hasPendingTranslation: false,
-                              pendingTranslationContent: undefined,
-                            },
-                          }));
-                        }
-                        toast.success("Content loaded into editor for manual editing.");
+                    <div
+                      className="border border-amber-200 rounded-lg bg-white p-4 prose prose-sm max-w-none mb-3 text-sm text-gray-700"
+                      dir="rtl"
+                      dangerouslySetInnerHTML={{
+                        __html: pages.terms.pendingTranslationContent || "",
                       }}
-                      className="h-8 gap-1.5 text-xs"
-                    >
-                      <Pencil className="h-3 w-3" />
-                      Edit Before Publishing
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={handleRejectTranslation}
-                      className="h-8 gap-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                    >
-                      Reject Translation
-                    </Button>
+                    />
+                    <div className="flex items-center gap-2">
+                      <Button
+                        size="sm"
+                        onClick={handleApproveTranslation}
+                        className="bg-[#003B95] hover:bg-[#002a6b] h-8 gap-1.5 text-xs"
+                      >
+                        <CheckCircle2 className="h-3 w-3" />
+                        Approve & Publish Translation
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                          setLang("ar");
+                          if (pages.terms.pendingTranslationContent) {
+                            setPages((curr) => ({
+                              ...curr,
+                              terms: {
+                                ...curr.terms,
+                                contentAr:
+                                  curr.terms.pendingTranslationContent ||
+                                  curr.terms.contentAr,
+                                hasPendingTranslation: false,
+                                pendingTranslationContent: undefined,
+                              },
+                            }));
+                          }
+                          toast.success(
+                            "Content loaded into editor for manual editing.",
+                          );
+                        }}
+                        className="h-8 gap-1.5 text-xs"
+                      >
+                        <Pencil className="h-3 w-3" />
+                        Edit Before Publishing
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={handleRejectTranslation}
+                        className="h-8 gap-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
+                      >
+                        Reject Translation
+                      </Button>
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
             </div>
 
             {/* Version History Panel */}
@@ -1070,11 +1146,14 @@ export function StaticPagesTab() {
                           "border rounded-lg p-3 space-y-2 cursor-pointer transition-colors",
                           isVersionPreview && previewVersion?.id === version.id
                             ? "border-[#003B95] bg-blue-50/50"
-                            : "border-gray-200 bg-white hover:border-gray-300"
+                            : "border-gray-200 bg-white hover:border-gray-300",
                         )}
                       >
                         <div className="flex items-center justify-between">
-                          <Badge variant="outline" className="text-[10px] h-5 font-mono">
+                          <Badge
+                            variant="outline"
+                            className="text-[10px] h-5 font-mono"
+                          >
                             v{version.versionNumber}
                           </Badge>
                           <Badge
@@ -1083,7 +1162,7 @@ export function StaticPagesTab() {
                               "text-[9px] h-4",
                               version.status === "published"
                                 ? "bg-emerald-50 text-emerald-700"
-                                : "bg-amber-50 text-amber-700"
+                                : "bg-amber-50 text-amber-700",
                             )}
                           >
                             {version.status}
@@ -1123,12 +1202,16 @@ export function StaticPagesTab() {
       )}
 
       {/* ─── Publish Confirmation ───────────────────────── */}
-      <AlertDialog open={publishConfirmOpen} onOpenChange={setPublishConfirmOpen}>
+      <AlertDialog
+        open={publishConfirmOpen}
+        onOpenChange={setPublishConfirmOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Publish {currentPage?.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will immediately replace the current live content. Are you sure?
+              This will immediately replace the current live content. Are you
+              sure?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -1153,8 +1236,8 @@ export function StaticPagesTab() {
             <AlertDialogTitle>Restore Version</AlertDialogTitle>
             <AlertDialogDescription>
               Restore version v{restoreConfirmOpen?.versionNumber} from{" "}
-              {restoreConfirmOpen && formatDate(restoreConfirmOpen.timestamp)}? The
-              current draft will be replaced with this version's content.
+              {restoreConfirmOpen && formatDate(restoreConfirmOpen.timestamp)}?
+              The current draft will be replaced with this version's content.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

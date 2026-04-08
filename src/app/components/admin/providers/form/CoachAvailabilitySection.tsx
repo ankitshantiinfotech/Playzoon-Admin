@@ -6,9 +6,20 @@
 import { useState, useCallback, useMemo } from "react";
 import { toast } from "sonner";
 import {
-  Clock, DollarSign, Save, Loader2, RotateCcw,
-  CalendarDays, Pencil, Check, X, ChevronDown,
-  CreditCard, Banknote, Package, Search,
+  Clock,
+  DollarSign,
+  Save,
+  Loader2,
+  RotateCcw,
+  CalendarDays,
+  Pencil,
+  Check,
+  X,
+  ChevronDown,
+  CreditCard,
+  Banknote,
+  Package,
+  Search,
 } from "lucide-react";
 import { cn } from "../../../ui/utils";
 import { Button } from "../../../ui/button";
@@ -16,11 +27,20 @@ import { Input } from "../../../ui/input";
 import { Label } from "../../../ui/label";
 import { Badge } from "../../../ui/badge";
 import {
-  Tooltip, TooltipContent, TooltipProvider, TooltipTrigger,
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
 } from "../../../ui/tooltip";
 import {
-  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
-  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle,
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
 } from "../../../ui/alert-dialog";
 
 // ═══════════════════════════════════════════════════════════════
@@ -28,11 +48,19 @@ import {
 // ═══════════════════════════════════════════════════════════════
 
 const DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"] as const;
-const DAYS_FULL = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"] as const;
+const DAYS_FULL = [
+  "Sunday",
+  "Monday",
+  "Tuesday",
+  "Wednesday",
+  "Thursday",
+  "Friday",
+  "Saturday",
+] as const;
 
 // Time slots from 6 AM to 10 PM (17 slots, 1-hour each)
 const SLOT_START = 6; // 6:00 AM
-const SLOT_END = 22;  // 10:00 PM
+const SLOT_END = 22; // 10:00 PM
 const SLOTS: number[] = [];
 for (let h = SLOT_START; h < SLOT_END; h++) SLOTS.push(h);
 
@@ -51,8 +79,8 @@ function formatHourShort(h: number): string {
 }
 
 // Slot key: "Mon-14" = Monday at 2 PM
-type SlotKey = `${typeof DAYS[number]}-${number}`;
-function makeSlotKey(day: typeof DAYS[number], hour: number): SlotKey {
+type SlotKey = `${(typeof DAYS)[number]}-${number}`;
+function makeSlotKey(day: (typeof DAYS)[number], hour: number): SlotKey {
   return `${day}-${hour}` as SlotKey;
 }
 
@@ -88,8 +116,8 @@ export interface CoachAvailabilityState {
   currency: string;
   perSessionRate: string;
   perHourRate: string;
-  packageRate5: string;   // 5-session package
-  packageRate10: string;  // 10-session package
+  packageRate5: string; // 5-session package
+  packageRate10: string; // 10-session package
   trialSessionRate: string;
 }
 
@@ -127,13 +155,14 @@ function CurrencyDropdown({
   const [open, setOpen] = useState(false);
   const [search, setSearch] = useState("");
 
-  const selected = CURRENCIES.find(c => c.code === value) ?? CURRENCIES[0];
+  const selected = CURRENCIES.find((c) => c.code === value) ?? CURRENCIES[0];
 
   const filtered = useMemo(() => {
     if (!search.trim()) return CURRENCIES;
     const q = search.toLowerCase();
     return CURRENCIES.filter(
-      c => c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q),
+      (c) =>
+        c.code.toLowerCase().includes(q) || c.name.toLowerCase().includes(q),
     );
   }, [search]);
 
@@ -143,7 +172,7 @@ function CurrencyDropdown({
         type="button"
         onClick={() => setOpen(!open)}
         className={cn(
-          "flex items-center gap-1.5 h-9 px-2.5 border rounded-md text-sm bg-white hover:bg-gray-50 transition-colors min-w-[120px]",
+          "flex items-center gap-1.5 h-10 px-2.5 border rounded-md text-sm bg-white hover:bg-gray-50 transition-colors min-w-[120px]",
           open && "ring-2 ring-[#003B95]/20 border-[#003B95]",
         )}
       >
@@ -161,18 +190,22 @@ function CurrencyDropdown({
                 type="text"
                 placeholder="Search currency..."
                 value={search}
-                onChange={e => setSearch(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="w-full h-8 pl-8 pr-2 text-xs border rounded focus:outline-none focus:ring-1 focus:ring-[#003B95]/30"
                 autoFocus
               />
             </div>
           </div>
           <div className="overflow-y-auto max-h-44">
-            {filtered.map(c => (
+            {filtered.map((c) => (
               <button
                 key={c.code}
                 type="button"
-                onClick={() => { onChange(c.code); setOpen(false); setSearch(""); }}
+                onClick={() => {
+                  onChange(c.code);
+                  setOpen(false);
+                  setSearch("");
+                }}
                 className={cn(
                   "w-full flex items-center gap-2 px-3 py-2 text-sm hover:bg-gray-50 transition-colors",
                   c.code === value && "bg-blue-50 text-[#003B95]",
@@ -184,7 +217,9 @@ function CurrencyDropdown({
               </button>
             ))}
             {filtered.length === 0 && (
-              <p className="text-xs text-gray-400 text-center py-4">No currencies found</p>
+              <p className="text-xs text-gray-400 text-center py-4">
+                No currencies found
+              </p>
             )}
           </div>
         </div>
@@ -259,7 +294,9 @@ function CostField({
               </span>
               <Input
                 value={draft}
-                onChange={e => setDraft(e.target.value.replace(/[^0-9.]/g, ""))}
+                onChange={(e) =>
+                  setDraft(e.target.value.replace(/[^0-9.]/g, ""))
+                }
                 onKeyDown={handleKeyDown}
                 className="h-8 w-28 pl-8 text-sm text-right"
                 autoFocus
@@ -320,36 +357,46 @@ export function CoachAvailabilitySection({
   const [isDragging, setIsDragging] = useState(false);
   const [dragMode, setDragMode] = useState<"add" | "remove" | null>(null);
 
-  const currencyObj = CURRENCIES.find(c => c.code === availability.currency) ?? CURRENCIES[0];
+  const currencyObj =
+    CURRENCIES.find((c) => c.code === availability.currency) ?? CURRENCIES[0];
 
   // ── Slot toggling ─────────────────────────────────────
-  const toggleSlot = useCallback((day: typeof DAYS[number], hour: number) => {
-    const key = makeSlotKey(day, hour);
-    setAvailability(prev => {
-      const next = new Set(prev.slots);
-      if (next.has(key)) next.delete(key);
-      else next.add(key);
-      return { ...prev, slots: next };
-    });
-    onDirty();
-  }, [setAvailability, onDirty]);
+  const toggleSlot = useCallback(
+    (day: (typeof DAYS)[number], hour: number) => {
+      const key = makeSlotKey(day, hour);
+      setAvailability((prev) => {
+        const next = new Set(prev.slots);
+        if (next.has(key)) next.delete(key);
+        else next.add(key);
+        return { ...prev, slots: next };
+      });
+      onDirty();
+    },
+    [setAvailability, onDirty],
+  );
 
   // ── Drag selection for quick slot paint ────────────────
-  const handleSlotMouseDown = useCallback((day: typeof DAYS[number], hour: number) => {
-    const key = makeSlotKey(day, hour);
-    const removing = availability.slots.has(key);
-    setIsDragging(true);
-    setDragMode(removing ? "remove" : "add");
-    toggleSlot(day, hour);
-  }, [availability.slots, toggleSlot]);
+  const handleSlotMouseDown = useCallback(
+    (day: (typeof DAYS)[number], hour: number) => {
+      const key = makeSlotKey(day, hour);
+      const removing = availability.slots.has(key);
+      setIsDragging(true);
+      setDragMode(removing ? "remove" : "add");
+      toggleSlot(day, hour);
+    },
+    [availability.slots, toggleSlot],
+  );
 
-  const handleSlotMouseEnter = useCallback((day: typeof DAYS[number], hour: number) => {
-    if (!isDragging || dragMode === null) return;
-    const key = makeSlotKey(day, hour);
-    const isActive = availability.slots.has(key);
-    if (dragMode === "add" && !isActive) toggleSlot(day, hour);
-    if (dragMode === "remove" && isActive) toggleSlot(day, hour);
-  }, [isDragging, dragMode, availability.slots, toggleSlot]);
+  const handleSlotMouseEnter = useCallback(
+    (day: (typeof DAYS)[number], hour: number) => {
+      if (!isDragging || dragMode === null) return;
+      const key = makeSlotKey(day, hour);
+      const isActive = availability.slots.has(key);
+      if (dragMode === "add" && !isActive) toggleSlot(day, hour);
+      if (dragMode === "remove" && isActive) toggleSlot(day, hour);
+    },
+    [isDragging, dragMode, availability.slots, toggleSlot],
+  );
 
   const handleMouseUp = useCallback(() => {
     setIsDragging(false);
@@ -358,7 +405,7 @@ export function CoachAvailabilitySection({
 
   // ── Quick actions ─────────────────────────────────────
   const selectWeekdays = useCallback(() => {
-    setAvailability(prev => {
+    setAvailability((prev) => {
       const next = new Set(prev.slots);
       for (const day of ["Mon", "Tue", "Wed", "Thu"] as const) {
         for (let h = 9; h < 17; h++) next.add(makeSlotKey(day, h));
@@ -369,7 +416,7 @@ export function CoachAvailabilitySection({
   }, [setAvailability, onDirty]);
 
   const clearAll = useCallback(() => {
-    setAvailability(prev => ({ ...prev, slots: new Set() }));
+    setAvailability((prev) => ({ ...prev, slots: new Set() }));
     onDirty();
   }, [setAvailability, onDirty]);
 
@@ -378,8 +425,10 @@ export function CoachAvailabilitySection({
   const hoursPerWeek = totalSlots; // each slot = 1 hour
   const dayStats = useMemo(() => {
     const stats: Record<string, number> = {};
-    DAYS.forEach(d => { stats[d] = 0; });
-    availability.slots.forEach(key => {
+    DAYS.forEach((d) => {
+      stats[d] = 0;
+    });
+    availability.slots.forEach((key) => {
       const day = key.split("-")[0];
       if (stats[day] !== undefined) stats[day]++;
     });
@@ -387,15 +436,18 @@ export function CoachAvailabilitySection({
   }, [availability.slots]);
 
   // ── Cost field updater ────────────────────────────────
-  const updateCost = useCallback((field: keyof CoachAvailabilityState, value: string) => {
-    setAvailability(prev => ({ ...prev, [field]: value }));
-    onDirty();
-  }, [setAvailability, onDirty]);
+  const updateCost = useCallback(
+    (field: keyof CoachAvailabilityState, value: string) => {
+      setAvailability((prev) => ({ ...prev, [field]: value }));
+      onDirty();
+    },
+    [setAvailability, onDirty],
+  );
 
   // ── Save confirmation ─────────────────────────────────
   const handleSaveSection = async () => {
     setIsSavingSection(true);
-    await new Promise(r => setTimeout(r, 800));
+    await new Promise((r) => setTimeout(r, 800));
     setIsSavingSection(false);
     setShowSaveConfirm(false);
     toast.success("Availability & pricing saved successfully.");
@@ -435,7 +487,10 @@ export function CoachAvailabilitySection({
                 <Clock className="h-4 w-4 text-[#003B95]" /> Weekly Schedule
               </Label>
               <div className="flex items-center gap-2">
-                <Badge variant="outline" className="text-[10px] px-2 py-0.5 text-gray-500">
+                <Badge
+                  variant="outline"
+                  className="text-[10px] px-2 py-0.5 text-gray-500"
+                >
                   {hoursPerWeek} hr{hoursPerWeek !== 1 ? "s" : ""}/week
                 </Badge>
                 <Button
@@ -460,7 +515,8 @@ export function CoachAvailabilitySection({
             </div>
 
             <p className="text-[11px] text-[#9CA3AF]">
-              Click or drag across slots to toggle availability. Green = available.
+              Click or drag across slots to toggle availability. Green =
+              available.
             </p>
 
             {/* Grid */}
@@ -479,13 +535,15 @@ export function CoachAvailabilitySection({
                       className="h-8 flex flex-col items-center justify-center rounded-t-md bg-gray-100"
                     >
                       <span className="text-[11px] text-[#374151]">{day}</span>
-                      <span className="text-[9px] text-[#9CA3AF]">{dayStats[day]}h</span>
+                      <span className="text-[9px] text-[#9CA3AF]">
+                        {dayStats[day]}h
+                      </span>
                     </div>
                   ))}
                 </div>
 
                 {/* Time slot rows */}
-                {SLOTS.map(hour => (
+                {SLOTS.map((hour) => (
                   <div
                     key={hour}
                     className="grid grid-cols-[60px_repeat(7,1fr)] gap-0.5 mb-0.5"
@@ -497,7 +555,7 @@ export function CoachAvailabilitySection({
                       </span>
                     </div>
                     {/* Day cells */}
-                    {DAYS.map(day => {
+                    {DAYS.map((day) => {
                       const key = makeSlotKey(day, hour);
                       const active = availability.slots.has(key);
                       return (
@@ -506,7 +564,9 @@ export function CoachAvailabilitySection({
                             <button
                               type="button"
                               onMouseDown={() => handleSlotMouseDown(day, hour)}
-                              onMouseEnter={() => handleSlotMouseEnter(day, hour)}
+                              onMouseEnter={() =>
+                                handleSlotMouseEnter(day, hour)
+                              }
                               className={cn(
                                 "h-7 rounded-sm transition-colors",
                                 active
@@ -517,9 +577,14 @@ export function CoachAvailabilitySection({
                             />
                           </TooltipTrigger>
                           <TooltipContent side="top" className="text-xs">
-                            {DAYS_FULL[DAYS.indexOf(day)]}, {formatHour(hour)} – {formatHour(hour + 1)}
+                            {DAYS_FULL[DAYS.indexOf(day)]}, {formatHour(hour)} –{" "}
+                            {formatHour(hour + 1)}
                             <br />
-                            <span className={active ? "text-emerald-400" : "text-gray-400"}>
+                            <span
+                              className={
+                                active ? "text-emerald-400" : "text-gray-400"
+                              }
+                            >
                               {active ? "✓ Available" : "✗ Unavailable"}
                             </span>
                           </TooltipContent>
@@ -545,7 +610,7 @@ export function CoachAvailabilitySection({
 
             {/* Day summary chips */}
             <div className="flex flex-wrap gap-1.5">
-              {DAYS.map(day => (
+              {DAYS.map((day) => (
                 <Badge
                   key={day}
                   variant="outline"
@@ -574,15 +639,16 @@ export function CoachAvailabilitySection({
               </Label>
               <CurrencyDropdown
                 value={availability.currency}
-                onChange={code => {
-                  setAvailability(prev => ({ ...prev, currency: code }));
+                onChange={(code) => {
+                  setAvailability((prev) => ({ ...prev, currency: code }));
                   onDirty();
                 }}
               />
             </div>
 
             <p className="text-[11px] text-[#9CA3AF]">
-              Hover over a field and click the pencil icon to edit. Press Enter to confirm or Escape to cancel.
+              Hover over a field and click the pencil icon to edit. Press Enter
+              to confirm or Escape to cancel.
             </p>
 
             <div className="space-y-2">
@@ -591,7 +657,7 @@ export function CoachAvailabilitySection({
                 icon={<CreditCard className="h-4 w-4 text-blue-500" />}
                 value={availability.perSessionRate}
                 currencySymbol={currencyObj.symbol}
-                onChange={v => updateCost("perSessionRate", v)}
+                onChange={(v) => updateCost("perSessionRate", v)}
                 description="Standard single-session booking price"
               />
               <CostField
@@ -599,7 +665,7 @@ export function CoachAvailabilitySection({
                 icon={<Clock className="h-4 w-4 text-blue-500" />}
                 value={availability.perHourRate}
                 currencySymbol={currencyObj.symbol}
-                onChange={v => updateCost("perHourRate", v)}
+                onChange={(v) => updateCost("perHourRate", v)}
                 description="Hourly coaching rate"
               />
               <CostField
@@ -607,7 +673,7 @@ export function CoachAvailabilitySection({
                 icon={<Package className="h-4 w-4 text-indigo-500" />}
                 value={availability.packageRate5}
                 currencySymbol={currencyObj.symbol}
-                onChange={v => updateCost("packageRate5", v)}
+                onChange={(v) => updateCost("packageRate5", v)}
                 description="Discounted bundle for 5 sessions"
               />
               <CostField
@@ -615,7 +681,7 @@ export function CoachAvailabilitySection({
                 icon={<Package className="h-4 w-4 text-purple-500" />}
                 value={availability.packageRate10}
                 currencySymbol={currencyObj.symbol}
-                onChange={v => updateCost("packageRate10", v)}
+                onChange={(v) => updateCost("packageRate10", v)}
                 description="Discounted bundle for 10 sessions"
               />
               <CostField
@@ -623,7 +689,7 @@ export function CoachAvailabilitySection({
                 icon={<Banknote className="h-4 w-4 text-emerald-500" />}
                 value={availability.trialSessionRate}
                 currencySymbol={currencyObj.symbol}
-                onChange={v => updateCost("trialSessionRate", v)}
+                onChange={(v) => updateCost("trialSessionRate", v)}
                 description="Introductory/trial session price"
               />
             </div>
@@ -637,19 +703,28 @@ export function CoachAvailabilitySection({
                 <div>
                   <p className="text-[10px] text-[#6B7280]">Session</p>
                   <p className="text-sm text-[#111827] tabular-nums">
-                    {currencyObj.symbol} {Number(availability.perSessionRate || 0).toLocaleString()}
+                    {currencyObj.symbol}{" "}
+                    {Number(availability.perSessionRate || 0).toLocaleString()}
                   </p>
                 </div>
                 <div>
                   <p className="text-[10px] text-[#6B7280]">5-Pack / session</p>
                   <p className="text-sm text-[#111827] tabular-nums">
-                    {currencyObj.symbol} {(Number(availability.packageRate5 || 0) / 5).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    {currencyObj.symbol}{" "}
+                    {(
+                      Number(availability.packageRate5 || 0) / 5
+                    ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                 </div>
                 <div>
-                  <p className="text-[10px] text-[#6B7280]">10-Pack / session</p>
+                  <p className="text-[10px] text-[#6B7280]">
+                    10-Pack / session
+                  </p>
                   <p className="text-sm text-[#111827] tabular-nums">
-                    {currencyObj.symbol} {(Number(availability.packageRate10 || 0) / 10).toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                    {currencyObj.symbol}{" "}
+                    {(
+                      Number(availability.packageRate10 || 0) / 10
+                    ).toLocaleString(undefined, { maximumFractionDigits: 0 })}
                   </p>
                 </div>
               </div>
@@ -661,12 +736,21 @@ export function CoachAvailabilitySection({
                       variant="outline"
                       className={cn(
                         "text-[10px] px-2 py-0",
-                        (Number(availability.packageRate5) / 5) < Number(availability.perSessionRate)
+                        Number(availability.packageRate5) / 5 <
+                          Number(availability.perSessionRate)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-gray-50 text-gray-500 border-gray-200",
                       )}
                     >
-                      5-Pack: {Math.round((1 - (Number(availability.packageRate5) / 5) / Number(availability.perSessionRate)) * 100)}% savings
+                      5-Pack:{" "}
+                      {Math.round(
+                        (1 -
+                          Number(availability.packageRate5) /
+                            5 /
+                            Number(availability.perSessionRate)) *
+                          100,
+                      )}
+                      % savings
                     </Badge>
                   )}
                   {Number(availability.packageRate10) > 0 && (
@@ -674,12 +758,21 @@ export function CoachAvailabilitySection({
                       variant="outline"
                       className={cn(
                         "text-[10px] px-2 py-0",
-                        (Number(availability.packageRate10) / 10) < Number(availability.perSessionRate)
+                        Number(availability.packageRate10) / 10 <
+                          Number(availability.perSessionRate)
                           ? "bg-emerald-50 text-emerald-700 border-emerald-200"
                           : "bg-gray-50 text-gray-500 border-gray-200",
                       )}
                     >
-                      10-Pack: {Math.round((1 - (Number(availability.packageRate10) / 10) / Number(availability.perSessionRate)) * 100)}% savings
+                      10-Pack:{" "}
+                      {Math.round(
+                        (1 -
+                          Number(availability.packageRate10) /
+                            10 /
+                            Number(availability.perSessionRate)) *
+                          100,
+                      )}
+                      % savings
                     </Badge>
                   )}
                 </div>
@@ -696,24 +789,34 @@ export function CoachAvailabilitySection({
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
-              <Save className="h-4 w-4 text-[#003B95]" /> Save Availability & Pricing
+              <Save className="h-4 w-4 text-[#003B95]" /> Save Availability &
+              Pricing
             </AlertDialogTitle>
             <AlertDialogDescription>
-              You are about to save the coach's availability schedule ({hoursPerWeek} hours/week across {DAYS.filter(d => dayStats[d] > 0).length} days) and pricing information.
-              This will update the coach's booking settings immediately.
+              You are about to save the coach's availability schedule (
+              {hoursPerWeek} hours/week across{" "}
+              {DAYS.filter((d) => dayStats[d] > 0).length} days) and pricing
+              information. This will update the coach's booking settings
+              immediately.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isSavingSection}>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isSavingSection}>
+              Cancel
+            </AlertDialogCancel>
             <AlertDialogAction
               onClick={handleSaveSection}
               disabled={isSavingSection}
               className="bg-[#003B95] hover:bg-[#002d73] gap-1.5"
             >
               {isSavingSection ? (
-                <><Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...</>
+                <>
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" /> Saving...
+                </>
               ) : (
-                <><Save className="h-3.5 w-3.5" /> Confirm & Save</>
+                <>
+                  <Save className="h-3.5 w-3.5" /> Confirm & Save
+                </>
               )}
             </AlertDialogAction>
           </AlertDialogFooter>

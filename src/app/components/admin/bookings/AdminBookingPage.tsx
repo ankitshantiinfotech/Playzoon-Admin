@@ -76,28 +76,40 @@ const DEFAULT_PAGE_SIZE = 20;
 // ─── Badge Style Maps ─────────────────────────────────────────────────────────
 
 const TYPE_BADGE: Record<BookingType, { cls: string; label: string }> = {
-  Facility:   { cls: "bg-blue-100 text-blue-700 border-blue-200",     label: "Facility" },
-  Training:   { cls: "bg-sky-100 text-sky-700 border-sky-200",        label: "Training" },
-  Coach:      { cls: "bg-amber-100 text-amber-700 border-amber-200",  label: "Coach" },
-  Tournament: { cls: "bg-emerald-100 text-emerald-700 border-emerald-200", label: "Tournament" },
+  Facility: {
+    cls: "bg-blue-100 text-blue-700 border-blue-200",
+    label: "Facility",
+  },
+  Training: {
+    cls: "bg-sky-100 text-sky-700 border-sky-200",
+    label: "Training",
+  },
+  Coach: {
+    cls: "bg-amber-100 text-amber-700 border-amber-200",
+    label: "Coach",
+  },
+  Tournament: {
+    cls: "bg-emerald-100 text-emerald-700 border-emerald-200",
+    label: "Tournament",
+  },
 };
 
 const STATUS_BADGE: Record<BookingStatus, string> = {
-  Created:              "bg-gray-100 text-gray-600 border-gray-200",
-  Upcoming:             "bg-sky-100 text-sky-700 border-sky-200",
-  Ongoing:              "bg-amber-100 text-amber-700 border-amber-200",
-  Completed:            "bg-emerald-100 text-emerald-700 border-emerald-200",
-  Cancelled:            "bg-red-100 text-red-700 border-red-200",
-  "Partially Cancelled":"bg-red-50 text-red-600 border-red-200",
-  Expired:              "bg-gray-100 text-gray-500 border-gray-200",
+  Created: "bg-gray-100 text-gray-600 border-gray-200",
+  Upcoming: "bg-sky-100 text-sky-700 border-sky-200",
+  Ongoing: "bg-amber-100 text-amber-700 border-amber-200",
+  Completed: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  Cancelled: "bg-red-100 text-red-700 border-red-200",
+  "Partially Cancelled": "bg-red-50 text-red-600 border-red-200",
+  Expired: "bg-gray-100 text-gray-500 border-gray-200",
 };
 
 const PAYMENT_BADGE: Record<PaymentStatus, string> = {
-  Paid:           "bg-emerald-100 text-emerald-700 border-emerald-200",
-  Pending:        "bg-amber-100 text-amber-700 border-amber-200",
-  Refunded:       "bg-sky-100 text-sky-700 border-sky-200",
-  "Partial Refund":"bg-sky-50 text-sky-600 border-sky-200",
-  Failed:         "bg-red-100 text-red-700 border-red-200",
+  Paid: "bg-emerald-100 text-emerald-700 border-emerald-200",
+  Pending: "bg-amber-100 text-amber-700 border-amber-200",
+  Refunded: "bg-sky-100 text-sky-700 border-sky-200",
+  "Partial Refund": "bg-sky-50 text-sky-600 border-sky-200",
+  Failed: "bg-red-100 text-red-700 border-red-200",
 };
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -111,17 +123,42 @@ function fmtCurrency(amount: number) {
 
 function exportCSV(bookings: Booking[]) {
   const headers = [
-    "Booking ID","Type","Player","Provider","Entity","Date","Period",
-    "Players","Gross Amount","Commission","Tax","Net","Payment Status","Booking Status","Flagged",
+    "Booking ID",
+    "Type",
+    "Player",
+    "Provider",
+    "Entity",
+    "Date",
+    "Period",
+    "Players",
+    "Gross Amount",
+    "Commission",
+    "Tax",
+    "Net",
+    "Payment Status",
+    "Booking Status",
+    "Flagged",
   ];
   const rows = bookings.map((b) => [
-    b.id, b.type, b.player.name, b.provider.name, b.entity.name,
-    fmtDateTime(b.bookingDate), b.period, b.playersCount,
-    b.financials.grossAmount.toFixed(2), b.financials.commissionAmount.toFixed(2),
-    b.financials.taxAmount.toFixed(2), b.financials.netPayout.toFixed(2),
-    b.paymentStatus, b.status, b.flagged ? "Yes" : "No",
+    b.id,
+    b.type,
+    b.player.name,
+    b.provider.name,
+    b.entity.name,
+    fmtDateTime(b.bookingDate),
+    b.period,
+    b.playersCount,
+    b.financials.grossAmount.toFixed(2),
+    b.financials.commissionAmount.toFixed(2),
+    b.financials.taxAmount.toFixed(2),
+    b.financials.netPayout.toFixed(2),
+    b.paymentStatus,
+    b.status,
+    b.flagged ? "Yes" : "No",
   ]);
-  const csv = [headers, ...rows].map((r) => r.map((c) => `"${c}"`).join(",")).join("\n");
+  const csv = [headers, ...rows]
+    .map((r) => r.map((c) => `"${c}"`).join(","))
+    .join("\n");
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
@@ -153,21 +190,36 @@ type SortDir = "asc" | "desc";
 
 function getSortValue(b: Booking, key: SortKey): string | number | boolean {
   switch (key) {
-    case "bookingId": return b.id;
-    case "bookingType": return b.type;
-    case "playerName": return b.player.name;
-    case "providerName": return b.provider.name;
-    case "entityName": return b.entity.name;
-    case "bookingDate": return b.bookingDate;
-    case "playersCount": return b.playersCount;
-    case "grossAmount": return b.financials.grossAmount;
-    case "commissionAmount": return b.financials.commissionAmount;
-    case "taxAmount": return b.financials.taxAmount;
-    case "netAmount": return b.financials.netPayout;
-    case "paymentStatus": return b.paymentStatus;
-    case "bookingStatus": return b.status;
-    case "flagged": return b.flagged ? 1 : 0;
-    default: return "";
+    case "bookingId":
+      return b.id;
+    case "bookingType":
+      return b.type;
+    case "playerName":
+      return b.player.name;
+    case "providerName":
+      return b.provider.name;
+    case "entityName":
+      return b.entity.name;
+    case "bookingDate":
+      return b.bookingDate;
+    case "playersCount":
+      return b.playersCount;
+    case "grossAmount":
+      return b.financials.grossAmount;
+    case "commissionAmount":
+      return b.financials.commissionAmount;
+    case "taxAmount":
+      return b.financials.taxAmount;
+    case "netAmount":
+      return b.financials.netPayout;
+    case "paymentStatus":
+      return b.paymentStatus;
+    case "bookingStatus":
+      return b.status;
+    case "flagged":
+      return b.flagged ? 1 : 0;
+    default:
+      return "";
   }
 }
 
@@ -216,9 +268,15 @@ export function AdminBookingPage() {
     return Array.from(set).sort();
   }, [bookings]);
 
-  const hasFilters = search || typeFilter !== "all" || statusFilter !== "all" ||
-    paymentFilter !== "all" || dateFrom || dateTo ||
-    providerFilter !== "all" || playerFilter !== "all";
+  const hasFilters =
+    search ||
+    typeFilter !== "all" ||
+    statusFilter !== "all" ||
+    paymentFilter !== "all" ||
+    dateFrom ||
+    dateTo ||
+    providerFilter !== "all" ||
+    playerFilter !== "all";
 
   const clearFilters = useCallback(() => {
     setSearch("");
@@ -233,21 +291,58 @@ export function AdminBookingPage() {
   }, []);
 
   // ── Active filter chips ──
-  const activeFilters: { label: string; value: string; clear: () => void }[] = [];
-  if (typeFilter !== "all") activeFilters.push({ label: "Type", value: typeFilter, clear: () => setTypeFilter("all") });
-  if (statusFilter !== "all") activeFilters.push({ label: "Status", value: statusFilter, clear: () => setStatusFilter("all") });
-  if (paymentFilter !== "all") activeFilters.push({ label: "Payment", value: paymentFilter, clear: () => setPaymentFilter("all") });
-  if (dateFrom) activeFilters.push({ label: "From", value: dateFrom, clear: () => setDateFrom("") });
-  if (dateTo) activeFilters.push({ label: "To", value: dateTo, clear: () => setDateTo("") });
-  if (providerFilter !== "all") activeFilters.push({ label: "Provider", value: providerFilter, clear: () => setProviderFilter("all") });
-  if (playerFilter !== "all") activeFilters.push({ label: "Player", value: playerFilter, clear: () => setPlayerFilter("all") });
+  const activeFilters: { label: string; value: string; clear: () => void }[] =
+    [];
+  if (typeFilter !== "all")
+    activeFilters.push({
+      label: "Type",
+      value: typeFilter,
+      clear: () => setTypeFilter("all"),
+    });
+  if (statusFilter !== "all")
+    activeFilters.push({
+      label: "Status",
+      value: statusFilter,
+      clear: () => setStatusFilter("all"),
+    });
+  if (paymentFilter !== "all")
+    activeFilters.push({
+      label: "Payment",
+      value: paymentFilter,
+      clear: () => setPaymentFilter("all"),
+    });
+  if (dateFrom)
+    activeFilters.push({
+      label: "From",
+      value: dateFrom,
+      clear: () => setDateFrom(""),
+    });
+  if (dateTo)
+    activeFilters.push({
+      label: "To",
+      value: dateTo,
+      clear: () => setDateTo(""),
+    });
+  if (providerFilter !== "all")
+    activeFilters.push({
+      label: "Provider",
+      value: providerFilter,
+      clear: () => setProviderFilter("all"),
+    });
+  if (playerFilter !== "all")
+    activeFilters.push({
+      label: "Player",
+      value: playerFilter,
+      clear: () => setPlayerFilter("all"),
+    });
 
   // ── Filtering ──
   const filtered = useMemo(() => {
     return bookings.filter((b) => {
       if (search) {
         const q = search.toLowerCase();
-        const match = b.id.toLowerCase().includes(q) ||
+        const match =
+          b.id.toLowerCase().includes(q) ||
           b.player.name.toLowerCase().includes(q) ||
           b.provider.name.toLowerCase().includes(q) ||
           b.entity.name.toLowerCase().includes(q);
@@ -255,9 +350,12 @@ export function AdminBookingPage() {
       }
       if (typeFilter !== "all" && b.type !== typeFilter) return false;
       if (statusFilter !== "all" && b.status !== statusFilter) return false;
-      if (paymentFilter !== "all" && b.paymentStatus !== paymentFilter) return false;
-      if (providerFilter !== "all" && b.provider.name !== providerFilter) return false;
-      if (playerFilter !== "all" && b.player.name !== playerFilter) return false;
+      if (paymentFilter !== "all" && b.paymentStatus !== paymentFilter)
+        return false;
+      if (providerFilter !== "all" && b.provider.name !== providerFilter)
+        return false;
+      if (playerFilter !== "all" && b.player.name !== playerFilter)
+        return false;
       if (dateFrom) {
         const bDate = new Date(b.bookingDate);
         if (bDate < new Date(dateFrom)) return false;
@@ -268,7 +366,17 @@ export function AdminBookingPage() {
       }
       return true;
     });
-  }, [bookings, search, typeFilter, statusFilter, paymentFilter, dateFrom, dateTo, providerFilter, playerFilter]);
+  }, [
+    bookings,
+    search,
+    typeFilter,
+    statusFilter,
+    paymentFilter,
+    dateFrom,
+    dateTo,
+    providerFilter,
+    playerFilter,
+  ]);
 
   // ── Sorting ──
   const sorted = useMemo(() => {
@@ -283,8 +391,12 @@ export function AdminBookingPage() {
 
   // ── Pagination ──
   const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
-  const paginated = sorted.slice((currentPage - 1) * pageSize, currentPage * pageSize);
-  const showingFrom = sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
+  const paginated = sorted.slice(
+    (currentPage - 1) * pageSize,
+    currentPage * pageSize,
+  );
+  const showingFrom =
+    sorted.length === 0 ? 0 : (currentPage - 1) * pageSize + 1;
   const showingTo = Math.min(currentPage * pageSize, sorted.length);
 
   const handleSort = (key: SortKey) => {
@@ -340,7 +452,9 @@ export function AdminBookingPage() {
     if (!unflagTarget) return;
     setBookings((prev) =>
       prev.map((b) =>
-        b.id === unflagTarget.id ? { ...b, flagged: false, flagInfo: undefined } : b,
+        b.id === unflagTarget.id
+          ? { ...b, flagged: false, flagInfo: undefined }
+          : b,
       ),
     );
     setUnflagModalOpen(false);
@@ -358,15 +472,22 @@ export function AdminBookingPage() {
 
   // ── Sort icon helper ──
   function SortIcon({ col }: { col: SortKey }) {
-    if (sortKey !== col) return <ArrowUpDown className="w-3 h-3 ml-1 text-gray-400 inline" />;
-    return sortDir === "asc"
-      ? <ArrowUp className="w-3 h-3 ml-1 text-[#003B95] inline" />
-      : <ArrowDown className="w-3 h-3 ml-1 text-[#003B95] inline" />;
+    if (sortKey !== col)
+      return <ArrowUpDown className="w-3 h-3 ml-1 text-gray-400 inline" />;
+    return sortDir === "asc" ? (
+      <ArrowUp className="w-3 h-3 ml-1 text-[#003B95] inline" />
+    ) : (
+      <ArrowDown className="w-3 h-3 ml-1 text-[#003B95] inline" />
+    );
   }
 
   return (
     <TooltipProvider>
-      <div className="flex flex-col gap-6" role="main" aria-label="Booking Management">
+      <div
+        className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen"
+        role="main"
+        aria-label="Booking Management"
+      >
         {/* ── Page Header ── */}
         <div>
           <nav aria-label="Breadcrumb" className="text-sm text-[#6B7280] mb-1">
@@ -379,7 +500,9 @@ export function AdminBookingPage() {
             <span className="mx-2">/</span>
             <span className="text-[#111827] font-medium">Bookings</span>
           </nav>
-          <h1 className="text-2xl font-bold text-[#111827]">Booking Management</h1>
+          <h1 className="text-2xl font-bold text-[#111827]">
+            Booking Management
+          </h1>
         </div>
 
         {/* ── Toolbar ── */}
@@ -394,12 +517,18 @@ export function AdminBookingPage() {
                   aria-label="Search bookings by ID, player, provider, or entity name"
                   className="pl-10 pr-8"
                   value={search}
-                  onChange={(e) => { setSearch(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setSearch(e.target.value);
+                    setCurrentPage(1);
+                  }}
                 />
                 {search && (
                   <button
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600"
-                    onClick={() => { setSearch(""); setCurrentPage(1); }}
+                    onClick={() => {
+                      setSearch("");
+                      setCurrentPage(1);
+                    }}
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -407,7 +536,12 @@ export function AdminBookingPage() {
               </div>
               <div className="flex items-center gap-2 ml-auto">
                 {hasFilters && (
-                  <Button variant="ghost" size="sm" onClick={clearFilters} aria-label="Clear all active filters">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={clearFilters}
+                    aria-label="Clear all active filters"
+                  >
                     Clear Filters
                   </Button>
                 )}
@@ -427,80 +561,144 @@ export function AdminBookingPage() {
 
             {/* Row 2: Filter dropdowns */}
             <div className="flex items-center gap-2 flex-wrap">
-              <Select value={typeFilter} onValueChange={(v) => { setTypeFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[140px] h-9 text-sm" aria-label="Filter by booking type">
+              <Select
+                value={typeFilter}
+                onValueChange={(v) => {
+                  setTypeFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger
+                  className="w-[140px] h-10 text-sm"
+                  aria-label="Filter by booking type"
+                >
                   <SelectValue placeholder="All Types" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Types</SelectItem>
                   {BOOKING_TYPES.map((t) => (
-                    <SelectItem key={t} value={t}>{t}</SelectItem>
+                    <SelectItem key={t} value={t}>
+                      {t}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[170px] h-9 text-sm" aria-label="Filter by booking status">
+              <Select
+                value={statusFilter}
+                onValueChange={(v) => {
+                  setStatusFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger
+                  className="w-[170px] h-10 text-sm"
+                  aria-label="Filter by booking status"
+                >
                   <SelectValue placeholder="All Statuses" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Statuses</SelectItem>
                   {BOOKING_STATUSES.map((s) => (
-                    <SelectItem key={s} value={s}>{s}</SelectItem>
+                    <SelectItem key={s} value={s}>
+                      {s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={paymentFilter} onValueChange={(v) => { setPaymentFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[160px] h-9 text-sm" aria-label="Filter by payment status">
+              <Select
+                value={paymentFilter}
+                onValueChange={(v) => {
+                  setPaymentFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger
+                  className="w-[160px] h-10 text-sm"
+                  aria-label="Filter by payment status"
+                >
                   <SelectValue placeholder="All Payments" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Payments</SelectItem>
                   {PAYMENT_STATUSES.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <div className="flex items-center gap-1.5 text-sm" aria-label="Filter by booking date range">
+              <div
+                className="flex items-center gap-1.5 text-sm"
+                aria-label="Filter by booking date range"
+              >
                 <Input
                   type="date"
-                  className="h-9 w-[140px] text-sm"
+                  className="h-10 w-[140px] text-sm"
                   value={dateFrom}
-                  onChange={(e) => { setDateFrom(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setDateFrom(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder="From"
                 />
                 <span className="text-gray-400">—</span>
                 <Input
                   type="date"
-                  className="h-9 w-[140px] text-sm"
+                  className="h-10 w-[140px] text-sm"
                   value={dateTo}
-                  onChange={(e) => { setDateTo(e.target.value); setCurrentPage(1); }}
+                  onChange={(e) => {
+                    setDateTo(e.target.value);
+                    setCurrentPage(1);
+                  }}
                   placeholder="To"
                 />
               </div>
 
-              <Select value={providerFilter} onValueChange={(v) => { setProviderFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[180px] h-9 text-sm" aria-label="Filter by provider">
+              <Select
+                value={providerFilter}
+                onValueChange={(v) => {
+                  setProviderFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger
+                  className="w-[180px] h-10 text-sm"
+                  aria-label="Filter by provider"
+                >
                   <SelectValue placeholder="All Providers" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Providers</SelectItem>
                   {providers.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
 
-              <Select value={playerFilter} onValueChange={(v) => { setPlayerFilter(v); setCurrentPage(1); }}>
-                <SelectTrigger className="w-[170px] h-9 text-sm" aria-label="Filter by player">
+              <Select
+                value={playerFilter}
+                onValueChange={(v) => {
+                  setPlayerFilter(v);
+                  setCurrentPage(1);
+                }}
+              >
+                <SelectTrigger
+                  className="w-[170px] h-10 text-sm"
+                  aria-label="Filter by player"
+                >
                   <SelectValue placeholder="All Players" />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All Players</SelectItem>
                   {players.map((p) => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
+                    <SelectItem key={p} value={p}>
+                      {p}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -517,7 +715,13 @@ export function AdminBookingPage() {
                   className="gap-1.5 text-xs font-medium"
                 >
                   {f.label}: {f.value}
-                  <button onClick={() => { f.clear(); setCurrentPage(1); }} className="ml-0.5 hover:text-red-600">
+                  <button
+                    onClick={() => {
+                      f.clear();
+                      setCurrentPage(1);
+                    }}
+                    className="ml-0.5 hover:text-red-600"
+                  >
                     <X className="w-3 h-3" />
                   </button>
                 </Badge>
@@ -532,26 +736,132 @@ export function AdminBookingPage() {
           )}
 
           {/* ── DataTable ── */}
-          <div className="overflow-x-auto" role="table" aria-label="Bookings table">
+          <div
+            className="overflow-x-auto"
+            role="table"
+            aria-label="Bookings table"
+          >
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50">
-                  <SortableHead col="bookingId" label="Booking ID" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[120px] sticky left-0 bg-gray-50 z-10" />
-                  <SortableHead col="bookingType" label="Type" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[100px]" />
-                  <SortableHead col="playerName" label="Player" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[150px]" />
-                  <SortableHead col="providerName" label="Provider / Host" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[160px]" />
-                  <SortableHead col="entityName" label="Entity" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[180px]" />
-                  <SortableHead col="bookingDate" label="Date" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[120px]" />
-                  <TableHead className="text-xs font-semibold text-gray-500 min-w-[100px]">Period</TableHead>
-                  <SortableHead col="playersCount" label="Players" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[80px] text-center" />
-                  <SortableHead col="grossAmount" label="Gross Amount" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[120px] text-right" />
-                  <SortableHead col="commissionAmount" label="Commission" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[110px] text-right" />
-                  <SortableHead col="taxAmount" label="Tax" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[100px] text-right" />
-                  <SortableHead col="netAmount" label="Net" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[110px] text-right" />
-                  <SortableHead col="paymentStatus" label="Payment Status" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[120px]" />
-                  <SortableHead col="bookingStatus" label="Booking Status" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[130px]" />
-                  <SortableHead col="flagged" label="Flagged" onSort={handleSort} sortKey={sortKey} sortDir={sortDir} className="min-w-[60px] text-center" />
-                  <TableHead className="text-xs font-semibold text-gray-500 min-w-[80px] text-center">Actions</TableHead>
+                  <SortableHead
+                    col="bookingId"
+                    label="Booking ID"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[120px] sticky left-0 bg-gray-50 z-10"
+                  />
+                  <SortableHead
+                    col="bookingType"
+                    label="Type"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[100px]"
+                  />
+                  <SortableHead
+                    col="playerName"
+                    label="Player"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[150px]"
+                  />
+                  <SortableHead
+                    col="providerName"
+                    label="Provider / Host"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[160px]"
+                  />
+                  <SortableHead
+                    col="entityName"
+                    label="Entity"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[180px]"
+                  />
+                  <SortableHead
+                    col="bookingDate"
+                    label="Date"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[120px]"
+                  />
+                  <TableHead className="text-xs font-semibold text-gray-500 min-w-[100px]">
+                    Period
+                  </TableHead>
+                  <SortableHead
+                    col="playersCount"
+                    label="Players"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[80px] text-center"
+                  />
+                  <SortableHead
+                    col="grossAmount"
+                    label="Gross Amount"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[120px] text-right"
+                  />
+                  <SortableHead
+                    col="commissionAmount"
+                    label="Commission"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[110px] text-right"
+                  />
+                  <SortableHead
+                    col="taxAmount"
+                    label="Tax"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[100px] text-right"
+                  />
+                  <SortableHead
+                    col="netAmount"
+                    label="Net"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[110px] text-right"
+                  />
+                  <SortableHead
+                    col="paymentStatus"
+                    label="Payment Status"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[120px]"
+                  />
+                  <SortableHead
+                    col="bookingStatus"
+                    label="Booking Status"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[130px]"
+                  />
+                  <SortableHead
+                    col="flagged"
+                    label="Flagged"
+                    onSort={handleSort}
+                    sortKey={sortKey}
+                    sortDir={sortDir}
+                    className="min-w-[60px] text-center"
+                  />
+                  <TableHead className="text-xs font-semibold text-gray-500 min-w-[80px] text-center">
+                    Actions
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -589,14 +899,25 @@ export function AdminBookingPage() {
 
                       {/* Type */}
                       <TableCell>
-                        <Badge variant="outline" className={cn("text-xs font-medium border", TYPE_BADGE[b.type].cls)}>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs font-medium border",
+                            TYPE_BADGE[b.type].cls,
+                          )}
+                        >
                           {TYPE_BADGE[b.type].label}
                         </Badge>
                       </TableCell>
 
                       {/* Player */}
                       <TableCell className="text-sm text-[#111827]">
-                        <span className={cn(b.player.name === "Deleted User" && "text-gray-400 italic")}>
+                        <span
+                          className={cn(
+                            b.player.name === "Deleted User" &&
+                              "text-gray-400 italic",
+                          )}
+                        >
                           {b.player.name}
                         </span>
                       </TableCell>
@@ -616,7 +937,9 @@ export function AdminBookingPage() {
                           </TooltipTrigger>
                           <TooltipContent>
                             <p>{b.entity.name}</p>
-                            <p className="text-xs text-gray-400">{b.entity.detail}</p>
+                            <p className="text-xs text-gray-400">
+                              {b.entity.detail}
+                            </p>
                           </TooltipContent>
                         </Tooltip>
                       </TableCell>
@@ -627,10 +950,14 @@ export function AdminBookingPage() {
                       </TableCell>
 
                       {/* Period */}
-                      <TableCell className="text-sm text-[#6B7280]">{b.period}</TableCell>
+                      <TableCell className="text-sm text-[#6B7280]">
+                        {b.period}
+                      </TableCell>
 
                       {/* Players */}
-                      <TableCell className="text-sm text-[#111827] text-center">{b.playersCount}</TableCell>
+                      <TableCell className="text-sm text-[#111827] text-center">
+                        {b.playersCount}
+                      </TableCell>
 
                       {/* Gross Amount */}
                       <TableCell className="text-sm text-[#111827] text-right font-medium whitespace-nowrap">
@@ -654,14 +981,26 @@ export function AdminBookingPage() {
 
                       {/* Payment Status */}
                       <TableCell>
-                        <Badge variant="outline" className={cn("text-xs font-medium border", PAYMENT_BADGE[b.paymentStatus])}>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs font-medium border",
+                            PAYMENT_BADGE[b.paymentStatus],
+                          )}
+                        >
                           {b.paymentStatus}
                         </Badge>
                       </TableCell>
 
                       {/* Booking Status */}
                       <TableCell>
-                        <Badge variant="outline" className={cn("text-xs font-medium border", STATUS_BADGE[b.status])}>
+                        <Badge
+                          variant="outline"
+                          className={cn(
+                            "text-xs font-medium border",
+                            STATUS_BADGE[b.status],
+                          )}
+                        >
                           {b.status}
                         </Badge>
                       </TableCell>
@@ -674,11 +1013,17 @@ export function AdminBookingPage() {
                               <AlertTriangle className="w-4 h-4 text-amber-500 mx-auto" />
                             </TooltipTrigger>
                             <TooltipContent className="max-w-xs">
-                              <p className="font-semibold text-amber-700">Flagged as suspicious</p>
+                              <p className="font-semibold text-amber-700">
+                                Flagged as suspicious
+                              </p>
                               {b.flagInfo && (
                                 <>
-                                  <p className="text-xs mt-1">By: {b.flagInfo.flaggedBy}</p>
-                                  <p className="text-xs text-gray-500">{b.flagInfo.reason}</p>
+                                  <p className="text-xs mt-1">
+                                    By: {b.flagInfo.flaggedBy}
+                                  </p>
+                                  <p className="text-xs text-gray-500">
+                                    {b.flagInfo.reason}
+                                  </p>
                                 </>
                               )}
                             </TooltipContent>
@@ -687,7 +1032,10 @@ export function AdminBookingPage() {
                       </TableCell>
 
                       {/* Actions */}
-                      <TableCell className="text-center" onClick={(e) => e.stopPropagation()}>
+                      <TableCell
+                        className="text-center"
+                        onClick={(e) => e.stopPropagation()}
+                      >
                         <div className="flex items-center justify-center gap-1">
                           <Tooltip>
                             <TooltipTrigger asChild>
@@ -717,7 +1065,9 @@ export function AdminBookingPage() {
                                   <Flag className="w-4 h-4 text-amber-500 fill-amber-500" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Remove Flag (Super Admin)</TooltipContent>
+                              <TooltipContent>
+                                Remove Flag (Super Admin)
+                              </TooltipContent>
                             </Tooltip>
                           ) : (
                             <Tooltip>
@@ -732,7 +1082,9 @@ export function AdminBookingPage() {
                                   <Flag className="w-4 h-4 text-gray-400 hover:text-amber-500" />
                                 </Button>
                               </TooltipTrigger>
-                              <TooltipContent>Flag as Suspicious</TooltipContent>
+                              <TooltipContent>
+                                Flag as Suspicious
+                              </TooltipContent>
                             </Tooltip>
                           )}
                         </div>
@@ -749,23 +1101,36 @@ export function AdminBookingPage() {
             <div className="flex items-center gap-3">
               <div className="flex items-center gap-2">
                 <span>Show</span>
-                <Select value={String(pageSize)} onValueChange={(v) => { setPageSize(Number(v)); setCurrentPage(1); }}>
+                <Select
+                  value={String(pageSize)}
+                  onValueChange={(v) => {
+                    setPageSize(Number(v));
+                    setCurrentPage(1);
+                  }}
+                >
                   <SelectTrigger className="h-8 w-[70px] text-sm">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     {PAGE_SIZES.map((s) => (
-                      <SelectItem key={s} value={String(s)}>{s}</SelectItem>
+                      <SelectItem key={s} value={String(s)}>
+                        {s}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
                 <span>per page</span>
               </div>
               <span>
-                Showing <strong>{showingFrom}</strong>–<strong>{showingTo}</strong> of <strong>{sorted.length.toLocaleString()}</strong> bookings
+                Showing <strong>{showingFrom}</strong>–
+                <strong>{showingTo}</strong> of{" "}
+                <strong>{sorted.length.toLocaleString()}</strong> bookings
               </span>
             </div>
-            <nav aria-label="Bookings table pagination" className="flex items-center gap-1">
+            <nav
+              aria-label="Bookings table pagination"
+              className="flex items-center gap-1"
+            >
               <Button
                 variant="outline"
                 size="icon"
@@ -791,7 +1156,10 @@ export function AdminBookingPage() {
                     key={page}
                     variant={page === currentPage ? "default" : "outline"}
                     size="icon"
-                    className={cn("h-8 w-8 text-xs", page === currentPage && "bg-[#003B95]")}
+                    className={cn(
+                      "h-8 w-8 text-xs",
+                      page === currentPage && "bg-[#003B95]",
+                    )}
                     onClick={() => setCurrentPage(page)}
                     aria-current={page === currentPage ? "page" : undefined}
                   >
@@ -821,7 +1189,8 @@ export function AdminBookingPage() {
                 Flag Booking as Suspicious
               </DialogTitle>
               <DialogDescription>
-                You are about to flag booking <strong>{flagTarget?.id}</strong> as suspicious. Please provide a reason.
+                You are about to flag booking <strong>{flagTarget?.id}</strong>{" "}
+                as suspicious. Please provide a reason.
               </DialogDescription>
             </DialogHeader>
             <div className="space-y-3">
@@ -834,7 +1203,11 @@ export function AdminBookingPage() {
                 className="resize-none"
               />
               <div className="flex justify-between text-xs text-[#6B7280]">
-                <span>{flagReason.length < 10 && flagReason.length > 0 ? "Flag reason must be at least 10 characters." : ""}</span>
+                <span>
+                  {flagReason.length < 10 && flagReason.length > 0
+                    ? "Flag reason must be at least 10 characters."
+                    : ""}
+                </span>
                 <span>{flagReason.length}/500</span>
               </div>
             </div>
@@ -864,14 +1237,22 @@ export function AdminBookingPage() {
                 Remove Suspicious Flag
               </DialogTitle>
               <DialogDescription>
-                Remove the suspicious flag from booking <strong>{unflagTarget?.id}</strong>?
+                Remove the suspicious flag from booking{" "}
+                <strong>{unflagTarget?.id}</strong>?
               </DialogDescription>
             </DialogHeader>
             <DialogFooter className="gap-2">
-              <Button variant="outline" onClick={() => setUnflagModalOpen(false)}>
+              <Button
+                variant="outline"
+                onClick={() => setUnflagModalOpen(false)}
+              >
                 Cancel
               </Button>
-              <Button variant="default" onClick={handleUnflag} className="bg-amber-600 hover:bg-amber-700 gap-1.5">
+              <Button
+                variant="default"
+                onClick={handleUnflag}
+                className="bg-amber-600 hover:bg-amber-700 gap-1.5"
+              >
                 Remove Flag
               </Button>
             </DialogFooter>
@@ -907,7 +1288,9 @@ function SortableHead({
         className,
       )}
       onClick={() => onSort(col)}
-      aria-sort={isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none"}
+      aria-sort={
+        isActive ? (sortDir === "asc" ? "ascending" : "descending") : "none"
+      }
     >
       {label}
       {isActive ? (

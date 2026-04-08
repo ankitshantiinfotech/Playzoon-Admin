@@ -80,7 +80,10 @@ const SAVED_SETTINGS: PlatformSettings = {
   maxSubAdminsPerProvider: 5,
 };
 
-const CANCELLATION_WINDOW_OPTIONS: { value: CancellationWindow; label: string }[] = [
+const CANCELLATION_WINDOW_OPTIONS: {
+  value: CancellationWindow;
+  label: string;
+}[] = [
   { value: "12", label: "12 Hours" },
   { value: "24", label: "24 Hours" },
   { value: "48", label: "48 Hours" },
@@ -94,9 +97,14 @@ const CANCELLATION_WINDOW_OPTIONS: { value: CancellationWindow; label: string }[
 
 function getChangedSettings(
   current: PlatformSettings,
-  saved: PlatformSettings
+  saved: PlatformSettings,
 ): { key: string; label: string; oldValue: string; newValue: string }[] {
-  const changes: { key: string; label: string; oldValue: string; newValue: string }[] = [];
+  const changes: {
+    key: string;
+    label: string;
+    oldValue: string;
+    newValue: string;
+  }[] = [];
   const labels: Record<string, string> = {
     fpPromotedRefresh: "FP Promoted Refresh Count",
     fpStandardRefresh: "FP Standard Refresh Count",
@@ -119,12 +127,14 @@ function getChangedSettings(
     if (current[key] !== saved[key]) {
       const format = (v: unknown) => {
         if (typeof v === "boolean") return v ? "Enabled" : "Disabled";
-        if (key === "penaltyType") return v === "fixed" ? "Fixed Amount (SAR)" : "Percentage (%)";
+        if (key === "penaltyType")
+          return v === "fixed" ? "Fixed Amount (SAR)" : "Percentage (%)";
         if (key === "cancellationWindow") {
           const opt = CANCELLATION_WINDOW_OPTIONS.find((o) => o.value === v);
           return opt?.label ?? String(v);
         }
-        if (key === "minPayoutAmount" || key === "penaltyValue") return `${v} SAR`;
+        if (key === "minPayoutAmount" || key === "penaltyValue")
+          return `${v} SAR`;
         return String(v);
       };
       changes.push({
@@ -161,7 +171,7 @@ function RefreshCountField({
         step={1}
         value={value}
         onChange={(e) => onChange(parseInt(e.target.value) || 0)}
-        className={cn("h-9 text-sm", hasWarning && "border-amber-400")}
+        className={cn("h-10 text-sm", hasWarning && "border-amber-400")}
       />
       {value === 0 && (
         <p className="text-[11px] text-amber-600 flex items-center gap-1">
@@ -170,10 +180,14 @@ function RefreshCountField({
         </p>
       )}
       {value > 100 && (
-        <p className="text-[11px] text-red-500">Refresh count cannot exceed 100.</p>
+        <p className="text-[11px] text-red-500">
+          Refresh count cannot exceed 100.
+        </p>
       )}
       {value < 0 && (
-        <p className="text-[11px] text-red-500">Refresh count cannot be negative.</p>
+        <p className="text-[11px] text-red-500">
+          Refresh count cannot be negative.
+        </p>
       )}
     </div>
   );
@@ -182,7 +196,9 @@ function RefreshCountField({
 // ─── Main Page ──────────────────────────────────────────────────────────────
 
 export function PlatformSettingsPage() {
-  const [settings, setSettings] = useState<PlatformSettings>({ ...SAVED_SETTINGS });
+  const [settings, setSettings] = useState<PlatformSettings>({
+    ...SAVED_SETTINGS,
+  });
   const [savedSettings] = useState<PlatformSettings>({ ...SAVED_SETTINGS });
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [discardConfirmOpen, setDiscardConfirmOpen] = useState(false);
@@ -190,17 +206,26 @@ export function PlatformSettingsPage() {
 
   const changes = useMemo(
     () => getChangedSettings(settings, savedSettings),
-    [settings, savedSettings]
+    [settings, savedSettings],
   );
   const hasChanges = changes.length > 0;
 
-  const update = useCallback(<K extends keyof PlatformSettings>(key: K, value: PlatformSettings[K]) => {
-    setSettings((prev) => ({ ...prev, [key]: value }));
-  }, []);
+  const update = useCallback(
+    <K extends keyof PlatformSettings>(key: K, value: PlatformSettings[K]) => {
+      setSettings((prev) => ({ ...prev, [key]: value }));
+    },
+    [],
+  );
 
   function handleSave() {
     // Check if any changes are "critical" (penalty, communication toggles)
-    const criticalKeys = ["penaltyValue", "penaltyType", "cancellationWindow", "adminProviderChat", "offlineMessages"];
+    const criticalKeys = [
+      "penaltyValue",
+      "penaltyType",
+      "cancellationWindow",
+      "adminProviderChat",
+      "offlineMessages",
+    ];
     const hasCritical = changes.some((c) => criticalKeys.includes(c.key));
     if (hasCritical) {
       setConfirmOpen(true);
@@ -214,7 +239,9 @@ export function PlatformSettingsPage() {
     setConfirmOpen(false);
     setTimeout(() => {
       setIsSaving(false);
-      toast.success("Platform settings saved successfully. Changes are effective immediately.");
+      toast.success(
+        "Platform settings saved successfully. Changes are effective immediately.",
+      );
     }, 600);
   }
 
@@ -231,7 +258,7 @@ export function PlatformSettingsPage() {
   }
 
   return (
-    <div className="space-y-6 pb-24">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Page header + breadcrumb */}
       <div>
         <div className="flex items-center gap-1.5 text-xs text-gray-400 mb-2">
@@ -242,7 +269,9 @@ export function PlatformSettingsPage() {
           <span className="text-gray-700">Settings</span>
         </div>
         <h1 className="text-2xl font-bold text-[#111827]">Platform Settings</h1>
-        <p className="text-sm text-[#6B7280] mt-1">Configure platform-wide operational settings.</p>
+        <p className="text-sm text-[#6B7280] mt-1">
+          Configure platform-wide operational settings.
+        </p>
       </div>
 
       {/* Settings sections */}
@@ -251,13 +280,14 @@ export function PlatformSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-blue-100">
+              <div className="flex items-center justify-center h-10 w-9 rounded-lg bg-blue-100">
                 <RefreshCcw className="h-4.5 w-4.5 text-blue-600" />
               </div>
               <div>
                 <CardTitle className="text-base">Refresh Counts</CardTitle>
                 <CardDescription className="text-xs mt-0.5">
-                  Configure daily refresh limits per provider type and promotion status. Counts reset at 00:00 UTC daily (Rule 18).
+                  Configure daily refresh limits per provider type and promotion
+                  status. Counts reset at 00:00 UTC daily (Rule 18).
                 </CardDescription>
               </div>
             </div>
@@ -308,11 +338,13 @@ export function PlatformSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-emerald-100">
+              <div className="flex items-center justify-center h-10 w-9 rounded-lg bg-emerald-100">
                 <Banknote className="h-4.5 w-4.5 text-emerald-600" />
               </div>
               <div>
-                <CardTitle className="text-base">Payout Configuration</CardTitle>
+                <CardTitle className="text-base">
+                  Payout Configuration
+                </CardTitle>
                 <CardDescription className="text-xs mt-0.5">
                   Configure minimum payout threshold and cycle duration.
                 </CardDescription>
@@ -322,34 +354,54 @@ export function PlatformSettingsPage() {
           <CardContent>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1.5">
-                <Label className="text-sm text-gray-700">Minimum Payout Amount</Label>
+                <Label className="text-sm text-gray-700">
+                  Minimum Payout Amount
+                </Label>
                 <div className="relative">
                   <Input
                     type="number"
                     min={0}
                     step={0.01}
                     value={settings.minPayoutAmount}
-                    onChange={(e) => update("minPayoutAmount", parseFloat(e.target.value) || 0)}
-                    className="h-9 text-sm pr-12"
+                    onChange={(e) =>
+                      update("minPayoutAmount", parseFloat(e.target.value) || 0)
+                    }
+                    className="h-10 text-sm pr-12"
                   />
-                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">SAR</span>
+                  <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
+                    SAR
+                  </span>
                 </div>
-                <p className="text-[11px] text-gray-400">Providers cannot request payouts below this amount (Rule 19).</p>
+                <p className="text-[11px] text-gray-400">
+                  Providers cannot request payouts below this amount (Rule 19).
+                </p>
               </div>
 
               <div className="space-y-1.5">
-                <Label className="text-sm text-gray-700">Payout Cycle Duration</Label>
+                <Label className="text-sm text-gray-700">
+                  Payout Cycle Duration
+                </Label>
                 <div className="flex items-center gap-2">
                   <Input
                     type="number"
                     min={1}
                     step={1}
                     value={settings.payoutCycleDuration}
-                    onChange={(e) => update("payoutCycleDuration", parseInt(e.target.value) || 1)}
-                    className="h-9 text-sm flex-1"
+                    onChange={(e) =>
+                      update(
+                        "payoutCycleDuration",
+                        parseInt(e.target.value) || 1,
+                      )
+                    }
+                    className="h-10 text-sm flex-1"
                   />
-                  <Select value={settings.payoutCycleDurationType} onValueChange={(v) => update("payoutCycleDurationType", v as PayoutDurationType)}>
-                    <SelectTrigger className="h-9 w-[120px] text-xs">
+                  <Select
+                    value={settings.payoutCycleDurationType}
+                    onValueChange={(v) =>
+                      update("payoutCycleDurationType", v as PayoutDurationType)
+                    }
+                  >
+                    <SelectTrigger className="h-10 w-[120px] text-xs">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
@@ -368,13 +420,16 @@ export function PlatformSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-purple-100">
+              <div className="flex items-center justify-center h-10 w-9 rounded-lg bg-purple-100">
                 <MessageSquare className="h-4.5 w-4.5 text-purple-600" />
               </div>
               <div>
-                <CardTitle className="text-base">Communication Settings</CardTitle>
+                <CardTitle className="text-base">
+                  Communication Settings
+                </CardTitle>
                 <CardDescription className="text-xs mt-0.5">
-                  Configure chat and messaging features between admin and providers.
+                  Configure chat and messaging features between admin and
+                  providers.
                 </CardDescription>
               </div>
             </div>
@@ -382,11 +437,15 @@ export function PlatformSettingsPage() {
           <CardContent className="space-y-4">
             <div className="flex items-center justify-between py-3 border-b border-gray-100">
               <div className="flex-1 pr-6">
-                <Label htmlFor="toggle-chat" className="text-sm font-medium text-gray-900 cursor-pointer">
+                <Label
+                  htmlFor="toggle-chat"
+                  className="text-sm font-medium text-gray-900 cursor-pointer"
+                >
                   Enable Admin-Provider Chat
                 </Label>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  When enabled, providers can initiate chat with admin support (Rule 6, F10.4).
+                  When enabled, providers can initiate chat with admin support
+                  (Rule 6, F10.4).
                 </p>
               </div>
               <Switch
@@ -397,11 +456,15 @@ export function PlatformSettingsPage() {
             </div>
             <div className="flex items-center justify-between py-3">
               <div className="flex-1 pr-6">
-                <Label htmlFor="toggle-offline" className="text-sm font-medium text-gray-900 cursor-pointer">
+                <Label
+                  htmlFor="toggle-offline"
+                  className="text-sm font-medium text-gray-900 cursor-pointer"
+                >
                   Enable Offline Messages
                 </Label>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  When enabled, messages sent to offline users are stored and delivered when they come online (F10.8).
+                  When enabled, messages sent to offline users are stored and
+                  delivered when they come online (F10.8).
                 </p>
               </div>
               <Switch
@@ -417,13 +480,16 @@ export function PlatformSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-red-100">
+              <div className="flex items-center justify-center h-10 w-9 rounded-lg bg-red-100">
                 <ShieldAlert className="h-4.5 w-4.5 text-red-600" />
               </div>
               <div>
-                <CardTitle className="text-base">Provider Cancellation Policy</CardTitle>
+                <CardTitle className="text-base">
+                  Provider Cancellation Policy
+                </CardTitle>
                 <CardDescription className="text-xs mt-0.5">
-                  Configure the penalty applied when providers cancel bookings within the cancellation window.
+                  Configure the penalty applied when providers cancel bookings
+                  within the cancellation window.
                 </CardDescription>
               </div>
             </div>
@@ -431,18 +497,30 @@ export function PlatformSettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1.5">
-                <Label className="text-sm text-gray-700">Cancellation Window</Label>
-                <Select value={settings.cancellationWindow} onValueChange={(v) => update("cancellationWindow", v as CancellationWindow)}>
-                  <SelectTrigger className="h-9 text-sm">
+                <Label className="text-sm text-gray-700">
+                  Cancellation Window
+                </Label>
+                <Select
+                  value={settings.cancellationWindow}
+                  onValueChange={(v) =>
+                    update("cancellationWindow", v as CancellationWindow)
+                  }
+                >
+                  <SelectTrigger className="h-10 text-sm">
                     <SelectValue placeholder="Select window" />
                   </SelectTrigger>
                   <SelectContent>
                     {CANCELLATION_WINDOW_OPTIONS.map((opt) => (
-                      <SelectItem key={opt.value} value={opt.value}>{opt.label}</SelectItem>
+                      <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
-                <p className="text-[11px] text-gray-400">Time before booking start when cancellation triggers a penalty.</p>
+                <p className="text-[11px] text-gray-400">
+                  Time before booking start when cancellation triggers a
+                  penalty.
+                </p>
               </div>
 
               <div className="space-y-1.5">
@@ -452,18 +530,25 @@ export function PlatformSettingsPage() {
                     type="number"
                     min={0}
                     step={0.01}
-                    max={settings.penaltyType === "percentage" ? 100 : undefined}
+                    max={
+                      settings.penaltyType === "percentage" ? 100 : undefined
+                    }
                     value={settings.penaltyValue}
-                    onChange={(e) => update("penaltyValue", parseFloat(e.target.value) || 0)}
-                    className="h-9 text-sm pr-12"
+                    onChange={(e) =>
+                      update("penaltyValue", parseFloat(e.target.value) || 0)
+                    }
+                    className="h-10 text-sm pr-12"
                   />
                   <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400">
                     {settings.penaltyType === "fixed" ? "SAR" : "%"}
                   </span>
                 </div>
-                {settings.penaltyType === "percentage" && settings.penaltyValue > 100 && (
-                  <p className="text-[11px] text-red-500">Penalty percentage cannot exceed 100%.</p>
-                )}
+                {settings.penaltyType === "percentage" &&
+                  settings.penaltyValue > 100 && (
+                    <p className="text-[11px] text-red-500">
+                      Penalty percentage cannot exceed 100%.
+                    </p>
+                  )}
               </div>
             </div>
 
@@ -502,7 +587,9 @@ export function PlatformSettingsPage() {
             <div className="flex items-start gap-2 bg-blue-50 border border-blue-200 rounded-lg p-3 text-xs text-blue-700">
               <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
               <span>
-                If a provider&apos;s wallet goes negative after a cancellation penalty, the negative balance will be adjusted from future earnings.
+                If a provider&apos;s wallet goes negative after a cancellation
+                penalty, the negative balance will be adjusted from future
+                earnings.
               </span>
             </div>
           </CardContent>
@@ -512,11 +599,13 @@ export function PlatformSettingsPage() {
         <Card>
           <CardHeader>
             <div className="flex items-center gap-3">
-              <div className="flex items-center justify-center h-9 w-9 rounded-lg bg-gray-100">
+              <div className="flex items-center justify-center h-10 w-9 rounded-lg bg-gray-100">
                 <Settings className="h-4.5 w-4.5 text-gray-600" />
               </div>
               <div>
-                <CardTitle className="text-base">General Configuration</CardTitle>
+                <CardTitle className="text-base">
+                  General Configuration
+                </CardTitle>
                 <CardDescription className="text-xs mt-0.5">
                   Configure system-wide operational parameters.
                 </CardDescription>
@@ -526,22 +615,35 @@ export function PlatformSettingsPage() {
           <CardContent className="space-y-4">
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1.5">
-                <Label className="text-sm text-gray-700">Max Sub-Admins Per Provider</Label>
+                <Label className="text-sm text-gray-700">
+                  Max Sub-Admins Per Provider
+                </Label>
                 <Input
                   type="number"
                   min={1}
                   max={50}
                   step={1}
                   value={settings.maxSubAdminsPerProvider}
-                  onChange={(e) => update("maxSubAdminsPerProvider", parseInt(e.target.value) || 1)}
-                  className="h-9 text-sm"
+                  onChange={(e) =>
+                    update(
+                      "maxSubAdminsPerProvider",
+                      parseInt(e.target.value) || 1,
+                    )
+                  }
+                  className="h-10 text-sm"
                 />
-                <p className="text-[11px] text-gray-400">Maximum number of sub-admin accounts a provider can create.</p>
+                <p className="text-[11px] text-gray-400">
+                  Maximum number of sub-admin accounts a provider can create.
+                </p>
                 {settings.maxSubAdminsPerProvider < 1 && (
-                  <p className="text-[11px] text-red-500">Must allow at least 1 sub-admin.</p>
+                  <p className="text-[11px] text-red-500">
+                    Must allow at least 1 sub-admin.
+                  </p>
                 )}
                 {settings.maxSubAdminsPerProvider > 50 && (
-                  <p className="text-[11px] text-red-500">Cannot exceed 50 sub-admins per provider.</p>
+                  <p className="text-[11px] text-red-500">
+                    Cannot exceed 50 sub-admins per provider.
+                  </p>
                 )}
               </div>
 
@@ -550,15 +652,18 @@ export function PlatformSettingsPage() {
                 <Input
                   value="SAR (Saudi Riyal)"
                   disabled
-                  className="h-9 text-sm bg-gray-50 cursor-not-allowed"
+                  className="h-10 text-sm bg-gray-50 cursor-not-allowed"
                 />
-                <p className="text-[11px] text-gray-400">Currency cannot be changed after launch.</p>
+                <p className="text-[11px] text-gray-400">
+                  Currency cannot be changed after launch.
+                </p>
               </div>
             </div>
 
             <div className="flex items-start gap-2 bg-gray-50 border border-gray-200 rounded-lg p-3 text-xs text-gray-500">
               <Info className="h-3.5 w-3.5 shrink-0 mt-0.5" />
-              Currency conversion rates are fetched once daily and stored in the database.
+              Currency conversion rates are fetched once daily and stored in the
+              database.
             </div>
           </CardContent>
         </Card>
@@ -571,9 +676,12 @@ export function PlatformSettingsPage() {
           <CardContent className="py-5">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-900">Commission & Tax Configuration</p>
+                <p className="text-sm font-medium text-gray-900">
+                  Commission & Tax Configuration
+                </p>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  Manage commission rates, tax deductions, and payout durations per provider type.
+                  Manage commission rates, tax deductions, and payout durations
+                  per provider type.
                 </p>
               </div>
               <Button variant="outline" asChild className="gap-1.5">
@@ -592,10 +700,16 @@ export function PlatformSettingsPage() {
         <div className="fixed bottom-0 left-0 right-0 z-50 border-t border-gray-200 bg-white shadow-lg">
           <div className="max-w-[1200px] mx-auto px-8 py-3 flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <Badge variant="outline" className="bg-amber-50 text-amber-700 border-amber-200">
-                {changes.length} setting{changes.length !== 1 ? "s" : ""} modified
+              <Badge
+                variant="outline"
+                className="bg-amber-50 text-amber-700 border-amber-200"
+              >
+                {changes.length} setting{changes.length !== 1 ? "s" : ""}{" "}
+                modified
               </Badge>
-              <span className="text-xs text-gray-500">Changes will take effect immediately after saving.</span>
+              <span className="text-xs text-gray-500">
+                Changes will take effect immediately after saving.
+              </span>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -630,7 +744,12 @@ export function PlatformSettingsPage() {
       )}
 
       {/* ─── Confirm Modal (critical changes) ────────────────── */}
-      <AlertDialog open={confirmOpen} onOpenChange={(v) => { if (!v && !isSaving) setConfirmOpen(false); }}>
+      <AlertDialog
+        open={confirmOpen}
+        onOpenChange={(v) => {
+          if (!v && !isSaving) setConfirmOpen(false);
+        }}
+      >
         <AlertDialogContent className="max-w-md">
           <AlertDialogHeader>
             <AlertDialogTitle className="flex items-center gap-2">
@@ -639,15 +758,26 @@ export function PlatformSettingsPage() {
             </AlertDialogTitle>
             <AlertDialogDescription asChild>
               <div className="space-y-3 text-sm">
-                <p className="text-gray-500">The following settings will be updated:</p>
+                <p className="text-gray-500">
+                  The following settings will be updated:
+                </p>
                 <div className="bg-gray-50 rounded-lg border border-gray-200 divide-y divide-gray-100">
                   {changes.map((c) => (
-                    <div key={c.key} className="px-3 py-2 flex items-center justify-between text-xs">
-                      <span className="text-gray-700 font-medium">{c.label}</span>
+                    <div
+                      key={c.key}
+                      className="px-3 py-2 flex items-center justify-between text-xs"
+                    >
+                      <span className="text-gray-700 font-medium">
+                        {c.label}
+                      </span>
                       <div className="flex items-center gap-1.5">
-                        <span className="text-gray-400 line-through">{c.oldValue}</span>
+                        <span className="text-gray-400 line-through">
+                          {c.oldValue}
+                        </span>
                         <span className="text-gray-400">&rarr;</span>
-                        <span className="text-[#003B95] font-medium">{c.newValue}</span>
+                        <span className="text-[#003B95] font-medium">
+                          {c.newValue}
+                        </span>
                       </div>
                     </div>
                   ))}
@@ -657,7 +787,11 @@ export function PlatformSettingsPage() {
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel disabled={isSaving}>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={doSave} disabled={isSaving} className="bg-[#003B95] hover:bg-[#002a6b]">
+            <AlertDialogAction
+              onClick={doSave}
+              disabled={isSaving}
+              className="bg-[#003B95] hover:bg-[#002a6b]"
+            >
               Confirm & Save
             </AlertDialogAction>
           </AlertDialogFooter>
@@ -665,17 +799,23 @@ export function PlatformSettingsPage() {
       </AlertDialog>
 
       {/* ─── Discard Confirm ─────────────────────────────────── */}
-      <AlertDialog open={discardConfirmOpen} onOpenChange={setDiscardConfirmOpen}>
+      <AlertDialog
+        open={discardConfirmOpen}
+        onOpenChange={setDiscardConfirmOpen}
+      >
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Discard Changes?</AlertDialogTitle>
             <AlertDialogDescription>
-              Discard all unsaved changes? This will revert all settings to their last saved values.
+              Discard all unsaved changes? This will revert all settings to
+              their last saved values.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction onClick={handleDiscard}>Discard</AlertDialogAction>
+            <AlertDialogAction onClick={handleDiscard}>
+              Discard
+            </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>

@@ -137,7 +137,12 @@ interface StatCardProps {
 function StatCard({ label, value, icon: Icon, color, bg }: StatCardProps) {
   return (
     <div className="bg-white rounded-xl border border-gray-200 p-5 flex items-center gap-4">
-      <div className={cn("w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0", bg)}>
+      <div
+        className={cn(
+          "w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0",
+          bg,
+        )}
+      >
         <Icon size={22} className={color} />
       </div>
       <div>
@@ -178,7 +183,7 @@ function Field({
 function validateSubAdminForm(
   form: SubAdminFormData,
   existingEmails: string[],
-  editingEmail?: string
+  editingEmail?: string,
 ): Record<string, string> {
   const errs: Record<string, string> = {};
 
@@ -198,7 +203,7 @@ function validateSubAdminForm(
     const isDuplicate = existingEmails.some(
       (e) =>
         e.toLowerCase() === form.email.trim().toLowerCase() &&
-        e.toLowerCase() !== editingEmail?.toLowerCase()
+        e.toLowerCase() !== editingEmail?.toLowerCase(),
     );
     if (isDuplicate)
       errs.email = "This email is already registered to another admin account.";
@@ -219,7 +224,15 @@ function validateSubAdminForm(
 
 // ─── Sort helpers ───────────────────────────────────────────────────────────
 
-type SubAdminSortField = "fullName" | "email" | "mobile" | "roleName" | "nationality" | "country" | "status" | "lastLogin";
+type SubAdminSortField =
+  | "fullName"
+  | "email"
+  | "mobile"
+  | "roleName"
+  | "nationality"
+  | "country"
+  | "status"
+  | "lastLogin";
 type SortDir = "asc" | "desc";
 
 function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
@@ -233,11 +246,19 @@ function SortIcon({ active, dir }: { active: boolean; dir: SortDir }) {
       </span>
     );
   return dir === "asc" ? (
-    <svg viewBox="0 0 12 12" fill="none" className="inline-block w-3 h-3 text-[#003B95]">
+    <svg
+      viewBox="0 0 12 12"
+      fill="none"
+      className="inline-block w-3 h-3 text-[#003B95]"
+    >
       <path d="M6 2l3 4H3l3-4z" fill="currentColor" />
     </svg>
   ) : (
-    <svg viewBox="0 0 12 12" fill="none" className="inline-block w-3 h-3 text-[#003B95]">
+    <svg
+      viewBox="0 0 12 12"
+      fill="none"
+      className="inline-block w-3 h-3 text-[#003B95]"
+    >
       <path d="M6 10L3 6h6L6 10z" fill="currentColor" />
     </svg>
   );
@@ -297,7 +318,10 @@ function PaginationControl({
           }, [])
           .map((p, i) =>
             p === "..." ? (
-              <span key={`ellipsis-${i}`} className="px-1 text-gray-400 text-sm">
+              <span
+                key={`ellipsis-${i}`}
+                className="px-1 text-gray-400 text-sm"
+              >
                 ...
               </span>
             ) : (
@@ -306,11 +330,14 @@ function PaginationControl({
                 variant={p === page ? "default" : "outline"}
                 size="sm"
                 onClick={() => onPageChange(p as number)}
-                className={cn("h-8 w-8 p-0 text-xs", p === page && "bg-[#003B95]")}
+                className={cn(
+                  "h-8 w-8 p-0 text-xs",
+                  p === page && "bg-[#003B95]",
+                )}
               >
                 {p}
               </Button>
-            )
+            ),
           )}
         <Button
           variant="outline"
@@ -360,7 +387,9 @@ export function SubAdminsPage() {
 
   // ── Sub-Admin Filters ──
   const [search, setSearch] = useState("");
-  const [filterStatus, setFilterStatus] = useState<SubAdminStatus | "All">("All");
+  const [filterStatus, setFilterStatus] = useState<SubAdminStatus | "All">(
+    "All",
+  );
   const [sortField, setSortField] = useState<SubAdminSortField>("fullName");
   const [sortDir, setSortDir] = useState<SortDir>("asc");
   const [page, setPage] = useState(1);
@@ -388,7 +417,10 @@ export function SubAdminsPage() {
   }, [subAdmins]);
 
   // ── Active roles for form dropdown ──
-  const activeRoles = useMemo(() => roles.filter((r) => r.status === "Active"), [roles]);
+  const activeRoles = useMemo(
+    () => roles.filter((r) => r.status === "Active"),
+    [roles],
+  );
 
   // ── Filtered + sorted sub-admins ──
   const filteredSubAdmins = useMemo(() => {
@@ -399,7 +431,7 @@ export function SubAdminsPage() {
         (s) =>
           s.fullName.toLowerCase().includes(q) ||
           s.email.toLowerCase().includes(q) ||
-          s.roleName.toLowerCase().includes(q)
+          s.roleName.toLowerCase().includes(q),
       );
     }
     if (filterStatus !== "All") {
@@ -414,8 +446,14 @@ export function SubAdminsPage() {
     return list;
   }, [subAdmins, search, filterStatus, sortField, sortDir]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredSubAdmins.length / pageSize));
-  const pagedSubAdmins = filteredSubAdmins.slice((page - 1) * pageSize, page * pageSize);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredSubAdmins.length / pageSize),
+  );
+  const pagedSubAdmins = filteredSubAdmins.slice(
+    (page - 1) * pageSize,
+    page * pageSize,
+  );
 
   // Reset page on filter change
   useEffect(() => {
@@ -425,7 +463,10 @@ export function SubAdminsPage() {
 
   // ── Roles list ──
   const rolesTotalPages = Math.max(1, Math.ceil(roles.length / rolesPageSize));
-  const pagedRoles = roles.slice((rolesPage - 1) * rolesPageSize, rolesPage * rolesPageSize);
+  const pagedRoles = roles.slice(
+    (rolesPage - 1) * rolesPageSize,
+    rolesPage * rolesPageSize,
+  );
 
   // ── Sort handler ──
   function handleSort(field: SubAdminSortField) {
@@ -455,8 +496,10 @@ export function SubAdminsPage() {
     }
   }
 
-  const allPageSelected = pagedSubAdmins.length > 0 && selectedIds.size === pagedSubAdmins.length;
-  const someSelected = selectedIds.size > 0 && selectedIds.size < pagedSubAdmins.length;
+  const allPageSelected =
+    pagedSubAdmins.length > 0 && selectedIds.size === pagedSubAdmins.length;
+  const someSelected =
+    selectedIds.size > 0 && selectedIds.size < pagedSubAdmins.length;
 
   // ── Drawer open helpers ──
   function openCreate() {
@@ -487,7 +530,8 @@ export function SubAdminsPage() {
   // ── Save sub-admin ──
   async function handleSave() {
     const existingEmails = subAdmins.map((s) => s.email);
-    const editingEmail = drawer.type === "edit" ? drawer.subAdmin.email : undefined;
+    const editingEmail =
+      drawer.type === "edit" ? drawer.subAdmin.email : undefined;
 
     const errs = validateSubAdminForm(form, existingEmails, editingEmail);
     if (Object.keys(errs).length > 0) {
@@ -521,11 +565,15 @@ export function SubAdminsPage() {
       if (selectedRole) {
         setRoles((prev) =>
           prev.map((r) =>
-            r.id === selectedRole.id ? { ...r, subAdminCount: r.subAdminCount + 1 } : r
-          )
+            r.id === selectedRole.id
+              ? { ...r, subAdminCount: r.subAdminCount + 1 }
+              : r,
+          ),
         );
       }
-      toast.success("Sub-admin created successfully. An email invite has been sent.");
+      toast.success(
+        "Sub-admin created successfully. An email invite has been sent.",
+      );
     } else if (drawer.type === "edit") {
       const original = drawer.subAdmin;
       setSubAdmins((prev) =>
@@ -544,8 +592,8 @@ export function SubAdminsPage() {
                 country: form.country,
                 status: form.status,
               }
-            : s
-        )
+            : s,
+        ),
       );
       toast.success("Sub-admin updated successfully.");
     }
@@ -563,7 +611,9 @@ export function SubAdminsPage() {
       case "activate": {
         const { subAdmin } = modal;
         setSubAdmins((prev) =>
-          prev.map((s) => (s.id === subAdmin.id ? { ...s, status: "Active" } : s))
+          prev.map((s) =>
+            s.id === subAdmin.id ? { ...s, status: "Active" } : s,
+          ),
         );
         toast.success("Sub-admin activated.");
         break;
@@ -571,7 +621,9 @@ export function SubAdminsPage() {
       case "deactivate": {
         const { subAdmin } = modal;
         setSubAdmins((prev) =>
-          prev.map((s) => (s.id === subAdmin.id ? { ...s, status: "Inactive" } : s))
+          prev.map((s) =>
+            s.id === subAdmin.id ? { ...s, status: "Inactive" } : s,
+          ),
         );
         toast.success("Sub-admin deactivated and logged out.");
         break;
@@ -594,11 +646,13 @@ export function SubAdminsPage() {
         if (role.subAdminCount > 0) {
           setSubAdmins((prev) =>
             prev.map((s) =>
-              s.roleId === role.id ? { ...s, status: "Inactive" } : s
-            )
+              s.roleId === role.id ? { ...s, status: "Inactive" } : s,
+            ),
           );
         }
-        toast.success("Role deleted. All assigned sub-admins have been deactivated.");
+        toast.success(
+          "Role deleted. All assigned sub-admins have been deactivated.",
+        );
         break;
       }
       case "resend": {
@@ -609,7 +663,9 @@ export function SubAdminsPage() {
       case "bulk-activate": {
         const { ids } = modal;
         setSubAdmins((prev) =>
-          prev.map((s) => (ids.includes(s.id) ? { ...s, status: "Active" } : s))
+          prev.map((s) =>
+            ids.includes(s.id) ? { ...s, status: "Active" } : s,
+          ),
         );
         setSelectedIds(new Set());
         toast.success(`${ids.length} sub-admins activated successfully.`);
@@ -618,7 +674,9 @@ export function SubAdminsPage() {
       case "bulk-deactivate": {
         const { ids } = modal;
         setSubAdmins((prev) =>
-          prev.map((s) => (ids.includes(s.id) ? { ...s, status: "Inactive" } : s))
+          prev.map((s) =>
+            ids.includes(s.id) ? { ...s, status: "Inactive" } : s,
+          ),
         );
         setSelectedIds(new Set());
         toast.success(`${ids.length} sub-admins deactivated successfully.`);
@@ -661,13 +719,16 @@ export function SubAdminsPage() {
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2.5 mb-1">
-              <div className="w-9 h-9 rounded-lg bg-[#003B95]/10 flex items-center justify-center">
+              <div className="w-9 h-10 rounded-lg bg-[#003B95]/10 flex items-center justify-center">
                 <UserCog size={19} className="text-[#003B95]" />
               </div>
-              <h1 className="text-2xl font-semibold text-gray-900">Sub-Admin Management</h1>
+              <h1 className="text-2xl font-semibold text-gray-900">
+                Sub-Admin Management
+              </h1>
             </div>
             <p className="text-sm text-gray-500 ml-[46px]">
-              Manage sub-admin accounts and configure custom roles with granular permissions.
+              Manage sub-admin accounts and configure custom roles with granular
+              permissions.
             </p>
           </div>
           <div className="flex items-center gap-3 flex-shrink-0">
@@ -717,12 +778,10 @@ export function SubAdminsPage() {
 
         {/* ── Tabs ── */}
         <div className="flex border-b border-gray-200 gap-1" role="tablist">
-          {(
-            [
-              { id: "sub-admins" as const, label: "Sub-Admins" },
-              { id: "roles" as const, label: "Roles" },
-            ]
-          ).map((t) => (
+          {[
+            { id: "sub-admins" as const, label: "Sub-Admins" },
+            { id: "roles" as const, label: "Roles" },
+          ].map((t) => (
             <button
               key={t.id}
               role="tab"
@@ -735,7 +794,7 @@ export function SubAdminsPage() {
                 "px-5 py-2.5 text-sm font-medium border-b-2 transition-colors -mb-px",
                 tab === t.id
                   ? "border-[#003B95] text-[#003B95]"
-                  : "border-transparent text-gray-500 hover:text-gray-700"
+                  : "border-transparent text-gray-500 hover:text-gray-700",
               )}
             >
               {t.label}
@@ -747,12 +806,20 @@ export function SubAdminsPage() {
             TAB: Sub-Admins
         ════════════════════════════════════════════════════════════════════ */}
         {tab === "sub-admins" && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" role="tabpanel" aria-labelledby="sub-admins-tab">
+          <div
+            className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+            role="tabpanel"
+            aria-labelledby="sub-admins-tab"
+          >
             {/* Bulk Action Toolbar */}
             {selectedIds.size > 0 && (
-              <div className="flex items-center gap-3 px-4 py-3 bg-blue-50 border-b border-blue-100" aria-live="polite">
+              <div
+                className="flex items-center gap-3 px-4 py-3 bg-blue-50 border-b border-blue-100"
+                aria-live="polite"
+              >
                 <span className="text-sm font-medium text-blue-800">
-                  {selectedIds.size} row{selectedIds.size !== 1 ? "s" : ""} selected
+                  {selectedIds.size} row{selectedIds.size !== 1 ? "s" : ""}{" "}
+                  selected
                 </span>
                 <div className="flex items-center gap-2 ml-auto">
                   <Button
@@ -760,7 +827,10 @@ export function SubAdminsPage() {
                     variant="outline"
                     className="h-8 text-xs border-emerald-300 text-emerald-700 hover:bg-emerald-50"
                     onClick={() =>
-                      setModal({ type: "bulk-activate", ids: Array.from(selectedIds) })
+                      setModal({
+                        type: "bulk-activate",
+                        ids: Array.from(selectedIds),
+                      })
                     }
                   >
                     <ShieldCheck size={13} className="mr-1" />
@@ -771,7 +841,10 @@ export function SubAdminsPage() {
                     variant="outline"
                     className="h-8 text-xs border-amber-300 text-amber-700 hover:bg-amber-50"
                     onClick={() =>
-                      setModal({ type: "bulk-deactivate", ids: Array.from(selectedIds) })
+                      setModal({
+                        type: "bulk-deactivate",
+                        ids: Array.from(selectedIds),
+                      })
                     }
                   >
                     <ShieldOff size={13} className="mr-1" />
@@ -782,7 +855,10 @@ export function SubAdminsPage() {
                     variant="outline"
                     className="h-8 text-xs border-red-300 text-red-700 hover:bg-red-50"
                     onClick={() =>
-                      setModal({ type: "bulk-delete", ids: Array.from(selectedIds) })
+                      setModal({
+                        type: "bulk-delete",
+                        ids: Array.from(selectedIds),
+                      })
                     }
                   >
                     <Trash2 size={13} className="mr-1" />
@@ -795,12 +871,15 @@ export function SubAdminsPage() {
             {/* Filter / Search bar */}
             <div className="flex flex-wrap items-center gap-3 p-4 border-b border-gray-100">
               <div className="relative flex-1 min-w-[240px]" role="search">
-                <Search size={15} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400" />
+                <Search
+                  size={15}
+                  className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400"
+                />
                 <Input
                   placeholder="Search by name, email, role..."
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
-                  className="pl-9 h-9 text-sm"
+                  className="pl-9 h-10 text-sm"
                   aria-label="Search sub-admins"
                 />
                 {search && (
@@ -814,9 +893,14 @@ export function SubAdminsPage() {
               </div>
               <Select
                 value={filterStatus}
-                onValueChange={(v) => setFilterStatus(v as SubAdminStatus | "All")}
+                onValueChange={(v) =>
+                  setFilterStatus(v as SubAdminStatus | "All")
+                }
               >
-                <SelectTrigger className="h-9 w-[140px] text-sm" aria-label="Filter by status">
+                <SelectTrigger
+                  className="h-10 w-[140px] text-sm"
+                  aria-label="Filter by status"
+                >
                   <Filter size={13} className="mr-1.5 text-gray-400" />
                   <SelectValue placeholder="Status" />
                 </SelectTrigger>
@@ -834,7 +918,7 @@ export function SubAdminsPage() {
                     setSearch("");
                     setFilterStatus("All");
                   }}
-                  className="h-9 text-sm text-gray-500"
+                  className="h-10 text-sm text-gray-500"
                 >
                   <X size={13} className="mr-1" />
                   Clear
@@ -842,18 +926,26 @@ export function SubAdminsPage() {
               )}
               <div className="ml-auto flex items-center gap-2">
                 <span className="text-sm text-gray-500">
-                  {filteredSubAdmins.length} result{filteredSubAdmins.length !== 1 ? "s" : ""}
+                  {filteredSubAdmins.length} result
+                  {filteredSubAdmins.length !== 1 ? "s" : ""}
                 </span>
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-9 text-sm text-gray-600">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="h-10 text-sm text-gray-600"
+                    >
                       <Download size={14} className="mr-1.5" />
                       Export
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     {EXPORT_FORMATS.map((fmt) => (
-                      <DropdownMenuItem key={fmt} onClick={() => handleExport(fmt)}>
+                      <DropdownMenuItem
+                        key={fmt}
+                        onClick={() => handleExport(fmt)}
+                      >
                         {fmt}
                       </DropdownMenuItem>
                     ))}
@@ -869,7 +961,13 @@ export function SubAdminsPage() {
                   <TableRow className="bg-gray-50">
                     <TableHead className="w-[40px]">
                       <Checkbox
-                        checked={allPageSelected ? true : someSelected ? "indeterminate" : false}
+                        checked={
+                          allPageSelected
+                            ? true
+                            : someSelected
+                              ? "indeterminate"
+                              : false
+                        }
                         onCheckedChange={toggleSelectAll}
                         aria-label="Select all rows"
                       />
@@ -879,7 +977,11 @@ export function SubAdminsPage() {
                       onClick={() => handleSort("fullName")}
                     >
                       <span className="flex items-center gap-1">
-                        Name <SortIcon active={sortField === "fullName"} dir={sortDir} />
+                        Name{" "}
+                        <SortIcon
+                          active={sortField === "fullName"}
+                          dir={sortDir}
+                        />
                       </span>
                     </TableHead>
                     <TableHead
@@ -887,7 +989,11 @@ export function SubAdminsPage() {
                       onClick={() => handleSort("email")}
                     >
                       <span className="flex items-center gap-1">
-                        Email <SortIcon active={sortField === "email"} dir={sortDir} />
+                        Email{" "}
+                        <SortIcon
+                          active={sortField === "email"}
+                          dir={sortDir}
+                        />
                       </span>
                     </TableHead>
                     <TableHead
@@ -895,7 +1001,11 @@ export function SubAdminsPage() {
                       onClick={() => handleSort("mobile")}
                     >
                       <span className="flex items-center gap-1">
-                        Mobile <SortIcon active={sortField === "mobile"} dir={sortDir} />
+                        Mobile{" "}
+                        <SortIcon
+                          active={sortField === "mobile"}
+                          dir={sortDir}
+                        />
                       </span>
                     </TableHead>
                     <TableHead
@@ -903,7 +1013,11 @@ export function SubAdminsPage() {
                       onClick={() => handleSort("roleName")}
                     >
                       <span className="flex items-center gap-1">
-                        Role <SortIcon active={sortField === "roleName"} dir={sortDir} />
+                        Role{" "}
+                        <SortIcon
+                          active={sortField === "roleName"}
+                          dir={sortDir}
+                        />
                       </span>
                     </TableHead>
                     <TableHead
@@ -911,7 +1025,11 @@ export function SubAdminsPage() {
                       onClick={() => handleSort("nationality")}
                     >
                       <span className="flex items-center gap-1">
-                        Nationality <SortIcon active={sortField === "nationality"} dir={sortDir} />
+                        Nationality{" "}
+                        <SortIcon
+                          active={sortField === "nationality"}
+                          dir={sortDir}
+                        />
                       </span>
                     </TableHead>
                     <TableHead
@@ -919,7 +1037,11 @@ export function SubAdminsPage() {
                       onClick={() => handleSort("country")}
                     >
                       <span className="flex items-center gap-1">
-                        Country <SortIcon active={sortField === "country"} dir={sortDir} />
+                        Country{" "}
+                        <SortIcon
+                          active={sortField === "country"}
+                          dir={sortDir}
+                        />
                       </span>
                     </TableHead>
                     <TableHead
@@ -927,7 +1049,11 @@ export function SubAdminsPage() {
                       onClick={() => handleSort("status")}
                     >
                       <span className="flex items-center gap-1">
-                        Status <SortIcon active={sortField === "status"} dir={sortDir} />
+                        Status{" "}
+                        <SortIcon
+                          active={sortField === "status"}
+                          dir={sortDir}
+                        />
                       </span>
                     </TableHead>
                     <TableHead
@@ -935,7 +1061,11 @@ export function SubAdminsPage() {
                       onClick={() => handleSort("lastLogin")}
                     >
                       <span className="flex items-center gap-1">
-                        Last Login <SortIcon active={sortField === "lastLogin"} dir={sortDir} />
+                        Last Login{" "}
+                        <SortIcon
+                          active={sortField === "lastLogin"}
+                          dir={sortDir}
+                        />
                       </span>
                     </TableHead>
                     <TableHead className="text-right">Actions</TableHead>
@@ -950,9 +1080,12 @@ export function SubAdminsPage() {
                             <Users size={28} className="text-gray-400" />
                           </div>
                           <div>
-                            <p className="text-gray-700 font-medium">No Sub-Admins Found</p>
+                            <p className="text-gray-700 font-medium">
+                              No Sub-Admins Found
+                            </p>
                             <p className="text-sm text-gray-400 mt-1">
-                              Create your first sub-admin to delegate admin responsibilities.
+                              Create your first sub-admin to delegate admin
+                              responsibilities.
                             </p>
                           </div>
                           <Button
@@ -971,7 +1104,7 @@ export function SubAdminsPage() {
                         key={sa.id}
                         className={cn(
                           "hover:bg-gray-50/60 transition-colors",
-                          selectedIds.has(sa.id) && "bg-blue-50/50"
+                          selectedIds.has(sa.id) && "bg-blue-50/50",
                         )}
                       >
                         <TableCell>
@@ -1001,11 +1134,15 @@ export function SubAdminsPage() {
                         </TableCell>
                         {/* Email */}
                         <TableCell>
-                          <span className="text-sm text-gray-600">{sa.email}</span>
+                          <span className="text-sm text-gray-600">
+                            {sa.email}
+                          </span>
                         </TableCell>
                         {/* Mobile */}
                         <TableCell>
-                          <span className="text-sm text-gray-600">{sa.countryCode} {sa.mobile}</span>
+                          <span className="text-sm text-gray-600">
+                            {sa.countryCode} {sa.mobile}
+                          </span>
                         </TableCell>
                         {/* Role with colour dot */}
                         <TableCell>
@@ -1026,18 +1163,22 @@ export function SubAdminsPage() {
                         </TableCell>
                         {/* Nationality */}
                         <TableCell>
-                          <span className="text-sm text-gray-600">{sa.nationality || "—"}</span>
+                          <span className="text-sm text-gray-600">
+                            {sa.nationality || "—"}
+                          </span>
                         </TableCell>
                         {/* Country */}
                         <TableCell>
-                          <span className="text-sm text-gray-600">{sa.country || "—"}</span>
+                          <span className="text-sm text-gray-600">
+                            {sa.country || "—"}
+                          </span>
                         </TableCell>
                         {/* Status */}
                         <TableCell>
                           <span
                             className={cn(
                               "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                              statusColor(sa.status)
+                              statusColor(sa.status),
                             )}
                           >
                             {sa.status}
@@ -1052,10 +1193,14 @@ export function SubAdminsPage() {
                                   {fmtRelative(sa.lastLogin)}
                                 </span>
                               </TooltipTrigger>
-                              <TooltipContent>{fmtDateTime(sa.lastLogin)} UTC</TooltipContent>
+                              <TooltipContent>
+                                {fmtDateTime(sa.lastLogin)} UTC
+                              </TooltipContent>
                             </Tooltip>
                           ) : (
-                            <span className="text-xs text-gray-400 italic">Never</span>
+                            <span className="text-xs text-gray-400 italic">
+                              Never
+                            </span>
                           )}
                         </TableCell>
                         {/* Actions */}
@@ -1071,21 +1216,31 @@ export function SubAdminsPage() {
                                 <MoreHorizontal size={16} />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[160px]">
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-[160px]"
+                            >
                               <DropdownMenuItem onClick={() => openEdit(sa)}>
                                 <Edit2 size={14} className="mr-2" />
                                 Edit
                               </DropdownMenuItem>
                               {sa.status === "Active" ? (
                                 <DropdownMenuItem
-                                  onClick={() => setModal({ type: "deactivate", subAdmin: sa })}
+                                  onClick={() =>
+                                    setModal({
+                                      type: "deactivate",
+                                      subAdmin: sa,
+                                    })
+                                  }
                                 >
                                   <ShieldOff size={14} className="mr-2" />
                                   Deactivate
                                 </DropdownMenuItem>
                               ) : (
                                 <DropdownMenuItem
-                                  onClick={() => setModal({ type: "activate", subAdmin: sa })}
+                                  onClick={() =>
+                                    setModal({ type: "activate", subAdmin: sa })
+                                  }
                                 >
                                   <ShieldCheck size={14} className="mr-2" />
                                   Activate
@@ -1093,7 +1248,9 @@ export function SubAdminsPage() {
                               )}
                               {sa.mustChangePassword && (
                                 <DropdownMenuItem
-                                  onClick={() => setModal({ type: "resend", subAdmin: sa })}
+                                  onClick={() =>
+                                    setModal({ type: "resend", subAdmin: sa })
+                                  }
                                 >
                                   <MailCheck size={14} className="mr-2" />
                                   Resend Invite
@@ -1101,7 +1258,12 @@ export function SubAdminsPage() {
                               )}
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onClick={() => setModal({ type: "delete-sub-admin", subAdmin: sa })}
+                                onClick={() =>
+                                  setModal({
+                                    type: "delete-sub-admin",
+                                    subAdmin: sa,
+                                  })
+                                }
                                 className="text-red-600 focus:text-red-600"
                               >
                                 <Trash2 size={14} className="mr-2" />
@@ -1138,7 +1300,11 @@ export function SubAdminsPage() {
             TAB: Roles
         ════════════════════════════════════════════════════════════════════ */}
         {tab === "roles" && (
-          <div className="bg-white rounded-xl border border-gray-200 overflow-hidden" role="tabpanel" aria-labelledby="roles-tab">
+          <div
+            className="bg-white rounded-xl border border-gray-200 overflow-hidden"
+            role="tabpanel"
+            aria-labelledby="roles-tab"
+          >
             <div className="overflow-x-auto">
               <Table>
                 <TableHeader>
@@ -1146,7 +1312,9 @@ export function SubAdminsPage() {
                     <TableHead className="w-[40px]">Colour</TableHead>
                     <TableHead>Role Name</TableHead>
                     <TableHead>Description</TableHead>
-                    <TableHead className="text-center">Sub-Admins Assigned</TableHead>
+                    <TableHead className="text-center">
+                      Sub-Admins Assigned
+                    </TableHead>
                     <TableHead>Status</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
@@ -1160,7 +1328,9 @@ export function SubAdminsPage() {
                             <Settings size={28} className="text-gray-400" />
                           </div>
                           <div>
-                            <p className="text-gray-700 font-medium">No Roles Defined</p>
+                            <p className="text-gray-700 font-medium">
+                              No Roles Defined
+                            </p>
                             <p className="text-sm text-gray-400 mt-1">
                               Create a custom role to assign permissions.
                             </p>
@@ -1177,7 +1347,10 @@ export function SubAdminsPage() {
                     </TableRow>
                   ) : (
                     pagedRoles.map((role) => (
-                      <TableRow key={role.id} className="hover:bg-gray-50/60 transition-colors">
+                      <TableRow
+                        key={role.id}
+                        className="hover:bg-gray-50/60 transition-colors"
+                      >
                         {/* Colour dot */}
                         <TableCell>
                           <span
@@ -1204,7 +1377,9 @@ export function SubAdminsPage() {
                                 {role.description || "—"}
                               </span>
                             </TooltipTrigger>
-                            <TooltipContent className="max-w-xs">{role.description}</TooltipContent>
+                            <TooltipContent className="max-w-xs">
+                              {role.description}
+                            </TooltipContent>
                           </Tooltip>
                         </TableCell>
                         {/* Sub-Admin Count */}
@@ -1218,7 +1393,7 @@ export function SubAdminsPage() {
                           <span
                             className={cn(
                               "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
-                              statusColor(role.status)
+                              statusColor(role.status),
                             )}
                           >
                             {role.status}
@@ -1228,11 +1403,18 @@ export function SubAdminsPage() {
                         <TableCell className="text-right">
                           <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                              <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-gray-500">
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-gray-500"
+                              >
                                 <MoreHorizontal size={16} />
                               </Button>
                             </DropdownMenuTrigger>
-                            <DropdownMenuContent align="end" className="w-[140px]">
+                            <DropdownMenuContent
+                              align="end"
+                              className="w-[140px]"
+                            >
                               <DropdownMenuItem
                                 onClick={() =>
                                   navigate(`/sub-admins/roles/${role.id}/edit`)
@@ -1243,7 +1425,9 @@ export function SubAdminsPage() {
                               </DropdownMenuItem>
                               <DropdownMenuSeparator />
                               <DropdownMenuItem
-                                onClick={() => setModal({ type: "delete-role", role })}
+                                onClick={() =>
+                                  setModal({ type: "delete-role", role })
+                                }
                                 className="text-red-600 focus:text-red-600"
                               >
                                 <Trash2 size={14} className="mr-2" />
@@ -1309,7 +1493,9 @@ export function SubAdminsPage() {
               <Input
                 placeholder="Enter full name"
                 value={form.fullName}
-                onChange={(e) => setForm((f) => ({ ...f, fullName: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, fullName: e.target.value }))
+                }
                 className={cn(formErrors.fullName && "border-red-400")}
                 maxLength={100}
                 aria-required="true"
@@ -1322,7 +1508,9 @@ export function SubAdminsPage() {
                 type="email"
                 placeholder="Enter email address"
                 value={form.email}
-                onChange={(e) => setForm((f) => ({ ...f, email: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, email: e.target.value }))
+                }
                 className={cn(formErrors.email && "border-red-400")}
                 maxLength={254}
                 aria-required="true"
@@ -1334,7 +1522,9 @@ export function SubAdminsPage() {
               <div className="flex gap-2">
                 <Select
                   value={form.countryCode}
-                  onValueChange={(v) => setForm((f) => ({ ...f, countryCode: v }))}
+                  onValueChange={(v) =>
+                    setForm((f) => ({ ...f, countryCode: v }))
+                  }
                 >
                   <SelectTrigger className="w-[120px] text-sm flex-shrink-0">
                     <Phone size={13} className="mr-1 text-gray-400" />
@@ -1352,8 +1542,16 @@ export function SubAdminsPage() {
                   type="tel"
                   placeholder="Enter mobile number"
                   value={form.mobile}
-                  onChange={(e) => setForm((f) => ({ ...f, mobile: e.target.value.replace(/\D/g, "") }))}
-                  className={cn("flex-1", formErrors.mobile && "border-red-400")}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      mobile: e.target.value.replace(/\D/g, ""),
+                    }))
+                  }
+                  className={cn(
+                    "flex-1",
+                    formErrors.mobile && "border-red-400",
+                  )}
                   maxLength={15}
                   aria-required="true"
                 />
@@ -1374,7 +1572,10 @@ export function SubAdminsPage() {
                   onValueChange={(v) => setForm((f) => ({ ...f, roleId: v }))}
                 >
                   <SelectTrigger
-                    className={cn("text-sm", formErrors.roleId && "border-red-400")}
+                    className={cn(
+                      "text-sm",
+                      formErrors.roleId && "border-red-400",
+                    )}
                     aria-required="true"
                   >
                     <SelectValue placeholder="Select a role" />
@@ -1400,7 +1601,12 @@ export function SubAdminsPage() {
             <Field label="Nationality">
               <Select
                 value={form.nationality || "__none__"}
-                onValueChange={(v) => setForm((f) => ({ ...f, nationality: v === "__none__" ? "" : v }))}
+                onValueChange={(v) =>
+                  setForm((f) => ({
+                    ...f,
+                    nationality: v === "__none__" ? "" : v,
+                  }))
+                }
               >
                 <SelectTrigger className="text-sm">
                   <Globe size={13} className="mr-1 text-gray-400" />
@@ -1423,7 +1629,9 @@ export function SubAdminsPage() {
             <Field label="Country">
               <Select
                 value={form.country || "__none__"}
-                onValueChange={(v) => setForm((f) => ({ ...f, country: v === "__none__" ? "" : v }))}
+                onValueChange={(v) =>
+                  setForm((f) => ({ ...f, country: v === "__none__" ? "" : v }))
+                }
               >
                 <SelectTrigger className="text-sm">
                   <Globe size={13} className="mr-1 text-gray-400" />
@@ -1445,19 +1653,33 @@ export function SubAdminsPage() {
             {/* Status toggle */}
             <div className="flex items-center justify-between py-2 px-1">
               <div>
-                <Label className="text-sm font-medium text-gray-700">Status</Label>
+                <Label className="text-sm font-medium text-gray-700">
+                  Status
+                </Label>
                 <p className="text-xs text-gray-400 mt-0.5">
-                  {form.status === "Active" ? "Sub-admin can log in" : "Sub-admin cannot log in"}
+                  {form.status === "Active"
+                    ? "Sub-admin can log in"
+                    : "Sub-admin cannot log in"}
                 </p>
               </div>
               <div className="flex items-center gap-2">
-                <span className={cn("text-xs font-medium", form.status === "Active" ? "text-emerald-600" : "text-gray-400")}>
+                <span
+                  className={cn(
+                    "text-xs font-medium",
+                    form.status === "Active"
+                      ? "text-emerald-600"
+                      : "text-gray-400",
+                  )}
+                >
                   {form.status}
                 </span>
                 <Switch
                   checked={form.status === "Active"}
                   onCheckedChange={(checked) =>
-                    setForm((f) => ({ ...f, status: checked ? "Active" : "Inactive" }))
+                    setForm((f) => ({
+                      ...f,
+                      status: checked ? "Active" : "Inactive",
+                    }))
                   }
                 />
               </div>
@@ -1478,7 +1700,9 @@ export function SubAdminsPage() {
               ) : (
                 <Check size={15} className="mr-2" />
               )}
-              {drawer.type === "create" ? "Create & Send Invite" : "Save Changes"}
+              {drawer.type === "create"
+                ? "Create & Send Invite"
+                : "Save Changes"}
             </Button>
           </SheetFooter>
         </SheetContent>
@@ -1500,16 +1724,22 @@ export function SubAdminsPage() {
               Deactivate Sub-Admin
             </DialogTitle>
             <DialogDescription>
-              Deactivating this sub-admin will log them out immediately. Continue?
+              Deactivating this sub-admin will log them out immediately.
+              Continue?
             </DialogDescription>
           </DialogHeader>
           {modal.type === "deactivate" && (
             <p className="text-sm text-gray-600 py-2">
-              <span className="font-medium">{modal.subAdmin.fullName}</span> will lose access to the admin panel immediately.
+              <span className="font-medium">{modal.subAdmin.fullName}</span>{" "}
+              will lose access to the admin panel immediately.
             </p>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModal({ type: "none" })} disabled={confirming}>
+            <Button
+              variant="outline"
+              onClick={() => setModal({ type: "none" })}
+              disabled={confirming}
+            >
               Cancel
             </Button>
             <Button
@@ -1518,7 +1748,9 @@ export function SubAdminsPage() {
               disabled={confirming}
               className="min-w-[120px]"
             >
-              {confirming && <Loader2 size={15} className="animate-spin mr-2" />}
+              {confirming && (
+                <Loader2 size={15} className="animate-spin mr-2" />
+              )}
               Deactivate
             </Button>
           </DialogFooter>
@@ -1541,7 +1773,11 @@ export function SubAdminsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModal({ type: "none" })} disabled={confirming}>
+            <Button
+              variant="outline"
+              onClick={() => setModal({ type: "none" })}
+              disabled={confirming}
+            >
               Cancel
             </Button>
             <Button
@@ -1549,7 +1785,9 @@ export function SubAdminsPage() {
               disabled={confirming}
               className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[110px]"
             >
-              {confirming && <Loader2 size={15} className="animate-spin mr-2" />}
+              {confirming && (
+                <Loader2 size={15} className="animate-spin mr-2" />
+              )}
               Activate
             </Button>
           </DialogFooter>
@@ -1568,18 +1806,24 @@ export function SubAdminsPage() {
               Delete Sub-Admin
             </DialogTitle>
             <DialogDescription>
-              Are you sure you want to delete this sub-admin? This action cannot be undone.
+              Are you sure you want to delete this sub-admin? This action cannot
+              be undone.
             </DialogDescription>
           </DialogHeader>
           {modal.type === "delete-sub-admin" && (
             <div className="bg-red-50 border border-red-200 rounded-lg px-4 py-3">
               <p className="text-sm text-red-700">
-                <span className="font-medium">{modal.subAdmin.fullName}</span> ({modal.subAdmin.email}) will be permanently removed.
+                <span className="font-medium">{modal.subAdmin.fullName}</span> (
+                {modal.subAdmin.email}) will be permanently removed.
               </p>
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModal({ type: "none" })} disabled={confirming}>
+            <Button
+              variant="outline"
+              onClick={() => setModal({ type: "none" })}
+              disabled={confirming}
+            >
               Cancel
             </Button>
             <Button
@@ -1588,7 +1832,9 @@ export function SubAdminsPage() {
               disabled={confirming}
               className="min-w-[100px]"
             >
-              {confirming && <Loader2 size={15} className="animate-spin mr-2" />}
+              {confirming && (
+                <Loader2 size={15} className="animate-spin mr-2" />
+              )}
               Delete
             </Button>
           </DialogFooter>
@@ -1617,13 +1863,22 @@ export function SubAdminsPage() {
               <p className="text-sm text-red-700">
                 Role: <span className="font-medium">{modal.role.name}</span>
                 {modal.role.subAdminCount > 0 && (
-                  <span> ({modal.role.subAdminCount} assigned sub-admin{modal.role.subAdminCount !== 1 ? "s" : ""} will be deactivated)</span>
+                  <span>
+                    {" "}
+                    ({modal.role.subAdminCount} assigned sub-admin
+                    {modal.role.subAdminCount !== 1 ? "s" : ""} will be
+                    deactivated)
+                  </span>
                 )}
               </p>
             </div>
           )}
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModal({ type: "none" })} disabled={confirming}>
+            <Button
+              variant="outline"
+              onClick={() => setModal({ type: "none" })}
+              disabled={confirming}
+            >
               Cancel
             </Button>
             <Button
@@ -1632,7 +1887,9 @@ export function SubAdminsPage() {
               disabled={confirming}
               className="min-w-[100px]"
             >
-              {confirming && <Loader2 size={15} className="animate-spin mr-2" />}
+              {confirming && (
+                <Loader2 size={15} className="animate-spin mr-2" />
+              )}
               Delete
             </Button>
           </DialogFooter>
@@ -1652,12 +1909,19 @@ export function SubAdminsPage() {
             </DialogTitle>
             <DialogDescription>
               {modal.type === "resend" && (
-                <>A new invitation email will be sent to <span className="font-medium">{modal.subAdmin.email}</span>.</>
+                <>
+                  A new invitation email will be sent to{" "}
+                  <span className="font-medium">{modal.subAdmin.email}</span>.
+                </>
               )}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModal({ type: "none" })} disabled={confirming}>
+            <Button
+              variant="outline"
+              onClick={() => setModal({ type: "none" })}
+              disabled={confirming}
+            >
               Cancel
             </Button>
             <Button
@@ -1665,7 +1929,9 @@ export function SubAdminsPage() {
               disabled={confirming}
               className="bg-[#003B95] hover:bg-[#002d73] text-white min-w-[130px]"
             >
-              {confirming && <Loader2 size={15} className="animate-spin mr-2" />}
+              {confirming && (
+                <Loader2 size={15} className="animate-spin mr-2" />
+              )}
               Resend Invite
             </Button>
           </DialogFooter>
@@ -1686,7 +1952,11 @@ export function SubAdminsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModal({ type: "none" })} disabled={confirming}>
+            <Button
+              variant="outline"
+              onClick={() => setModal({ type: "none" })}
+              disabled={confirming}
+            >
               Cancel
             </Button>
             <Button
@@ -1694,7 +1964,9 @@ export function SubAdminsPage() {
               disabled={confirming}
               className="bg-emerald-600 hover:bg-emerald-700 text-white min-w-[100px]"
             >
-              {confirming && <Loader2 size={15} className="animate-spin mr-2" />}
+              {confirming && (
+                <Loader2 size={15} className="animate-spin mr-2" />
+              )}
               Activate
             </Button>
           </DialogFooter>
@@ -1715,7 +1987,11 @@ export function SubAdminsPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModal({ type: "none" })} disabled={confirming}>
+            <Button
+              variant="outline"
+              onClick={() => setModal({ type: "none" })}
+              disabled={confirming}
+            >
               Cancel
             </Button>
             <Button
@@ -1724,7 +2000,9 @@ export function SubAdminsPage() {
               disabled={confirming}
               className="min-w-[110px]"
             >
-              {confirming && <Loader2 size={15} className="animate-spin mr-2" />}
+              {confirming && (
+                <Loader2 size={15} className="animate-spin mr-2" />
+              )}
               Deactivate
             </Button>
           </DialogFooter>
@@ -1738,14 +2016,20 @@ export function SubAdminsPage() {
       >
         <DialogContent className="max-w-sm">
           <DialogHeader>
-            <DialogTitle className="text-red-700">Confirm Bulk Delete</DialogTitle>
+            <DialogTitle className="text-red-700">
+              Confirm Bulk Delete
+            </DialogTitle>
             <DialogDescription>
               {modal.type === "bulk-delete" &&
                 `Delete ${modal.ids.length} selected sub-admin${modal.ids.length !== 1 ? "s" : ""}? This action cannot be undone.`}
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setModal({ type: "none" })} disabled={confirming}>
+            <Button
+              variant="outline"
+              onClick={() => setModal({ type: "none" })}
+              disabled={confirming}
+            >
               Cancel
             </Button>
             <Button
@@ -1754,7 +2038,9 @@ export function SubAdminsPage() {
               disabled={confirming}
               className="min-w-[100px]"
             >
-              {confirming && <Loader2 size={15} className="animate-spin mr-2" />}
+              {confirming && (
+                <Loader2 size={15} className="animate-spin mr-2" />
+              )}
               Delete
             </Button>
           </DialogFooter>

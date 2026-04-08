@@ -14,17 +14,18 @@ import { format } from "date-fns";
 import { cn } from "../../../../lib/utils";
 import ImageCropper from "../../ImageCropper";
 import { CROP_PRESETS } from "../../../../lib/cropPresets";
-import {
-  MasterDataEntity,
-  MasterDataCategory,
-} from "./types";
+import { MasterDataEntity, MasterDataCategory } from "./types";
 
 // ---------------------------------------------------------------------------
 // Mock data (mirrors MasterDataPage generator so edit mode can resolve an id)
 // ---------------------------------------------------------------------------
 const buildMockLookup = (): Record<string, MasterDataEntity> => {
   const lookup: Record<string, MasterDataEntity> = {};
-  const categories: MasterDataCategory[] = ["Sports", "Court Types", "Court Stations"];
+  const categories: MasterDataCategory[] = [
+    "Sports",
+    "Court Types",
+    "Court Stations",
+  ];
 
   categories.forEach((category) => {
     for (let i = 1; i <= 15; i++) {
@@ -33,15 +34,36 @@ const buildMockLookup = (): Record<string, MasterDataEntity> => {
       let nameAr = `${category} (AR) ${i}`;
 
       if (category === "Sports") {
-        const sports = ["Football", "Padel", "Tennis", "Basketball", "Swimming", "Volleyball"];
+        const sports = [
+          "Football",
+          "Padel",
+          "Tennis",
+          "Basketball",
+          "Swimming",
+          "Volleyball",
+        ];
         nameEn = sports[(i - 1) % sports.length] || `Sport ${i}`;
         nameAr = `\u0631\u064A\u0627\u0636\u0629 ${i}`;
       } else if (category === "Court Types") {
-        const courtTypes = ["Indoor Court", "Outdoor Court", "Grass Court", "Clay Court", "Hardcourt", "Synthetic Turf"];
+        const courtTypes = [
+          "Indoor Court",
+          "Outdoor Court",
+          "Grass Court",
+          "Clay Court",
+          "Hardcourt",
+          "Synthetic Turf",
+        ];
         nameEn = courtTypes[(i - 1) % courtTypes.length] || `Court Type ${i}`;
         nameAr = `\u0646\u0648\u0639 \u0627\u0644\u0645\u0644\u0639\u0628 ${i}`;
       } else if (category === "Court Stations") {
-        const stations = ["Main Station", "North Wing", "South Wing", "East Court", "West Court", "VIP Section"];
+        const stations = [
+          "Main Station",
+          "North Wing",
+          "South Wing",
+          "East Court",
+          "West Court",
+          "VIP Section",
+        ];
         nameEn = stations[(i - 1) % stations.length] || `Station ${i}`;
         nameAr = `\u0645\u062D\u0637\u0629 ${i}`;
       }
@@ -187,7 +209,10 @@ export function CategoryFormPage() {
     e.target.value = "";
 
     if (file.size > MAX_ICON_SIZE_BYTES) {
-      setErrors((prev) => ({ ...prev, icon: "Icon file must be 2 MB or less." }));
+      setErrors((prev) => ({
+        ...prev,
+        icon: "Icon file must be 2 MB or less.",
+      }));
       return;
     }
     if (!ACCEPTED_ICON_TYPES.includes(file.type)) {
@@ -218,7 +243,9 @@ export function CategoryFormPage() {
   };
 
   const handleIconCropComplete = (blob: Blob, previewUrl: string) => {
-    const croppedFile = new File([blob], "icon-cropped.jpg", { type: "image/jpeg" });
+    const croppedFile = new File([blob], "icon-cropped.jpg", {
+      type: "image/jpeg",
+    });
     setIconFile(croppedFile);
     setIconPreview(previewUrl);
   };
@@ -242,7 +269,7 @@ export function CategoryFormPage() {
     toast.success(
       isEditMode
         ? `${categoryLabel} updated successfully`
-        : `New ${categoryLabel} created successfully`
+        : `New ${categoryLabel} created successfully`,
     );
     navigate("/master-data");
   };
@@ -263,7 +290,7 @@ export function CategoryFormPage() {
 
   // ---- Render --------------------------------------------------------------
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Breadcrumb */}
       <nav className="text-sm font-medium text-gray-500 mb-1">
         <ol className="list-none p-0 inline-flex">
@@ -291,9 +318,7 @@ export function CategoryFormPage() {
             <span className="mx-2">/</span>
           </li>
           <li className="flex items-center">
-            <span className="text-gray-900">
-              {isEditMode ? "Edit" : "New"}
-            </span>
+            <span className="text-gray-900">{isEditMode ? "Edit" : "New"}</span>
           </li>
         </ol>
       </nav>
@@ -341,7 +366,7 @@ export function CategoryFormPage() {
                   placeholder="e.g. Football"
                   className={cn(
                     "block w-full rounded-md border shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2",
-                    errors.nameEn ? "border-red-300" : "border-gray-300"
+                    errors.nameEn ? "border-red-300" : "border-gray-300",
                   )}
                 />
                 <div className="mt-1 flex items-center justify-between">
@@ -383,7 +408,7 @@ export function CategoryFormPage() {
                   placeholder="\u0645\u062B\u0627\u0644: \u0643\u0631\u0629 \u0627\u0644\u0642\u062F\u0645"
                   className={cn(
                     "block w-full rounded-md border shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2 font-arabic",
-                    errors.nameAr ? "border-red-300" : "border-gray-300"
+                    errors.nameAr ? "border-red-300" : "border-gray-300",
                   )}
                 />
                 <div className="mt-1 flex items-center justify-between">
@@ -485,7 +510,7 @@ export function CategoryFormPage() {
                     placeholder={`Describe this ${categoryLabel.toLowerCase()}...`}
                     className={cn(
                       "block w-full rounded-md border shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2 resize-none",
-                      errors.description ? "border-red-300" : "border-gray-300"
+                      errors.description ? "border-red-300" : "border-gray-300",
                     )}
                   />
                   <div className="mt-1 flex items-center justify-between">
@@ -520,13 +545,13 @@ export function CategoryFormPage() {
                 type="button"
                 className={cn(
                   "relative inline-flex h-6 w-11 flex-shrink-0 cursor-pointer rounded-full border-2 border-transparent transition-colors duration-200 ease-in-out focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:ring-offset-2",
-                  status === "active" ? "bg-[#003B95]" : "bg-gray-200"
+                  status === "active" ? "bg-[#003B95]" : "bg-gray-200",
                 )}
                 role="switch"
                 aria-checked={status === "active"}
                 onClick={() =>
                   setStatus((prev) =>
-                    prev === "active" ? "inactive" : "active"
+                    prev === "active" ? "inactive" : "active",
                   )
                 }
               >
@@ -534,7 +559,7 @@ export function CategoryFormPage() {
                   aria-hidden="true"
                   className={cn(
                     "pointer-events-none inline-block h-5 w-5 transform rounded-full bg-white shadow ring-0 transition duration-200 ease-in-out",
-                    status === "active" ? "translate-x-5" : "translate-x-0"
+                    status === "active" ? "translate-x-5" : "translate-x-0",
                   )}
                 />
               </button>
@@ -681,8 +706,8 @@ export function CategoryFormPage() {
                     <div className="mt-2 text-sm text-red-700">
                       <p>
                         Are you sure you want to permanently delete{" "}
-                        <strong>{nameEn || "this item"}</strong>? All
-                        associated data will be removed.
+                        <strong>{nameEn || "this item"}</strong>? All associated
+                        data will be removed.
                       </p>
                     </div>
                   </div>

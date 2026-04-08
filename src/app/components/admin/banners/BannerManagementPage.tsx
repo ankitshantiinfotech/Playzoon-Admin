@@ -4,11 +4,28 @@
 
 import { useState, useEffect, useCallback } from "react";
 import {
-  Plus, Edit2, Trash2, Search, RefreshCw, RotateCcw,
-  ImageIcon, ExternalLink, ChevronDown, ChevronUp,
-  ArrowUpDown, AlertCircle, AlertTriangle, Info,
-  History, CheckCircle2, XCircle, Eye, EyeOff, Hash,
-  GripVertical, Filter,
+  Plus,
+  Edit2,
+  Trash2,
+  Search,
+  RefreshCw,
+  RotateCcw,
+  ImageIcon,
+  ExternalLink,
+  ChevronDown,
+  ChevronUp,
+  ArrowUpDown,
+  AlertCircle,
+  AlertTriangle,
+  Info,
+  History,
+  CheckCircle2,
+  XCircle,
+  Eye,
+  EyeOff,
+  Hash,
+  GripVertical,
+  Filter,
 } from "lucide-react";
 import { format } from "date-fns";
 import { toast } from "sonner";
@@ -63,11 +80,13 @@ function AuditTableSkeleton() {
 function StatusBadge({ status }: { status: Banner["status"] }) {
   return status === "Active" ? (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-emerald-50 text-emerald-700 border-emerald-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />Active
+      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+      Active
     </span>
   ) : (
     <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold border bg-gray-100 text-gray-500 border-gray-200">
-      <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />Inactive
+      <span className="w-1.5 h-1.5 rounded-full bg-gray-400" />
+      Inactive
     </span>
   );
 }
@@ -96,7 +115,8 @@ function DeleteModal({
           {bannerText || "Untitled Banner"}
         </p>
         <p className="text-xs text-gray-500 text-center mb-5">
-          Are you sure you want to delete this banner? This action cannot be undone.
+          Are you sure you want to delete this banner? This action cannot be
+          undone.
         </p>
         <div className="flex items-center gap-2 text-xs text-gray-500 bg-gray-50 rounded-lg px-3 py-2 mb-4">
           <Info className="w-3.5 h-3.5 shrink-0 text-blue-400" />
@@ -139,7 +159,7 @@ function StatusToggleModal({
         <div
           className={cn(
             "w-12 h-12 rounded-xl flex items-center justify-center mx-auto mb-4",
-            toActive ? "bg-emerald-50" : "bg-amber-50"
+            toActive ? "bg-emerald-50" : "bg-amber-50",
           )}
         >
           {toActive ? (
@@ -172,7 +192,7 @@ function StatusToggleModal({
               "flex-1 py-2.5 rounded-xl text-sm font-semibold text-white transition-colors",
               toActive
                 ? "bg-emerald-600 hover:bg-emerald-700"
-                : "bg-amber-600 hover:bg-amber-700"
+                : "bg-amber-600 hover:bg-amber-700",
             )}
           >
             {toActive ? "Activate" : "Deactivate"}
@@ -200,12 +220,14 @@ function BannerListItem({
     <div
       className={cn(
         "flex items-center gap-4 p-4 bg-white border border-gray-200 rounded-xl shadow-sm transition-all hover:shadow-md group",
-        banner.status === "Inactive" && "opacity-80 bg-gray-50/80"
+        banner.status === "Inactive" && "opacity-80 bg-gray-50/80",
       )}
     >
       {/* Sort Order Indicator */}
       <div className="flex flex-col items-center gap-0.5 w-8 shrink-0">
-        <span className="text-[10px] font-bold text-gray-400 uppercase">Order</span>
+        <span className="text-[10px] font-bold text-gray-400 uppercase">
+          Order
+        </span>
         <span className="text-sm font-bold text-gray-700 tabular-nums bg-gray-100 rounded-md w-7 h-7 flex items-center justify-center">
           {banner.sortOrder}
         </span>
@@ -231,7 +253,9 @@ function BannerListItem({
       <div className="flex-1 min-w-0 space-y-1">
         <div className="flex items-center gap-2">
           <p className="text-sm font-semibold text-gray-900 truncate">
-            {banner.bannerText || <span className="text-gray-400 italic">No banner text</span>}
+            {banner.bannerText || (
+              <span className="text-gray-400 italic">No banner text</span>
+            )}
           </p>
         </div>
         <div className="flex items-center gap-3 text-xs text-gray-500">
@@ -303,7 +327,7 @@ function AuditTrailSection({ entries }: { entries: BannerAuditEntry[] }) {
 
   const toggleSort = (field: AuditSortField) => {
     if (sortField === field) {
-      setSortDir(d => (d === "asc" ? "desc" : "asc"));
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
     } else {
       setSortField(field);
       setSortDir(field === "changedAt" ? "desc" : "asc");
@@ -399,7 +423,7 @@ function AuditTrailSection({ entries }: { entries: BannerAuditEntry[] }) {
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-gray-100">
-                  {visible.map(entry => (
+                  {visible.map((entry) => (
                     <tr
                       key={entry.id}
                       className="hover:bg-gray-50/60 transition-colors"
@@ -431,7 +455,10 @@ function AuditTrailSection({ entries }: { entries: BannerAuditEntry[] }) {
                         </span>
                       </td>
                       <td className="px-4 py-3 text-xs text-gray-600 tabular-nums whitespace-nowrap">
-                        {format(new Date(entry.changedAt), "dd MMM yyyy, HH:mm")}
+                        {format(
+                          new Date(entry.changedAt),
+                          "dd MMM yyyy, HH:mm",
+                        )}
                       </td>
                       <td className="px-4 py-3">
                         <span className="text-xs font-semibold text-[#003B95]">
@@ -445,7 +472,7 @@ function AuditTrailSection({ entries }: { entries: BannerAuditEntry[] }) {
             </div>
             {sorted.length > 5 && (
               <button
-                onClick={() => setExpanded(e => !e)}
+                onClick={() => setExpanded((e) => !e)}
                 className="w-full py-2 mt-2 text-xs text-[#003B95] hover:underline font-medium"
               >
                 {expanded
@@ -465,15 +492,20 @@ function AuditTrailSection({ entries }: { entries: BannerAuditEntry[] }) {
 export function BannerManagementPage() {
   // ── State ──────────────────────────────────────────────
   const [banners, setBanners] = useState<Banner[]>([]);
-  const [auditTrail, setAuditTrail] = useState<BannerAuditEntry[]>(MOCK_BANNER_AUDIT);
+  const [auditTrail, setAuditTrail] =
+    useState<BannerAuditEntry[]>(MOCK_BANNER_AUDIT);
   const [isLoading, setIsLoading] = useState(true);
   const [hasError, setHasError] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const [statusFilter, setStatusFilter] = useState<"All" | "Active" | "Inactive">("All");
+  const [statusFilter, setStatusFilter] = useState<
+    "All" | "Active" | "Inactive"
+  >("All");
 
   // Form / modal state
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [editingBanner, setEditingBanner] = useState<Banner | undefined>(undefined);
+  const [editingBanner, setEditingBanner] = useState<Banner | undefined>(
+    undefined,
+  );
   const [deletingBanner, setDeletingBanner] = useState<Banner | null>(null);
   const [togglingBanner, setTogglingBanner] = useState<Banner | null>(null);
 
@@ -492,7 +524,9 @@ export function BannerManagementPage() {
             buttonLabel: String(b.button_text || ""),
             redirectUrl: String(b.button_redirect_url || ""),
             sortOrder: Number(b.display_order ?? 0),
-            status: (String(b.status) === "active" ? "Active" : "Inactive") as Banner["status"],
+            status: (String(b.status) === "active"
+              ? "Active"
+              : "Inactive") as Banner["status"],
             createdAt: String(b.created_at || new Date().toISOString()),
             updatedAt: String(b.updated_at || new Date().toISOString()),
           }))
@@ -517,7 +551,7 @@ export function BannerManagementPage() {
       bannerText: string,
       field: string,
       oldValue: string,
-      newValue: string
+      newValue: string,
     ) => {
       const entry: BannerAuditEntry = {
         id: `BAUD-${Date.now()}`,
@@ -529,14 +563,14 @@ export function BannerManagementPage() {
         changedBy: "Super Admin",
         changedAt: new Date().toISOString(),
       };
-      setAuditTrail(prev => [entry, ...prev]);
+      setAuditTrail((prev) => [entry, ...prev]);
     },
-    []
+    [],
   );
 
   // ── Filtered & sorted list ─────────────────────────────
   const filtered = banners
-    .filter(b => {
+    .filter((b) => {
       if (statusFilter !== "All" && b.status !== statusFilter) return false;
       if (searchQuery) {
         const q = searchQuery.toLowerCase();
@@ -567,12 +601,12 @@ export function BannerManagementPage() {
       if (editingBanner) {
         payload.id = editingBanner.id;
         await adminService.manageBanner(payload);
-        setBanners(prev =>
-          prev.map(b =>
+        setBanners((prev) =>
+          prev.map((b) =>
             b.id === editingBanner.id
               ? { ...b, ...data, updatedAt: new Date().toISOString() }
-              : b
-          )
+              : b,
+          ),
         );
         toast.success("Banner updated successfully.");
       } else {
@@ -584,8 +618,14 @@ export function BannerManagementPage() {
           createdAt: new Date().toISOString(),
           updatedAt: new Date().toISOString(),
         };
-        setBanners(prev => [...prev, newBanner]);
-        addAudit(newId, data.bannerText, "Banner Created", "\u2014", "New banner created");
+        setBanners((prev) => [...prev, newBanner]);
+        addAudit(
+          newId,
+          data.bannerText,
+          "Banner Created",
+          "\u2014",
+          "New banner created",
+        );
         toast.success("Banner created successfully.");
       }
     } catch (err) {
@@ -599,7 +639,10 @@ export function BannerManagementPage() {
   const handleDelete = async () => {
     if (!deletingBanner) return;
     try {
-      await adminService.manageBanner({ id: deletingBanner.id, _action: "delete" });
+      await adminService.manageBanner({
+        id: deletingBanner.id,
+        _action: "delete",
+      });
     } catch (err) {
       console.error("Banner delete API failed, removing locally:", err);
     }
@@ -608,9 +651,9 @@ export function BannerManagementPage() {
       deletingBanner.bannerText,
       "Banner Deleted",
       "Existed",
-      "Deleted"
+      "Deleted",
     );
-    setBanners(prev => prev.filter(b => b.id !== deletingBanner.id));
+    setBanners((prev) => prev.filter((b) => b.id !== deletingBanner.id));
     setDeletingBanner(null);
     toast.success("Banner deleted successfully.");
   };
@@ -632,22 +675,24 @@ export function BannerManagementPage() {
       togglingBanner.bannerText,
       "Status",
       togglingBanner.status,
-      newStatus
+      newStatus,
     );
-    setBanners(prev =>
-      prev.map(b =>
+    setBanners((prev) =>
+      prev.map((b) =>
         b.id === togglingBanner.id
           ? { ...b, status: newStatus, updatedAt: new Date().toISOString() }
-          : b
-      )
+          : b,
+      ),
     );
     setTogglingBanner(null);
-    toast.success(`Banner ${newStatus === "Active" ? "activated" : "deactivated"}.`);
+    toast.success(
+      `Banner ${newStatus === "Active" ? "activated" : "deactivated"}.`,
+    );
   };
 
   // ── Stats ──────────────────────────────────────────────
-  const totalActive = banners.filter(b => b.status === "Active").length;
-  const totalInactive = banners.filter(b => b.status === "Inactive").length;
+  const totalActive = banners.filter((b) => b.status === "Active").length;
+  const totalInactive = banners.filter((b) => b.status === "Inactive").length;
 
   // ── Render: Error ──────────────────────────────────────
   if (hasError) {
@@ -685,10 +730,10 @@ export function BannerManagementPage() {
         </div>
         {/* Stat pills skeleton */}
         <div className="flex gap-3">
-          {[1, 2, 3].map(i => (
+          {[1, 2, 3].map((i) => (
             <div
               key={i}
-              className="h-9 w-28 bg-gray-100 rounded-lg animate-pulse"
+              className="h-10 w-28 bg-gray-100 rounded-lg animate-pulse"
             />
           ))}
         </div>
@@ -746,10 +791,10 @@ export function BannerManagementPage() {
             <Filter className="w-3.5 h-3.5 text-gray-400" />
             <select
               value={statusFilter}
-              onChange={e =>
+              onChange={(e) =>
                 setStatusFilter(e.target.value as "All" | "Active" | "Inactive")
               }
-              className="text-sm border border-gray-300 rounded-lg h-9 px-2 outline-none focus:border-[#003B95] bg-white"
+              className="text-sm border border-gray-300 rounded-lg h-10 px-2 outline-none focus:border-[#003B95] bg-white"
             >
               <option value="All">All Status</option>
               <option value="Active">Active</option>
@@ -764,8 +809,8 @@ export function BannerManagementPage() {
               type="text"
               placeholder="Search banners..."
               value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              className="w-full h-9 pl-9 pr-3 text-sm border border-gray-300 rounded-lg outline-none focus:border-[#003B95] transition-colors"
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="w-full h-10 pl-9 pr-3 text-sm border border-gray-300 rounded-lg outline-none focus:border-[#003B95] transition-colors"
             />
           </div>
         </div>
@@ -774,7 +819,7 @@ export function BannerManagementPage() {
       {/* Banner Listing */}
       <div className="space-y-3">
         {filtered.length > 0 ? (
-          filtered.map(banner => (
+          filtered.map((banner) => (
             <BannerListItem
               key={banner.id}
               banner={banner}

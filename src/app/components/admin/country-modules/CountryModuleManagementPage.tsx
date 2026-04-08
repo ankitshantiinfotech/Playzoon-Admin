@@ -16,9 +16,7 @@ import {
 } from "../../ui/table";
 import type { CountryModules, ModuleKey, AuditEntry } from "./types";
 import { MODULE_LABELS } from "./types";
-import {
-  INITIAL_AUDIT_ENTRIES,
-} from "./mockData";
+import { INITIAL_AUDIT_ENTRIES } from "./mockData";
 import { adminService } from "@/services/admin.service";
 
 const MODULE_KEYS: ModuleKey[] = [
@@ -31,26 +29,30 @@ const MODULE_KEYS: ModuleKey[] = [
 
 export function CountryModuleManagementPage() {
   const [countryModules, setCountryModules] = useState<CountryModules[]>([]);
-  const [auditEntries, setAuditEntries] =
-    useState<AuditEntry[]>(INITIAL_AUDIT_ENTRIES);
+  const [auditEntries, setAuditEntries] = useState<AuditEntry[]>(
+    INITIAL_AUDIT_ENTRIES,
+  );
   const [selectedCountryId, setSelectedCountryId] = useState<string>("");
   const [hasUnsavedChanges, setHasUnsavedChanges] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   // ── Map backend country to frontend type ────────────
-  const mapCountry = useCallback((c: Record<string, unknown>): CountryModules => {
-    const modules = (c.modules || {}) as Record<string, boolean>;
-    return {
-      countryId: String(c.id || ""),
-      countryName: String(c.name || ""),
-      countryCode: String(c.code || ""),
-      player: !!modules.player,
-      freelancerCoach: !!modules.freelance_coach,
-      trainingProvider: !!modules.training_provider,
-      facilityProvider: !!modules.facility_provider,
-      tournaments: !!modules.tournaments,
-    };
-  }, []);
+  const mapCountry = useCallback(
+    (c: Record<string, unknown>): CountryModules => {
+      const modules = (c.modules || {}) as Record<string, boolean>;
+      return {
+        countryId: String(c.id || ""),
+        countryName: String(c.name || ""),
+        countryCode: String(c.code || ""),
+        player: !!modules.player,
+        freelancerCoach: !!modules.freelance_coach,
+        trainingProvider: !!modules.training_provider,
+        facilityProvider: !!modules.facility_provider,
+        tournaments: !!modules.tournaments,
+      };
+    },
+    [],
+  );
 
   // ── Fetch countries from API ────────────────────────
   const fetchCountries = useCallback(async () => {
@@ -71,10 +73,12 @@ export function CountryModuleManagementPage() {
     }
   }, [mapCountry, selectedCountryId]);
 
-  useEffect(() => { fetchCountries(); }, [fetchCountries]);
+  useEffect(() => {
+    fetchCountries();
+  }, [fetchCountries]);
 
   const selectedCountry = countryModules.find(
-    (c) => c.countryId === selectedCountryId
+    (c) => c.countryId === selectedCountryId,
   );
 
   function handleToggleModule(moduleKey: ModuleKey) {
@@ -83,8 +87,8 @@ export function CountryModuleManagementPage() {
       prev.map((c) =>
         c.countryId === selectedCountryId
           ? { ...c, [moduleKey]: !c[moduleKey] }
-          : c
-      )
+          : c,
+      ),
     );
     setHasUnsavedChanges(true);
   }
@@ -95,21 +99,23 @@ export function CountryModuleManagementPage() {
     try {
       // Build the payload for the API
       const payload = {
-        countries: [{
-          id: selectedCountry.countryId,
-          modules: {
-            player: selectedCountry.player,
-            freelance_coach: selectedCountry.freelancerCoach,
-            training_provider: selectedCountry.trainingProvider,
-            facility_provider: selectedCountry.facilityProvider,
-            tournaments: selectedCountry.tournaments,
+        countries: [
+          {
+            id: selectedCountry.countryId,
+            modules: {
+              player: selectedCountry.player,
+              freelance_coach: selectedCountry.freelancerCoach,
+              training_provider: selectedCountry.trainingProvider,
+              facility_provider: selectedCountry.facilityProvider,
+              tournaments: selectedCountry.tournaments,
+            },
           },
-        }],
+        ],
       };
       await adminService.getCountryModules(payload); // PUT uses same endpoint
 
       // Add audit entries for changes
-      const newEntries: AuditEntry[] = MODULE_KEYS.map(key => ({
+      const newEntries: AuditEntry[] = MODULE_KEYS.map((key) => ({
         id: `aud-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
         editedBy: "Admin (Current User)",
         country: selectedCountry.countryName,
@@ -122,7 +128,7 @@ export function CountryModuleManagementPage() {
 
       setHasUnsavedChanges(false);
       toast.success(
-        `Module configuration for ${selectedCountry.countryName} saved successfully.`
+        `Module configuration for ${selectedCountry.countryName} saved successfully.`,
       );
     } catch (err) {
       console.error("Failed to save country modules:", err);
@@ -131,7 +137,7 @@ export function CountryModuleManagementPage() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Page header */}
       <div>
         <h1 className="text-2xl font-bold text-[#111827]">
@@ -154,7 +160,7 @@ export function CountryModuleManagementPage() {
               {countryModules.map((country) => {
                 const isSelected = selectedCountryId === country.countryId;
                 const enabledCount = MODULE_KEYS.filter(
-                  (k) => country[k]
+                  (k) => country[k],
                 ).length;
                 return (
                   <li
@@ -171,13 +177,13 @@ export function CountryModuleManagementPage() {
                         "w-full text-left px-4 py-3 flex items-center gap-3 border-l-[3px] transition-colors",
                         isSelected
                           ? "bg-[#003B95]/5 border-l-[#003B95]"
-                          : "border-l-transparent hover:bg-gray-50"
+                          : "border-l-transparent hover:bg-gray-50",
                       )}
                     >
                       <Globe
                         className={cn(
                           "h-4 w-4 shrink-0",
-                          isSelected ? "text-[#003B95]" : "text-gray-400"
+                          isSelected ? "text-[#003B95]" : "text-gray-400",
                         )}
                       />
                       <div className="flex-1 min-w-0">
@@ -256,7 +262,7 @@ export function CountryModuleManagementPage() {
                             "text-[10px]",
                             selectedCountry[key]
                               ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                              : "bg-gray-100 text-gray-500 border-gray-200"
+                              : "bg-gray-100 text-gray-500 border-gray-200",
                           )}
                         >
                           {selectedCountry[key] ? "Enabled" : "Disabled"}
@@ -329,7 +335,7 @@ export function CountryModuleManagementPage() {
                           "text-[10px]",
                           entry.oldValue === "Enabled"
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-gray-100 text-gray-500 border-gray-200"
+                            : "bg-gray-100 text-gray-500 border-gray-200",
                         )}
                       >
                         {entry.oldValue}
@@ -342,7 +348,7 @@ export function CountryModuleManagementPage() {
                           "text-[10px]",
                           entry.newValue === "Enabled"
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-gray-100 text-gray-500 border-gray-200"
+                            : "bg-gray-100 text-gray-500 border-gray-200",
                         )}
                       >
                         {entry.newValue}

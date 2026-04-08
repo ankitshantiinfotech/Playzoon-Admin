@@ -25,12 +25,7 @@ import { Label } from "../../ui/label";
 import { Textarea } from "../../ui/textarea";
 import { Badge } from "../../ui/badge";
 import { Checkbox } from "../../ui/checkbox";
-import {
-  Card,
-  CardContent,
-  CardHeader,
-  CardTitle,
-} from "../../ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "../../ui/card";
 import {
   Dialog,
   DialogContent,
@@ -45,11 +40,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "../../ui/tooltip";
-import type {
-  Role,
-  RoleFormData,
-  RolePermissions,
-} from "./types";
+import type { Role, RoleFormData, RolePermissions } from "./types";
 import {
   PERMISSION_MODULES,
   ROLE_COLOURS,
@@ -71,7 +62,7 @@ interface FormErrors {
 function validateRoleForm(
   form: RoleFormData,
   existingNames: string[],
-  editingName?: string
+  editingName?: string,
 ): FormErrors {
   const errors: FormErrors = {};
 
@@ -85,7 +76,7 @@ function validateRoleForm(
     const isDuplicate = existingNames.some(
       (n) =>
         n.toLowerCase() === form.name.trim().toLowerCase() &&
-        n.toLowerCase() !== editingName?.toLowerCase()
+        n.toLowerCase() !== editingName?.toLowerCase(),
     );
     if (isDuplicate) errors.name = "A role with this name already exists.";
   }
@@ -117,7 +108,7 @@ export function RoleConfigPage() {
   const [roles] = useState<Role[]>(MOCK_ROLES);
   const existingRole = useMemo(
     () => (roleId ? roles.find((r) => r.id === roleId) : undefined),
-    [roleId, roles]
+    [roleId, roles],
   );
 
   // ── Form State ──
@@ -128,7 +119,9 @@ export function RoleConfigPage() {
   const [initialFormJson, setInitialFormJson] = useState("");
 
   // ── Collapsible modules ──
-  const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const [expandedModules, setExpandedModules] = useState<Set<string>>(
+    new Set(),
+  );
 
   // ── Confirm modals ──
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
@@ -169,7 +162,10 @@ export function RoleConfigPage() {
   }, [form, initialFormJson]);
 
   // ── Permission helpers ──
-  const totalSelected = useMemo(() => countPermissions(form.permissions), [form.permissions]);
+  const totalSelected = useMemo(
+    () => countPermissions(form.permissions),
+    [form.permissions],
+  );
   const totalAvailable = useMemo(() => totalAvailablePermissions(), []);
 
   function toggleModule(moduleId: string) {
@@ -290,7 +286,7 @@ export function RoleConfigPage() {
       const affected = existingRole?.subAdminCount ?? 0;
       if (affected > 0) {
         toast.success(
-          `Role updated successfully. ${affected} affected sub-admin${affected !== 1 ? "s" : ""} have been logged out.`
+          `Role updated successfully. ${affected} affected sub-admin${affected !== 1 ? "s" : ""} have been logged out.`,
         );
       } else {
         toast.success("Role updated successfully.");
@@ -324,7 +320,7 @@ export function RoleConfigPage() {
               variant="ghost"
               size="sm"
               onClick={handleCancel}
-              className="h-9 w-9 p-0 flex-shrink-0"
+              className="h-10 w-9 p-0 flex-shrink-0"
             >
               <ArrowLeft size={18} />
             </Button>
@@ -350,7 +346,10 @@ export function RoleConfigPage() {
                     </button>
                   </li>
                   <li className="text-gray-400">/</li>
-                  <li className="text-gray-900 font-medium truncate max-w-[200px]" aria-current="page">
+                  <li
+                    className="text-gray-900 font-medium truncate max-w-[200px]"
+                    aria-current="page"
+                  >
                     {breadcrumbTitle}
                   </li>
                 </ol>
@@ -360,7 +359,10 @@ export function RoleConfigPage() {
                   {breadcrumbTitle}
                 </h1>
                 {hasChanges && (
-                  <span className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0" title="Unsaved changes" />
+                  <span
+                    className="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0"
+                    title="Unsaved changes"
+                  />
                 )}
               </div>
             </div>
@@ -406,13 +408,17 @@ export function RoleConfigPage() {
                 <Input
                   placeholder="Enter role name"
                   value={form.name}
-                  onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+                  onChange={(e) =>
+                    setForm((f) => ({ ...f, name: e.target.value }))
+                  }
                   className={cn(errors.name && "border-red-400")}
                   maxLength={100}
                   aria-required="true"
                   aria-invalid={!!errors.name}
                 />
-                {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
+                {errors.name && (
+                  <p className="text-xs text-red-500">{errors.name}</p>
+                )}
               </div>
 
               {/* Colour Swatch Selector */}
@@ -435,15 +441,21 @@ export function RoleConfigPage() {
                             role="radio"
                             aria-checked={isSelected}
                             aria-label={colour.name}
-                            onClick={() => setForm((f) => ({ ...f, colourId: colour.id }))}
+                            onClick={() =>
+                              setForm((f) => ({ ...f, colourId: colour.id }))
+                            }
                             className={cn(
                               "w-8 h-8 rounded-full flex items-center justify-center transition-all",
-                              isSelected && "ring-2 ring-offset-2 ring-gray-400 scale-110"
+                              isSelected &&
+                                "ring-2 ring-offset-2 ring-gray-400 scale-110",
                             )}
                             style={{ backgroundColor: colour.hex }}
                           >
                             {isSelected && (
-                              <Check size={14} className="text-white drop-shadow-sm" />
+                              <Check
+                                size={14}
+                                className="text-white drop-shadow-sm"
+                              />
                             )}
                           </button>
                         </TooltipTrigger>
@@ -452,17 +464,23 @@ export function RoleConfigPage() {
                     );
                   })}
                 </div>
-                {errors.colourId && <p className="text-xs text-red-500">{errors.colourId}</p>}
+                {errors.colourId && (
+                  <p className="text-xs text-red-500">{errors.colourId}</p>
+                )}
               </div>
             </div>
 
             {/* Row 2: Description (full width) */}
             <div className="space-y-1.5">
-              <Label className="text-sm font-medium text-gray-700">Description</Label>
+              <Label className="text-sm font-medium text-gray-700">
+                Description
+              </Label>
               <Textarea
                 placeholder="Enter role description"
                 value={form.description}
-                onChange={(e) => setForm((f) => ({ ...f, description: e.target.value }))}
+                onChange={(e) =>
+                  setForm((f) => ({ ...f, description: e.target.value }))
+                }
                 className={cn(errors.description && "border-red-400")}
                 maxLength={500}
                 rows={3}
@@ -473,7 +491,9 @@ export function RoleConfigPage() {
                 ) : (
                   <span />
                 )}
-                <span className="text-xs text-gray-400">{form.description.length}/500</span>
+                <span className="text-xs text-gray-400">
+                  {form.description.length}/500
+                </span>
               </div>
             </div>
           </CardContent>
@@ -509,7 +529,10 @@ export function RoleConfigPage() {
           <CardContent className="space-y-2">
             {errors.permissions && (
               <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded-lg px-4 py-2.5 mb-3">
-                <AlertTriangle size={15} className="text-red-500 flex-shrink-0" />
+                <AlertTriangle
+                  size={15}
+                  className="text-red-500 flex-shrink-0"
+                />
                 <p className="text-sm text-red-600">{errors.permissions}</p>
               </div>
             )}
@@ -532,7 +555,7 @@ export function RoleConfigPage() {
                   <div
                     className={cn(
                       "flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors",
-                      isExpanded ? "bg-gray-50" : "hover:bg-gray-50/60"
+                      isExpanded ? "bg-gray-50" : "hover:bg-gray-50/60",
                     )}
                     onClick={() => toggleModule(module.moduleId)}
                   >
@@ -584,7 +607,7 @@ export function RoleConfigPage() {
                                 "flex items-center gap-2.5 p-2.5 rounded-lg border cursor-pointer transition-colors",
                                 isChecked
                                   ? "border-blue-300 bg-blue-50/50"
-                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50"
+                                  : "border-gray-200 hover:border-gray-300 hover:bg-gray-50",
                               )}
                             >
                               <Checkbox
@@ -594,7 +617,9 @@ export function RoleConfigPage() {
                                 }
                                 aria-label={perm}
                               />
-                              <span className="text-sm text-gray-700">{perm}</span>
+                              <span className="text-sm text-gray-700">
+                                {perm}
+                              </span>
                             </label>
                           );
                         })}
@@ -645,7 +670,10 @@ export function RoleConfigPage() {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2">
-            <Button variant="outline" onClick={() => setShowCancelConfirm(false)}>
+            <Button
+              variant="outline"
+              onClick={() => setShowCancelConfirm(false)}
+            >
               Keep Editing
             </Button>
             <Button variant="destructive" onClick={confirmCancel}>
@@ -674,8 +702,10 @@ export function RoleConfigPage() {
           </DialogHeader>
           <div className="bg-amber-50 border border-amber-200 rounded-lg px-4 py-3">
             <p className="text-sm text-amber-700">
-              All sub-admins assigned to the <span className="font-medium">{existingRole?.name}</span> role will
-              have their sessions invalidated and will need to log in again with the updated permissions.
+              All sub-admins assigned to the{" "}
+              <span className="font-medium">{existingRole?.name}</span> role
+              will have their sessions invalidated and will need to log in again
+              with the updated permissions.
             </p>
           </div>
           <DialogFooter className="gap-2">

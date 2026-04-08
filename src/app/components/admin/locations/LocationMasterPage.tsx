@@ -94,10 +94,10 @@ function LocationFormModal({
   const isEdit = !!location;
   const [name, setName] = useState(location?.name ?? "");
   const [latitude, setLatitude] = useState(
-    location?.latitude?.toString() ?? ""
+    location?.latitude?.toString() ?? "",
   );
   const [longitude, setLongitude] = useState(
-    location?.longitude?.toString() ?? ""
+    location?.longitude?.toString() ?? "",
   );
   const [isActive, setIsActive] = useState(location?.isActive ?? true);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -111,7 +111,7 @@ function LocationFormModal({
       existingLocations.some(
         (l) =>
           l.id !== location?.id &&
-          l.name.toLowerCase() === name.trim().toLowerCase()
+          l.name.toLowerCase() === name.trim().toLowerCase(),
       )
     )
       errs.name = "A location with this name already exists.";
@@ -153,9 +153,7 @@ function LocationFormModal({
     >
       <DialogContent className="max-w-md">
         <DialogHeader>
-          <DialogTitle>
-            {isEdit ? "Edit Location" : "Add Location"}
-          </DialogTitle>
+          <DialogTitle>{isEdit ? "Edit Location" : "Add Location"}</DialogTitle>
           <DialogDescription>
             {isEdit
               ? "Update the location details."
@@ -280,7 +278,7 @@ export function LocationMasterPage() {
   const filteredLocations = useMemo(() => {
     if (statusFilter === "all") return locations;
     return locations.filter((l) =>
-      statusFilter === "active" ? l.isActive : !l.isActive
+      statusFilter === "active" ? l.isActive : !l.isActive,
     );
   }, [locations, statusFilter]);
 
@@ -288,7 +286,7 @@ export function LocationMasterPage() {
   const totalPages = Math.max(1, Math.ceil(totalItems / pageSize));
   const paginatedLocations = filteredLocations.slice(
     (page - 1) * pageSize,
-    page * pageSize
+    page * pageSize,
   );
 
   // ─── CRUD ─────────────────────────────────────────────────
@@ -322,8 +320,8 @@ export function LocationMasterPage() {
                 isActive: data.isActive,
                 updatedAt: now,
               }
-            : l
-        )
+            : l,
+        ),
       );
       toast.success("Location updated successfully.");
     } else {
@@ -347,7 +345,7 @@ export function LocationMasterPage() {
     if (!deleteConfirm) return;
     if (deleteConfirm.associatedFacilities > 0) {
       toast.error(
-        `Cannot delete: location is associated with ${deleteConfirm.associatedFacilities} facilities`
+        `Cannot delete: location is associated with ${deleteConfirm.associatedFacilities} facilities`,
       );
       setDeleteConfirm(null);
       return;
@@ -364,7 +362,7 @@ export function LocationMasterPage() {
   // ─── Render ───────────────────────────────────────────────
 
   return (
-    <div className="space-y-6">
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       {/* Page header */}
       <div className="flex items-center justify-between">
         <div>
@@ -397,7 +395,7 @@ export function LocationMasterPage() {
                   setPage(1);
                 }}
               >
-                <SelectTrigger className="h-9 w-[140px] text-sm">
+                <SelectTrigger className="h-10 w-[140px] text-sm">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
@@ -486,7 +484,7 @@ export function LocationMasterPage() {
                           "text-[11px]",
                           location.isActive
                             ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                            : "bg-gray-100 text-gray-500 border-gray-200"
+                            : "bg-gray-100 text-gray-500 border-gray-200",
                         )}
                       >
                         {location.isActive ? "Active" : "Inactive"}
@@ -562,22 +560,20 @@ export function LocationMasterPage() {
               >
                 <ChevronRight className="h-3.5 w-3.5 rotate-180" />
               </Button>
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map(
-                (pg) => (
-                  <Button
-                    key={pg}
-                    variant={pg === page ? "default" : "outline"}
-                    size="icon"
-                    className={cn(
-                      "h-8 w-8 text-xs",
-                      pg === page && "bg-[#003B95] hover:bg-[#002a6b]"
-                    )}
-                    onClick={() => setPage(pg)}
-                  >
-                    {pg}
-                  </Button>
-                )
-              )}
+              {Array.from({ length: totalPages }, (_, i) => i + 1).map((pg) => (
+                <Button
+                  key={pg}
+                  variant={pg === page ? "default" : "outline"}
+                  size="icon"
+                  className={cn(
+                    "h-8 w-8 text-xs",
+                    pg === page && "bg-[#003B95] hover:bg-[#002a6b]",
+                  )}
+                  onClick={() => setPage(pg)}
+                >
+                  {pg}
+                </Button>
+              ))}
               <Button
                 variant="outline"
                 size="icon"
@@ -615,23 +611,21 @@ export function LocationMasterPage() {
           <AlertDialogHeader>
             <AlertDialogTitle>Delete Location</AlertDialogTitle>
             <AlertDialogDescription>
-              {deleteConfirm &&
-              deleteConfirm.associatedFacilities > 0
+              {deleteConfirm && deleteConfirm.associatedFacilities > 0
                 ? `Cannot delete: location is associated with ${deleteConfirm.associatedFacilities} facilities`
                 : `Are you sure you want to delete "${deleteConfirm?.name}"? This action is permanent.`}
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
-            {deleteConfirm &&
-              deleteConfirm.associatedFacilities === 0 && (
-                <AlertDialogAction
-                  onClick={handleDeleteLocation}
-                  className="bg-red-600 hover:bg-red-700"
-                >
-                  Delete
-                </AlertDialogAction>
-              )}
+            {deleteConfirm && deleteConfirm.associatedFacilities === 0 && (
+              <AlertDialogAction
+                onClick={handleDeleteLocation}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                Delete
+              </AlertDialogAction>
+            )}
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
