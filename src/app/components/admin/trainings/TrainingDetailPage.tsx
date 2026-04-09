@@ -935,7 +935,7 @@ export function TrainingDetailPage({ trainingId, onBack }: Props) {
                   }
                 />
                 <InfoRow
-                  label="Phone"
+                  label="Mobile number"
                   value={
                     <span className="flex items-center gap-1 text-sm">
                       <Phone className="w-3 h-3 text-gray-400" />

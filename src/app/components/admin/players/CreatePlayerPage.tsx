@@ -164,6 +164,17 @@ export function CreatePlayerPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [dobOpen, setDobOpen] = useState(false);
+  const [countries, setCountries] = useState<{ id: string; name_en: string }[]>(
+    [],
+  );
+
+  useEffect(() => {
+    adminService
+      .listMasterData("countries", { limit: 200, status: "active" })
+      .then((res: any) => {
+        if (res?.data?.items) setCountries(res.data.items);
+      });
+  }, []);
 
   // ── Profile picture state (AC-PM-027) ───────────────────
   const [profilePicture, setProfilePicture] = useState<File | null>(null);
@@ -366,7 +377,7 @@ export function CreatePlayerPage() {
         date_of_birth: form.dateOfBirth
           ? format(form.dateOfBirth, "yyyy-MM-dd")
           : undefined,
-        nationality: form.nationality || undefined,
+        nationality_id: form.nationality || undefined,
       };
       const result = await adminService.createPlayer(payload);
       const newId = result.id || result.player?.id;
@@ -378,7 +389,19 @@ export function CreatePlayerPage() {
       toast.success("Player created successfully.");
       if (newId) setTimeout(() => navigate(`/players/${newId}`), 1000);
     } catch (err: any) {
-      const details = err?.response?.data?.error?.details;
+      const resp = err?.response?.data;
+      const errorCode = resp?.error?.code;
+      const errorMessage = resp?.message || "Failed to create player.";
+
+      if (errorCode === "EMAIL_ALREADY_EXISTS") {
+        setErrors((prev) => ({ ...prev, email: errorMessage }));
+        fieldRefs.email.current?.focus();
+      } else if (errorCode === "MOBILE_ALREADY_EXISTS") {
+        setErrors((prev) => ({ ...prev, phone: errorMessage }));
+        fieldRefs.phone.current?.focus();
+      }
+
+      const details = resp?.error?.details;
       if (details && Array.isArray(details) && details.length > 0) {
         const fieldMessages = details.map(
           (d: { field?: string; message?: string }) =>
@@ -387,11 +410,8 @@ export function CreatePlayerPage() {
         showBanner("error", fieldMessages.join(". "));
         fieldMessages.forEach((m: string) => toast.error(m));
       } else {
-        const msg =
-          err?.response?.data?.message ||
-          "Failed to create player. Please try again.";
-        showBanner("error", msg);
-        toast.error(msg);
+        showBanner("error", errorMessage);
+        toast.error(errorMessage);
       }
     } finally {
       setIsSubmitting(false);
@@ -712,9 +732,9 @@ export function CreatePlayerPage() {
                   <SelectValue placeholder="Select nationality" />
                 </SelectTrigger>
                 <SelectContent>
-                  {COUNTRIES.map((c) => (
-                    <SelectItem key={c} value={c.toLowerCase()}>
-                      {c.toLowerCase()}
+                  {countries.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name_en}
                     </SelectItem>
                   ))}
                 </SelectContent>

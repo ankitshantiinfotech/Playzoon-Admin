@@ -195,11 +195,15 @@ export function PlayerManagementPage() {
   // ── Data ──────────────────────────────────────────────
   const [players, setPlayers] = useState<PlayerRow[]>([]);
 
+  const [dynamicCountries, setDynamicCountries] = useState<
+    { id: string; name_en: string }[]
+  >([]);
+
   // Map API response to PlayerRow
   const mapApiPlayer = (p: any): PlayerRow => ({
     id: p.id,
-    firstName: p.first_name || p.first_name_en || "",
-    lastName: p.last_name || p.last_name_en || "",
+    firstName: p.firstName || p.first_name || p.first_name_en || "",
+    lastName: p.lastName || p.last_name || p.last_name_en || "",
     email: p.email || "",
     phone: p.country_code
       ? `${p.country_code}${p.phone || p.mobile || ""}`
@@ -219,20 +223,32 @@ export function PlayerManagementPage() {
     lockedUntil: p.locked_until || undefined,
     walletBalance: parseFloat(p.wallet_balance || "0"),
     isSSOUser: !!p.is_sso_user,
-    nationality: p.nationality?.name_en || "",
+    nationality: p.nationality || "",
     defaultCity: p.default_city || "",
     defaultCountry: p.default_country || "",
     savedAddressesCount: p.addresses_count || 0,
   });
 
+  const fetchCountries = async () => {
+    try {
+      const res = await adminService.listMasterData("countries", {
+        limit: 250,
+      });
+      if (res?.data?.items) {
+        setDynamicCountries(res.data.items);
+      }
+    } catch (err) {
+      console.error("Failed to fetch countries:", err);
+    }
+  };
+
   const fetchPlayers = async (params: Record<string, unknown> = {}) => {
     setIsLoading(true);
     try {
       const res = await adminService.listPlayers(params);
-      // API returns { success, data: { players, pagination }, message }
-      // adminService unwraps one level (r.data), so res = { success, data: { players, pagination } }
       const payload = res?.data || res;
-      const list = payload?.players || payload || [];
+      // The backend now returns { players, pagination }
+      const list = payload?.players || payload?.items || payload || [];
       const mapped = Array.isArray(list) ? list.map(mapApiPlayer) : [];
       setPlayers(mapped);
       setTotalRecords(
@@ -249,6 +265,7 @@ export function PlayerManagementPage() {
   };
 
   useEffect(() => {
+    fetchCountries();
     fetchPlayers({ page: 1, limit: 25 });
   }, []);
 
@@ -319,20 +336,39 @@ export function PlayerManagementPage() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // ── Apply search on Enter ─────────────────────────────
+  // ── Apply Search & Debouncing ─────────────────────────────
   const submitSearch = () => {
     if (searchInput.length > 200) {
       toast.error("Search query must be 200 characters or less.");
       return;
     }
-    setFilters((f) => ({ ...f, search: searchInput }));
-    setPage(1);
+    setFilters((f) => {
+      if (f.search === searchInput) return f;
+      setTimeout(() => setPage(1), 0);
+      return { ...f, search: searchInput };
+    });
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput.length <= 200) {
+        setFilters((f) => {
+          if (f.search === searchInput) return f;
+          setTimeout(() => setPage(1), 0);
+          return { ...f, search: searchInput };
+        });
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const clearSearch = () => {
     setSearchInput("");
-    setFilters((f) => ({ ...f, search: "" }));
-    setPage(1);
+    setFilters((f) => {
+      if (f.search === "") return f;
+      setTimeout(() => setPage(1), 0);
+      return { ...f, search: "" };
+    });
   };
 
   // ── Filter validation ─────────────────────────────────
@@ -487,6 +523,11 @@ export function PlayerManagementPage() {
       )
         return false;
       if (filters.hasDependents && p.dependents === 0) return false;
+      if (
+        filters.nationalities.length > 0 &&
+        !filters.nationalities.includes(p.nationality)
+      )
+        return false;
       return true;
     });
   }, [players, filters]);
@@ -819,26 +860,33 @@ export function PlayerManagementPage() {
                 <div className="space-y-1.5">
                   <Label>Status</Label>
                   <div className="flex flex-wrap gap-2">
-                    {(["Active", "Inactive", "Locked"] as PlayerStatus[]).map(
-                      (s) => (
-                        <button
-                          key={s}
-                          onClick={() => toggleStatusFilter(s)}
-                          className={cn(
-                            "px-3 py-1.5 rounded-full border text-xs transition-colors",
-                            filterDraft.statuses.includes(s)
-                              ? s === "Active"
-                                ? "bg-emerald-100 border-emerald-300 text-emerald-800"
-                                : s === "Locked"
-                                  ? "bg-red-100 border-red-300 text-red-800"
+                    {(
+                      [
+                        "Active",
+                        "Inactive",
+                        "Locked",
+                        "Unlocked",
+                      ] as PlayerStatus[]
+                    ).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => toggleStatusFilter(s)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full border text-xs transition-colors",
+                          filterDraft.statuses.includes(s)
+                            ? s === "Active"
+                              ? "bg-emerald-100 border-emerald-300 text-emerald-800"
+                              : s === "Locked"
+                                ? "bg-red-100 border-red-300 text-red-800"
+                                : s === "Unlocked"
+                                  ? "bg-blue-100 border-blue-300 text-blue-800"
                                   : "bg-gray-200 border-gray-300 text-gray-800"
-                              : "bg-white border-gray-200 text-gray-500 hover:border-gray-300",
-                          )}
-                        >
-                          {s}
-                        </button>
-                      ),
-                    )}
+                            : "bg-white border-gray-200 text-gray-500 hover:border-gray-300",
+                        )}
+                      >
+                        {s}
+                      </button>
+                    ))}
                   </div>
                   <p className="text-[11px] text-gray-400">
                     Select one or more statuses.
@@ -862,6 +910,32 @@ export function PlayerManagementPage() {
                       Has Dependents
                     </Label>
                   </div>
+                </div>
+
+                {/* Nationality */}
+                <div className="space-y-1.5 col-span-2">
+                  <Label>Nationality</Label>
+                  <Select
+                    value={filterDraft.nationalities[0] || "all"}
+                    onValueChange={(v) =>
+                      setFilterDraft((d) => ({
+                        ...d,
+                        nationalities: v === "all" ? [] : [v],
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Nationalities" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Nationalities</SelectItem>
+                      {dynamicCountries.map((c) => (
+                        <SelectItem key={c.id} value={c.name_en}>
+                          {c.name_en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Created From / To */}
@@ -1266,16 +1340,22 @@ export function PlayerManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell className="px-3 text-sm text-[#374151] truncate max-w-[180px]">
-                        {player.email}
+                        {player.email || "-"}
                       </TableCell>
                       <TableCell className="px-3 text-xs text-[#6B7280] hidden lg:table-cell">
-                        {player.phone}
+                        {player.phone || "-"}
                       </TableCell>
                       <TableCell className="px-3 text-xs text-[#6B7280] hidden lg:table-cell">
-                        {player.gender}
+                        {player.gender
+                          ? player.gender.charAt(0).toUpperCase() +
+                            player.gender.slice(1)
+                          : "-"}
                       </TableCell>
                       <TableCell className="px-3 text-xs text-[#6B7280] hidden lg:table-cell">
-                        {player.nationality}
+                        {player.nationality
+                          ? player.nationality.charAt(0).toUpperCase() +
+                            player.nationality.slice(1)
+                          : "-"}
                       </TableCell>
                       <TableCell className="px-3">
                         <Tooltip>

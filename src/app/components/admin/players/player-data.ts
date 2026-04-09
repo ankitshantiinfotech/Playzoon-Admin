@@ -1,6 +1,6 @@
 // ─── Extended player types & mock data ───────────────────────
 
-export type PlayerStatus = "Active" | "Inactive" | "Locked";
+export type PlayerStatus = "Active" | "Inactive" | "Locked" | "Unlocked";
 export type LockStatus  = "Locked" | "Unlocked";
 
 export interface PlayerRow {

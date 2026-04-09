@@ -167,234 +167,254 @@ export function PlayerDetailPage() {
   >([]);
   const [tournaments, setTournaments] = useState<PlayerTournament[]>([]);
   const [friends, setFriends] = useState<PlayerFriend[]>([]);
+  const [countries, setCountries] = useState<{ id: string; name_en: string }[]>(
+    [],
+  );
   const [isLoadingApi, setIsLoadingApi] = useState(true);
+
+  const loadData = async () => {
+    setIsLoadingApi(true);
+    try {
+      const [res, countriesRes] = await Promise.all([
+        adminService.getPlayer(id),
+        adminService.listMasterData("countries", {
+          limit: 200,
+          status: "active",
+        }),
+      ]);
+
+      console.log("countriesRes", countriesRes);
+
+      if (countriesRes?.data?.items) {
+        setCountries(countriesRes.data.items);
+      }
+
+      // adminService returns r.data = { success, data: { player fields }, message }
+      const data = res?.data || res;
+      if (!data || !data.id) throw new Error("Player not found");
+      // Map API response to PlayerDetail shape, merging with defaults
+      setPlayer((prev) => ({
+        ...prev,
+        id: data.id ? String(data.id) : prev.id,
+        firstName: data.first_name || data.first_name_en || "",
+        lastName: data.last_name || data.last_name_en || "",
+        email: data.email || "",
+        phone: data.country_code
+          ? `${data.country_code}${data.phone || data.mobile || ""}`
+          : data.phone || data.mobile || "",
+        gender: data.gender || "",
+        dateOfBirth: data.date_of_birth || "",
+        nationality:
+          data.nationality_id ||
+          data.nationality?.id ||
+          (typeof data.nationality === "string" ? data.nationality : ""),
+        status: (data.status === "active"
+          ? "Active"
+          : data.status === "locked"
+            ? "Locked"
+            : "Inactive") as PlayerStatus,
+        avatarUrl: data.avatar_url || data.profile_photo_url || undefined,
+        bio: data.bio || "",
+        createdAt: data.created_at
+          ? new Date(data.created_at)
+          : prev.createdAt,
+        lastActiveAt: data.last_login_at
+          ? new Date(data.last_login_at)
+          : prev.lastActiveAt,
+        walletBalance:
+          data.wallet_balance != null ? parseFloat(data.wallet_balance) : 0,
+      }));
+
+      // Load dependants from API
+      if (data.dependants && Array.isArray(data.dependants)) {
+        setDependents(
+          data.dependants.map((d: Record<string, unknown>) => ({
+            id: String(d.id || ""),
+            firstName: String(d.first_name_en || ""),
+            lastName: String(d.last_name_en || ""),
+            relationship: String(
+              d.relationship || d.relation_type_id || "Child",
+            ),
+            dateOfBirth: String(d.dob || ""),
+            email: String(d.email || ""),
+            phone: String(d.phone || ""),
+            notes: String(d.notes || ""),
+            lastUpdated: d.updated_at
+              ? new Date(String(d.updated_at))
+              : new Date(),
+          })),
+        );
+      } else {
+        setDependents([]);
+      }
+
+      // Load addresses from API
+      if (data.addresses && Array.isArray(data.addresses)) {
+        setAddresses(
+          data.addresses.map((a: Record<string, unknown>) => ({
+            id: String(a.id || ""),
+            addressType: String(a.label || "home"),
+            addressLine1:
+              `${a.building_number || ""} ${a.street_name || ""}`.trim(),
+            addressLine2: String(a.apartment_floor || ""),
+            city: String(a.city_name || ""),
+            state: "",
+            postalCode: "",
+            country: String(a.country_name || ""),
+            isDefault: Boolean(a.is_default),
+            lastUpdated: a.updated_at
+              ? new Date(String(a.updated_at))
+              : new Date(),
+          })),
+        );
+      } else {
+        setAddresses([]);
+      }
+
+      // Load audit trail from API
+      if (
+        data.recent_audit_trail &&
+        Array.isArray(data.recent_audit_trail) &&
+        data.recent_audit_trail.length > 0
+      ) {
+        setAuditEvents(
+          data.recent_audit_trail.map((a: Record<string, unknown>) => ({
+            id: String(a.id || ""),
+            timestamp: a.created_at
+              ? new Date(String(a.created_at))
+              : new Date(),
+            actor: String(a.actor_name || "System"),
+            actorRole: "Admin",
+            module: "Players",
+            action: String(a.action || ""),
+            target: String(a.description || ""),
+            result: "Success" as const,
+            metadata: String(a.changes || ""),
+          })),
+        );
+      }
+
+      // Sports interests from API
+      if (data.sports_interests && Array.isArray(data.sports_interests)) {
+        setPlayer((prev) => ({
+          ...prev,
+          interestedSports: data.sports_interests.map(
+            (s: Record<string, unknown>) => String(s.name_en || ""),
+          ),
+        }));
+      }
+
+      // Saved cards from API
+      if (data.saved_cards && Array.isArray(data.saved_cards)) {
+        setSavedCards(
+          data.saved_cards.map((c: Record<string, unknown>) => ({
+            id: String(c.id || ""),
+            brand: String(c.card_brand || "Visa"),
+            last4: String(c.card_last_four || "****"),
+            expiry: `${String(c.expiry_month || "00").padStart(2, "0")}/${String(c.expiry_year || "00").slice(-2)}`,
+            isDefault: Boolean(c.is_default),
+            addedDate: c.created_at
+              ? new Date(String(c.created_at))
+              : new Date(),
+          })),
+        );
+      }
+
+      // Recent bookings from API
+      if (data.recent_bookings && Array.isArray(data.recent_bookings)) {
+        setBookings(
+          data.recent_bookings.map((b: Record<string, unknown>) => ({
+            id: String(b.id || ""),
+            type: (String(b.type || "facility")
+              .charAt(0)
+              .toUpperCase() + String(b.type || "facility").slice(1)) as
+              | "Facility"
+              | "Training"
+              | "Coach"
+              | "Tournament",
+            entityName: String(b.entity_name || "—"),
+            dateTime: b.start_time
+              ? new Date(String(b.start_time))
+              : new Date(),
+            status: String(b.status || "pending"),
+            amount: Number(b.amount || 0),
+          })),
+        );
+      }
+
+      // Tournaments from API
+      if (data.tournaments && Array.isArray(data.tournaments)) {
+        setTournaments(
+          data.tournaments.map((t: Record<string, unknown>) => ({
+            id: String(t.id || ""),
+            name: String(t.name || ""),
+            sport: String(t.sport || ""),
+            date: t.date ? new Date(String(t.date)) : new Date(),
+            status: String(t.status || "upcoming"),
+            teamOrSolo: "Solo" as const,
+            result: "—",
+          })),
+        );
+      }
+
+      // Friends from API
+      if (data.friends && Array.isArray(data.friends)) {
+        setFriends(
+          data.friends.map((f: Record<string, unknown>) => ({
+            playerId: String(f.friend_user_id || ""),
+            name: String(f.friend_name || ""),
+            status: (String(f.status || "pending")
+              .charAt(0)
+              .toUpperCase() + String(f.status || "pending").slice(1)) as
+              | "Accepted"
+              | "Pending",
+            addedDate: f.created_at
+              ? new Date(String(f.created_at))
+              : new Date(),
+          })),
+        );
+      }
+
+      // Wallet transactions from API
+      if (
+        data.wallet_transactions &&
+        Array.isArray(data.wallet_transactions)
+      ) {
+        setWalletTransactions(
+          data.wallet_transactions.map((wt: Record<string, unknown>) => ({
+            id: String(wt.id || ""),
+            type: (Number(wt.amount || 0) >= 0 ? "Credit" : "Debit") as
+              | "Credit"
+              | "Debit",
+            amount: Math.abs(Number(wt.amount || 0)),
+            description: String(
+              wt.description || wt.reference_type || wt.type || "",
+            ),
+            date: wt.created_at
+              ? new Date(String(wt.created_at))
+              : new Date(),
+            status: String(wt.status || "completed"),
+          })),
+        );
+      }
+
+      // Wallet balance from summary
+      if (data.wallet_summary) {
+        setPlayer((prev) => ({
+          ...prev,
+          walletBalance: Number(data.wallet_summary.current_balance || 0),
+        }));
+      }
+    } catch (err) {
+      console.error("Failed to load player from API:", err);
+    } finally {
+      setIsLoadingApi(false);
+    }
+  };
 
   // Fetch from real API and merge with detail data
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await adminService.getPlayer(id);
-        // adminService returns r.data = { success, data: { player fields }, message }
-        const data = res?.data || res;
-        if (!data || !data.id) throw new Error("Player not found");
-        // Map API response to PlayerDetail shape, merging with defaults
-        setPlayer((prev) => ({
-          ...prev,
-          id: data.id ? String(data.id) : prev.id,
-          firstName: data.first_name || data.first_name_en || "",
-          lastName: data.last_name || data.last_name_en || "",
-          email: data.email || "",
-          phone: data.country_code
-            ? `${data.country_code}${data.phone || data.mobile || ""}`
-            : data.phone || data.mobile || "",
-          gender: data.gender || "",
-          dateOfBirth: data.date_of_birth || "",
-          nationality:
-            data.nationality?.name_en ||
-            (typeof data.nationality === "string" ? data.nationality : ""),
-          status: (data.status === "active"
-            ? "Active"
-            : data.status === "locked"
-              ? "Locked"
-              : "Inactive") as PlayerStatus,
-          avatarUrl: data.avatar_url || data.profile_photo_url || undefined,
-          bio: data.bio || "",
-          createdAt: data.created_at
-            ? new Date(data.created_at)
-            : prev.createdAt,
-          lastActiveAt: data.last_login_at
-            ? new Date(data.last_login_at)
-            : prev.lastActiveAt,
-          walletBalance:
-            data.wallet_balance != null ? parseFloat(data.wallet_balance) : 0,
-        }));
-
-        // Load dependants from API
-        if (data.dependants && Array.isArray(data.dependants)) {
-          setDependents(
-            data.dependants.map((d: Record<string, unknown>) => ({
-              id: String(d.id || ""),
-              firstName: String(d.first_name_en || ""),
-              lastName: String(d.last_name_en || ""),
-              relationship: String(
-                d.relationship || d.relation_type_id || "Child",
-              ),
-              dateOfBirth: String(d.dob || ""),
-              email: String(d.email || ""),
-              phone: String(d.phone || ""),
-              notes: String(d.notes || ""),
-              lastUpdated: d.updated_at
-                ? new Date(String(d.updated_at))
-                : new Date(),
-            })),
-          );
-        } else {
-          setDependents([]);
-        }
-
-        // Load addresses from API
-        if (data.addresses && Array.isArray(data.addresses)) {
-          setAddresses(
-            data.addresses.map((a: Record<string, unknown>) => ({
-              id: String(a.id || ""),
-              addressType: String(a.label || "home"),
-              addressLine1:
-                `${a.building_number || ""} ${a.street_name || ""}`.trim(),
-              addressLine2: String(a.apartment_floor || ""),
-              city: String(a.city_name || ""),
-              state: "",
-              postalCode: "",
-              country: String(a.country_name || ""),
-              isDefault: Boolean(a.is_default),
-              lastUpdated: a.updated_at
-                ? new Date(String(a.updated_at))
-                : new Date(),
-            })),
-          );
-        } else {
-          setAddresses([]);
-        }
-
-        // Load audit trail from API
-        if (
-          data.recent_audit_trail &&
-          Array.isArray(data.recent_audit_trail) &&
-          data.recent_audit_trail.length > 0
-        ) {
-          setAuditEvents(
-            data.recent_audit_trail.map((a: Record<string, unknown>) => ({
-              id: String(a.id || ""),
-              timestamp: a.created_at
-                ? new Date(String(a.created_at))
-                : new Date(),
-              actor: String(a.actor_name || "System"),
-              actorRole: "Admin",
-              module: "Players",
-              action: String(a.action || ""),
-              target: String(a.description || ""),
-              result: "Success" as const,
-              metadata: String(a.changes || ""),
-            })),
-          );
-        }
-
-        // Sports interests from API
-        if (data.sports_interests && Array.isArray(data.sports_interests)) {
-          setPlayer((prev) => ({
-            ...prev,
-            interestedSports: data.sports_interests.map(
-              (s: Record<string, unknown>) => String(s.name_en || ""),
-            ),
-          }));
-        }
-
-        // Saved cards from API
-        if (data.saved_cards && Array.isArray(data.saved_cards)) {
-          setSavedCards(
-            data.saved_cards.map((c: Record<string, unknown>) => ({
-              id: String(c.id || ""),
-              brand: String(c.card_brand || "Visa"),
-              last4: String(c.card_last_four || "****"),
-              expiry: `${String(c.expiry_month || "00").padStart(2, "0")}/${String(c.expiry_year || "00").slice(-2)}`,
-              isDefault: Boolean(c.is_default),
-              addedDate: c.created_at
-                ? new Date(String(c.created_at))
-                : new Date(),
-            })),
-          );
-        }
-
-        // Recent bookings from API
-        if (data.recent_bookings && Array.isArray(data.recent_bookings)) {
-          setBookings(
-            data.recent_bookings.map((b: Record<string, unknown>) => ({
-              id: String(b.id || ""),
-              type: (String(b.type || "facility")
-                .charAt(0)
-                .toUpperCase() + String(b.type || "facility").slice(1)) as
-                | "Facility"
-                | "Training"
-                | "Coach"
-                | "Tournament",
-              entityName: String(b.entity_name || "—"),
-              dateTime: b.start_time
-                ? new Date(String(b.start_time))
-                : new Date(),
-              status: String(b.status || "pending"),
-              amount: Number(b.amount || 0),
-            })),
-          );
-        }
-
-        // Tournaments from API
-        if (data.tournaments && Array.isArray(data.tournaments)) {
-          setTournaments(
-            data.tournaments.map((t: Record<string, unknown>) => ({
-              id: String(t.id || ""),
-              name: String(t.name || ""),
-              sport: String(t.sport || ""),
-              date: t.date ? new Date(String(t.date)) : new Date(),
-              status: String(t.status || "upcoming"),
-              teamOrSolo: "Solo" as const,
-              result: "—",
-            })),
-          );
-        }
-
-        // Friends from API
-        if (data.friends && Array.isArray(data.friends)) {
-          setFriends(
-            data.friends.map((f: Record<string, unknown>) => ({
-              playerId: String(f.friend_user_id || ""),
-              name: String(f.friend_name || ""),
-              status: (String(f.status || "pending")
-                .charAt(0)
-                .toUpperCase() + String(f.status || "pending").slice(1)) as
-                | "Accepted"
-                | "Pending",
-              addedDate: f.created_at
-                ? new Date(String(f.created_at))
-                : new Date(),
-            })),
-          );
-        }
-
-        // Wallet transactions from API
-        if (
-          data.wallet_transactions &&
-          Array.isArray(data.wallet_transactions)
-        ) {
-          setWalletTransactions(
-            data.wallet_transactions.map((wt: Record<string, unknown>) => ({
-              id: String(wt.id || ""),
-              type: (Number(wt.amount || 0) >= 0 ? "Credit" : "Debit") as
-                | "Credit"
-                | "Debit",
-              amount: Math.abs(Number(wt.amount || 0)),
-              description: String(
-                wt.description || wt.reference_type || wt.type || "",
-              ),
-              date: wt.created_at
-                ? new Date(String(wt.created_at))
-                : new Date(),
-              status: String(wt.status || "completed"),
-            })),
-          );
-        }
-
-        // Wallet balance from summary
-        if (data.wallet_summary) {
-          setPlayer((prev) => ({
-            ...prev,
-            walletBalance: Number(data.wallet_summary.current_balance || 0),
-          }));
-        }
-      } catch (err) {
-        console.error("Failed to load player from API:", err);
-      } finally {
-        setIsLoadingApi(false);
-      }
-    })();
+    loadData();
   }, [id]);
   const [banner, setBanner] = useState<BannerState>({
     type: "info",
@@ -474,8 +494,7 @@ export function PlayerDetailPage() {
     phone: player.phone,
     dateOfBirth: player.dateOfBirth,
     gender: player.gender,
-    username: player.username,
-    notes: player.notes,
+    nationality: player.nationality,
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
@@ -491,11 +510,10 @@ export function PlayerDetailPage() {
         phone: player.phone,
         dateOfBirth: player.dateOfBirth,
         gender: player.gender,
-        username: player.username,
-        notes: player.notes,
+        nationality: player.nationality,
       });
     }
-  }, [isLoadingApi, player.firstName, player.lastName, player.email]); // eslint-disable-line
+  }, [isLoadingApi, player.firstName, player.lastName, player.email, player.phone, player.dateOfBirth, player.gender, player.nationality]); // eslint-disable-line
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -516,6 +534,12 @@ export function PlayerDetailPage() {
     if (!formData.email.trim()) e.email = "Email is required.";
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
       e.email = "Invalid email format.";
+    if (!formData.phone?.trim()) {
+      e.phone = "mobile is not allowed to be empty";
+    }
+    if (!formData.gender?.trim()) {
+      e.gender = "gender must be one of [male, female, rather_not_say]";
+    }
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth);
       if (isNaN(dob.getTime())) e.dateOfBirth = "Invalid date.";
@@ -523,18 +547,6 @@ export function PlayerDetailPage() {
       else if (differenceInYears(new Date(), dob) < 13)
         e.dateOfBirth = "Player must be at least 13 years old.";
     }
-    if (
-      formData.username &&
-      (formData.username.length < 3 || formData.username.length > 30)
-    ) {
-      e.username = "Username must be 3–30 characters.";
-    } else if (
-      formData.username &&
-      !/^[a-zA-Z0-9._-]+$/.test(formData.username)
-    ) {
-      e.username = "Only letters, numbers, . _ - allowed.";
-    }
-    if (formData.notes.length > 1000) e.notes = "Max 1000 characters.";
     setFormErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -550,59 +562,87 @@ export function PlayerDetailPage() {
         mobile: formData.phone,
         gender: formData.gender,
         date_of_birth: formData.dateOfBirth || undefined,
-        notes: formData.notes || undefined,
+        nationality_id: formData.nationality || null,
       });
+
+      // AC-PM-015: Generate field-level audit trail entries
+      const fieldLabels: Record<string, string> = {
+        firstName: "First Name",
+        lastName: "Last Name",
+        email: "Email",
+        phone: "Mobile Number",
+        dateOfBirth: "Date of Birth",
+        gender: "Gender",
+      };
+      const now = new Date();
+      const newAuditEntries: DetailAuditEvent[] = [];
+      (Object.keys(formData) as Array<keyof typeof formData>).forEach((field) => {
+        const oldVal = player[field as keyof typeof player];
+        const newVal = formData[field];
+        if (oldVal !== newVal) {
+          newAuditEntries.push({
+            id: `AE-${Date.now()}-${field}`,
+            timestamp: now,
+            actor: "Admin",
+            actorRole: "Admin",
+            module: "Players",
+            action: "Update",
+            target: `${player.firstName} ${player.lastName} (#${player.id})`,
+            targetId: player.id,
+            result: "Success",
+            metadata: {
+              field: fieldLabels[field] || field,
+              before: oldVal,
+              after: newVal,
+            },
+          });
+        }
+      });
+
+      if (newAuditEntries.length > 0) {
+        setAuditEvents((prev) => [...newAuditEntries, ...prev]);
+      }
+
+      showBanner("success", "Player profile updated successfully.");
+      toast.success("Profile saved.");
+      setIsSaving(false);
+      setIsDirty(false);
+      loadData(); // REFRESH DATA
     } catch (err: any) {
       setIsSaving(false);
-      const msg = err?.response?.data?.message || "Failed to update player.";
+      const errData = err?.response?.data;
+      const msg = errData?.message || "Failed to update player.";
+      const errCode = errData?.error?.code;
+
+      if (errCode === "MOBILE_ALREADY_EXISTS") {
+        setFormErrors((prev) => ({
+          ...prev,
+          phone: "This mobile number is already registered to another player.",
+        }));
+        return;
+      }
+
+      if (
+        errCode === "VALIDATION_ERROR" &&
+        Array.isArray(errData?.error?.details)
+      ) {
+        let hasValidationError = false;
+        errData.error.details.forEach((detail: any) => {
+          if (detail.field === "mobile") {
+            setFormErrors((prev) => ({ ...prev, phone: detail.message }));
+            hasValidationError = true;
+          }
+          if (detail.field === "gender") {
+            setFormErrors((prev) => ({ ...prev, gender: detail.message }));
+            hasValidationError = true;
+          }
+        });
+        if (hasValidationError) return;
+      }
+
       showBanner("error", msg);
       return;
     }
-
-    // AC-PM-015: Generate field-level audit trail entries
-    const fieldLabels: Record<string, string> = {
-      firstName: "First Name",
-      lastName: "Last Name",
-      email: "Email",
-      phone: "Phone",
-      dateOfBirth: "Date of Birth",
-      gender: "Gender",
-      username: "Username",
-      notes: "Notes",
-    };
-    const now = new Date();
-    const newAuditEntries: DetailAuditEvent[] = [];
-    (Object.keys(formData) as Array<keyof typeof formData>).forEach((field) => {
-      const oldVal = player[field as keyof typeof player];
-      const newVal = formData[field];
-      if (oldVal !== newVal) {
-        newAuditEntries.push({
-          id: `AE-${Date.now()}-${field}`,
-          timestamp: now,
-          actor: "Admin",
-          actorRole: "Admin",
-          module: "Players",
-          action: "Update",
-          target: `${player.firstName} ${player.lastName} (#${player.id})`,
-          targetId: player.id,
-          result: "Success",
-          metadata: {
-            field: fieldLabels[field] || field,
-            before: oldVal,
-            after: newVal,
-          },
-        });
-      }
-    });
-
-    if (newAuditEntries.length > 0) {
-      setAuditEvents((prev) => [...newAuditEntries, ...prev]);
-    }
-
-    setPlayer((prev) => ({ ...prev, ...formData }));
-    setIsSaving(false);
-    setIsDirty(false);
-    showBanner("success", "Profile updated successfully.");
   };
 
   const handleCancelProfile = () => {
@@ -613,8 +653,7 @@ export function PlayerDetailPage() {
       phone: player.phone,
       dateOfBirth: player.dateOfBirth,
       gender: player.gender,
-      username: player.username,
-      notes: player.notes,
+      nationality: player.nationality,
     });
     setIsDirty(false);
     setFormErrors({});
@@ -956,17 +995,67 @@ export function PlayerDetailPage() {
 
       {/* ── Tabs ──────────────────────────────────────────── */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="bg-white border overflow-x-auto">
-          <TabsTrigger value="personal-info">Personal Info</TabsTrigger>
-          <TabsTrigger value="sports-interests">Sports Interests</TabsTrigger>
-          <TabsTrigger value="dependants">Dependants</TabsTrigger>
-          <TabsTrigger value="addresses">Addresses</TabsTrigger>
-          <TabsTrigger value="saved-cards">Saved Cards</TabsTrigger>
-          <TabsTrigger value="bookings">Bookings</TabsTrigger>
-          <TabsTrigger value="wallet">Wallet</TabsTrigger>
-          <TabsTrigger value="tournaments">Tournaments</TabsTrigger>
-          <TabsTrigger value="friends">Friends</TabsTrigger>
-          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
+        <TabsList className="bg-white border overflow-x-auto p-1">
+          <TabsTrigger
+            value="personal-info"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Personal Info
+          </TabsTrigger>
+          <TabsTrigger
+            value="sports-interests"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Sports Interests
+          </TabsTrigger>
+          <TabsTrigger
+            value="dependants"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Dependants
+          </TabsTrigger>
+          <TabsTrigger
+            value="addresses"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Addresses
+          </TabsTrigger>
+          <TabsTrigger
+            value="saved-cards"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Saved Cards
+          </TabsTrigger>
+          <TabsTrigger
+            value="bookings"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Bookings
+          </TabsTrigger>
+          <TabsTrigger
+            value="wallet"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Wallet
+          </TabsTrigger>
+          <TabsTrigger
+            value="tournaments"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Tournaments
+          </TabsTrigger>
+          <TabsTrigger
+            value="friends"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Friends
+          </TabsTrigger>
+          <TabsTrigger
+            value="audit"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Audit Trail
+          </TabsTrigger>
         </TabsList>
 
         {/* ════════════════════════════════════════════════════
@@ -1024,14 +1113,64 @@ export function PlayerDetailPage() {
                     className={cn(formErrors.email && "border-red-400")}
                   />
                 </FormField>
-                <FormField id="phone" label="Phone" error={formErrors.phone}>
+                <FormField
+                  id="phone"
+                  label="Mobile number"
+                  error={formErrors.phone}
+                  required
+                >
                   <Input
                     id="phone"
                     placeholder="+1 415 555 0123"
                     value={formData.phone}
                     onChange={(e) => updateField("phone", e.target.value)}
                     disabled={isSaving}
+                    className={cn(formErrors.phone && "border-red-400")}
                   />
+                </FormField>
+                <FormField
+                  id="gender"
+                  label="Gender"
+                  error={formErrors.gender}
+                  required
+                >
+                  <Select
+                    value={formData.gender?.toLowerCase()}
+                    onValueChange={(v) => updateField("gender", v)}
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger
+                      id="gender"
+                      className={cn(formErrors.gender && "border-red-400")}
+                    >
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {GENDER_OPTIONS.map((g) => (
+                        <SelectItem key={g} value={g.toLowerCase()}>
+                          {g}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <FormField id="nationality" label="Nationality">
+                  <Select
+                    value={formData.nationality?.toLowerCase()}
+                    onValueChange={(v) => updateField("nationality", v)}
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger id="nationality">
+                      <SelectValue placeholder="Select nationality" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name_en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </FormField>
                 <FormField
                   id="dateOfBirth"
@@ -1084,38 +1223,6 @@ export function PlayerDetailPage() {
                     </PopoverContent>
                   </Popover>
                 </FormField>
-                <FormField id="gender" label="Gender">
-                  <Select
-                    value={formData.gender?.toLowerCase()}
-                    onValueChange={(v) => updateField("gender", v)}
-                    disabled={isSaving}
-                  >
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select gender" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {GENDER_OPTIONS.map((g) => (
-                        <SelectItem key={g} value={g.toLowerCase()}>
-                          {g}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </FormField>
-                <FormField
-                  id="username"
-                  label="Username"
-                  error={formErrors.username}
-                >
-                  <Input
-                    id="username"
-                    placeholder="3–30 chars; letters, numbers, . _ -"
-                    value={formData.username}
-                    onChange={(e) => updateField("username", e.target.value)}
-                    disabled={isSaving}
-                    className={cn(formErrors.username && "border-red-400")}
-                  />
-                </FormField>
                 <FormField id="initialStatus" label="Initial Status">
                   <Input
                     id="initialStatus"
@@ -1125,22 +1232,6 @@ export function PlayerDetailPage() {
                   />
                 </FormField>
               </div>
-              <FormField id="notes" label="Notes" error={formErrors.notes}>
-                <div className="relative">
-                  <Textarea
-                    id="notes"
-                    placeholder="Internal admin notes (max 1000 chars)."
-                    value={formData.notes}
-                    onChange={(e) => updateField("notes", e.target.value)}
-                    disabled={isSaving}
-                    rows={3}
-                    className={cn(formErrors.notes && "border-red-400")}
-                  />
-                  <span className="absolute bottom-2 right-3 text-[10px] text-gray-400">
-                    {formData.notes.length}/1000
-                  </span>
-                </div>
-              </FormField>
               <div className="flex justify-end gap-3 pt-2">
                 <Button
                   variant="outline"
@@ -1268,7 +1359,10 @@ export function PlayerDetailPage() {
                       <Globe className="h-3.5 w-3.5" /> Nationality
                     </span>
                     <span className="text-xs text-[#111827] text-right">
-                      {player.nationality || "—"}
+                      {countries.find((c) => c.id === player.nationality)
+                        ?.name_en ||
+                        player.nationality ||
+                        "—"}
                     </span>
                   </div>
                   <div className="flex items-start justify-between gap-2">
