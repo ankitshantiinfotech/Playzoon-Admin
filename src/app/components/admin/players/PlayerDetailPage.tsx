@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router";
+import { useParams, useNavigate, Link, useLocation } from "react-router";
 import {
   format,
   differenceInYears,
@@ -43,6 +43,9 @@ import {
   ChevronUp,
   ChevronDown,
   Pencil,
+  Camera,
+  Trash2, // FIX 1: Added missing Trash2 import
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "../../ui/utils";
 import { Button } from "../../ui/button";
@@ -52,7 +55,7 @@ import { Badge } from "../../ui/badge";
 import { Checkbox } from "../../ui/checkbox";
 import { Textarea } from "../../ui/textarea";
 import { Separator } from "../../ui/separator";
-import { Avatar, AvatarFallback } from "../../ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "../../ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../ui/tabs";
 import { RadioGroup, RadioGroupItem } from "../../ui/radio-group";
 import {
@@ -94,23 +97,24 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { StatusPill } from "./components/StatusPill";
 import { AddressesTab } from "./AddressesTab";
 import { DependentsTab } from "./DependentsTab";
+import { PreferencesTab } from "./PreferencesTab";
 import type { PlayerStatus } from "./player-data";
 import {
-  getPlayerDetail,
-  getPlayerAddresses,
-  getPlayerDependents,
-  getDetailAuditEvents,
   GENDER_OPTIONS,
-  COUNTRIES,
-  type PlayerDetail,
-  type PlayerAddress,
-  type PlayerDependent,
-  type DetailAuditEvent,
-  type SavedCard,
-  type PlayerBooking,
-  type WalletTransaction,
-  type PlayerTournament,
-  type PlayerFriend,
+  RELATIONSHIP_OPTIONS,
+  ADDRESS_TYPE_OPTIONS,
+  POPULAR_COUNTRIES as COUNTRIES,
+} from "./constants";
+import type {
+  PlayerDetail,
+  PlayerAddress,
+  PlayerDependent,
+  DetailAuditEvent,
+  SavedCard,
+  PlayerBooking,
+  WalletTransaction,
+  PlayerTournament,
+  PlayerFriend,
 } from "./player-detail-data";
 
 // ─── Banner ──────────────────────────────────────────────────
@@ -156,7 +160,42 @@ export function PlayerDetailPage() {
   const navigate = useNavigate();
   const id = routeId || "P-104392";
 
-  const [player, setPlayer] = useState<PlayerDetail>(() => getPlayerDetail(id));
+  const [player, setPlayer] = useState<PlayerDetail>({
+    id: id,
+    firstName: "",
+    lastName: "",
+    email: "",
+    countryCode: "+966",
+    phone: "",
+    status: "Active",
+    dateOfBirth: "",
+    gender: "",
+    nationality: "",
+    username: "",
+    bio: "",
+    occupation: "",
+    interestedSports: [],
+    preferredLanguage: "",
+    notes: "",
+    walletBalance: 0,
+    isSSOUser: false,
+    createdAt: new Date(),
+    lastActiveAt: new Date(),
+    notificationSettings: {
+      emailBookingConfirm: false,
+      emailCancellation: false,
+      emailPromotions: false,
+      pushReminders: false,
+      pushSessionUpdates: false,
+      smsAlerts: false,
+    },
+    privacySettings: {
+      profileVisible: false,
+      showActivityHistory: false,
+      allowFriendRequests: false,
+      shareWithCoaches: false,
+    },
+  });
   const [addresses, setAddresses] = useState<PlayerAddress[]>([]);
   const [dependents, setDependents] = useState<PlayerDependent[]>([]);
   const [auditEvents, setAuditEvents] = useState<DetailAuditEvent[]>([]);
@@ -183,41 +222,43 @@ export function PlayerDetailPage() {
         }),
       ]);
 
-      console.log("countriesRes", countriesRes);
-
       if (countriesRes?.data?.items) {
         setCountries(countriesRes.data.items);
       }
 
-      // adminService returns r.data = { success, data: { player fields }, message }
       const data = res?.data || res;
       if (!data || !data.id) throw new Error("Player not found");
-      // Map API response to PlayerDetail shape, merging with defaults
+
       setPlayer((prev) => ({
         ...prev,
         id: data.id ? String(data.id) : prev.id,
         firstName: data.first_name || data.first_name_en || "",
         lastName: data.last_name || data.last_name_en || "",
         email: data.email || "",
-        phone: data.country_code
-          ? `${data.country_code}${data.phone || data.mobile || ""}`
-          : data.phone || data.mobile || "",
+        countryCode: data.country_code || "+966",
+        phone: data.phone || data.mobile || "",
         gender: data.gender || "",
         dateOfBirth: data.date_of_birth || "",
         nationality:
           data.nationality_id ||
           data.nationality?.id ||
           (typeof data.nationality === "string" ? data.nationality : ""),
-        status: (data.status === "active"
-          ? "Active"
-          : data.status === "locked"
-            ? "Locked"
-            : "Inactive") as PlayerStatus,
+        status: (() => {
+          if (!data.status)
+            throw new Error("Status missing from API response.");
+          const norm =
+            typeof data.status === "string" ? data.status.toLowerCase() : "";
+          if (norm === "active") return "Active";
+          if (norm === "locked") return "Locked";
+          if (norm === "inactive") return "Inactive";
+          throw new Error(`Invalid player status received: ${data.status}`);
+        })(),
         avatarUrl: data.avatar_url || data.profile_photo_url || undefined,
         bio: data.bio || "",
-        createdAt: data.created_at
-          ? new Date(data.created_at)
-          : prev.createdAt,
+        occupation: data.occupation || "",
+        preferredLanguage:
+          data.preferred_language || data.preferredLanguage || "",
+        createdAt: data.created_at ? new Date(data.created_at) : prev.createdAt,
         lastActiveAt: data.last_login_at
           ? new Date(data.last_login_at)
           : prev.lastActiveAt,
@@ -225,7 +266,6 @@ export function PlayerDetailPage() {
           data.wallet_balance != null ? parseFloat(data.wallet_balance) : 0,
       }));
 
-      // Load dependants from API
       if (data.dependants && Array.isArray(data.dependants)) {
         setDependents(
           data.dependants.map((d: Record<string, unknown>) => ({
@@ -248,7 +288,6 @@ export function PlayerDetailPage() {
         setDependents([]);
       }
 
-      // Load addresses from API
       if (data.addresses && Array.isArray(data.addresses)) {
         setAddresses(
           data.addresses.map((a: Record<string, unknown>) => ({
@@ -271,7 +310,6 @@ export function PlayerDetailPage() {
         setAddresses([]);
       }
 
-      // Load audit trail from API
       if (
         data.recent_audit_trail &&
         Array.isArray(data.recent_audit_trail) &&
@@ -294,7 +332,6 @@ export function PlayerDetailPage() {
         );
       }
 
-      // Sports interests from API
       if (data.sports_interests && Array.isArray(data.sports_interests)) {
         setPlayer((prev) => ({
           ...prev,
@@ -304,7 +341,6 @@ export function PlayerDetailPage() {
         }));
       }
 
-      // Saved cards from API
       if (data.saved_cards && Array.isArray(data.saved_cards)) {
         setSavedCards(
           data.saved_cards.map((c: Record<string, unknown>) => ({
@@ -320,7 +356,6 @@ export function PlayerDetailPage() {
         );
       }
 
-      // Recent bookings from API
       if (data.recent_bookings && Array.isArray(data.recent_bookings)) {
         setBookings(
           data.recent_bookings.map((b: Record<string, unknown>) => ({
@@ -342,7 +377,6 @@ export function PlayerDetailPage() {
         );
       }
 
-      // Tournaments from API
       if (data.tournaments && Array.isArray(data.tournaments)) {
         setTournaments(
           data.tournaments.map((t: Record<string, unknown>) => ({
@@ -357,7 +391,6 @@ export function PlayerDetailPage() {
         );
       }
 
-      // Friends from API
       if (data.friends && Array.isArray(data.friends)) {
         setFriends(
           data.friends.map((f: Record<string, unknown>) => ({
@@ -375,11 +408,7 @@ export function PlayerDetailPage() {
         );
       }
 
-      // Wallet transactions from API
-      if (
-        data.wallet_transactions &&
-        Array.isArray(data.wallet_transactions)
-      ) {
+      if (data.wallet_transactions && Array.isArray(data.wallet_transactions)) {
         setWalletTransactions(
           data.wallet_transactions.map((wt: Record<string, unknown>) => ({
             id: String(wt.id || ""),
@@ -390,20 +419,59 @@ export function PlayerDetailPage() {
             description: String(
               wt.description || wt.reference_type || wt.type || "",
             ),
-            date: wt.created_at
-              ? new Date(String(wt.created_at))
-              : new Date(),
+            date: wt.created_at ? new Date(String(wt.created_at)) : new Date(),
             status: String(wt.status || "completed"),
           })),
         );
       }
 
-      // Wallet balance from summary
       if (data.wallet_summary) {
         setPlayer((prev) => ({
           ...prev,
           walletBalance: Number(data.wallet_summary.current_balance || 0),
         }));
+      }
+
+      try {
+        const prefsRes = await adminService.getPlayerPreferences(id);
+        const prefs = prefsRes?.data;
+        if (prefs) {
+          setPlayer((prev) => ({
+            ...prev,
+            notificationSettings: {
+              emailBookingConfirm:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "booking_confirmed",
+                )?.email ?? false,
+              emailCancellation:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "booking_cancelled",
+                )?.email ?? false,
+              emailPromotions:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "payment_success",
+                )?.email ?? false,
+              pushReminders:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "booking_reminder",
+                )?.push ?? false,
+              pushSessionUpdates:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "tournament_joined",
+                )?.push ?? false,
+              smsAlerts: false,
+            },
+            privacySettings: {
+              profileVisible: prefs.privacy === "public",
+              showActivityHistory:
+                prefs.privacy === "public" || prefs.privacy === "friends",
+              allowFriendRequests: prefs.privacy !== "private",
+              shareWithCoaches: prefs.privacy === "public",
+            },
+          }));
+        }
+      } catch {
+        // Preferences endpoint may not have data for new players - use defaults
       }
     } catch (err) {
       console.error("Failed to load player from API:", err);
@@ -412,20 +480,22 @@ export function PlayerDetailPage() {
     }
   };
 
-  // Fetch from real API and merge with detail data
   useEffect(() => {
     loadData();
   }, [id]);
+
   const [banner, setBanner] = useState<BannerState>({
     type: "info",
     message: "",
     visible: false,
   });
-  const [activeTab, setActiveTab] = useState("personal-info");
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = searchParams.get("tab") || "personal-info";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [copied, setCopied] = useState<string | null>(null);
   const [dobOpen, setDobOpen] = useState(false);
 
-  // ── Sports Interests Edit State ─────────────────────
   const ALL_SPORTS = [
     "Football",
     "Basketball",
@@ -460,7 +530,6 @@ export function PlayerDetailPage() {
       setTimeout(() => setBanner((b) => ({ ...b, visible: false })), 5000);
   }, []);
 
-  // Show locked warning
   useEffect(() => {
     if (player.status === "Locked") {
       const past =
@@ -486,34 +555,53 @@ export function PlayerDetailPage() {
     setTimeout(() => setCopied(null), 1500);
   };
 
-  // ── Profile Form State ────────────────────────────────
   const [formData, setFormData] = useState({
     firstName: player.firstName,
     lastName: player.lastName,
     email: player.email,
+    countryCode: player.countryCode,
     phone: player.phone,
     dateOfBirth: player.dateOfBirth,
     gender: player.gender,
     nationality: player.nationality,
+    bio: player.bio,
+    occupation: player.occupation,
+    preferredLanguage: player.preferredLanguage,
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sync form data when player state updates from API
   useEffect(() => {
     if (!isLoadingApi) {
       setFormData({
         firstName: player.firstName,
         lastName: player.lastName,
         email: player.email,
+        countryCode: player.countryCode,
         phone: player.phone,
         dateOfBirth: player.dateOfBirth,
         gender: player.gender,
         nationality: player.nationality,
+        bio: player.bio,
+        occupation: player.occupation,
+        preferredLanguage: player.preferredLanguage,
       });
     }
-  }, [isLoadingApi, player.firstName, player.lastName, player.email, player.phone, player.dateOfBirth, player.gender, player.nationality]); // eslint-disable-line
+  }, [
+    isLoadingApi,
+    player.firstName,
+    player.lastName,
+    player.email,
+    player.countryCode,
+    player.phone,
+    player.dateOfBirth,
+    player.gender,
+    player.nationality,
+    player.bio,
+    player.occupation,
+    player.preferredLanguage,
+  ]); // eslint-disable-line
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -551,6 +639,48 @@ export function PlayerDetailPage() {
     return Object.keys(e).length === 0;
   };
 
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+
+  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    try {
+      setIsPhotoUploading(true);
+      const res = await adminService.uploadPlayerPhoto(id, file);
+      setPlayer((prev) => ({ ...prev, avatarUrl: res.data.profile_photo_url }));
+      showBanner("success", "Profile photo updated successfully.");
+    } catch (err: any) {
+      showBanner(
+        "error",
+        err.response?.data?.message || "Failed to upload photo.",
+      );
+    } finally {
+      setIsPhotoUploading(false);
+    }
+  };
+
+  const triggerPhotoUpload = () => {
+    photoInputRef.current?.click();
+  };
+
+  const handleDeletePhoto = async () => {
+    if (!player.avatarUrl) return;
+    try {
+      setIsPhotoUploading(true);
+      await adminService.deletePlayerPhoto(id);
+      setPlayer((prev) => ({ ...prev, avatarUrl: undefined }));
+      showBanner("success", "Profile photo removed successfully.");
+    } catch (err: any) {
+      showBanner(
+        "error",
+        err.response?.data?.message || "Failed to remove photo.",
+      );
+    } finally {
+      setIsPhotoUploading(false);
+    }
+  };
+
   const handleSaveProfile = async () => {
     if (!validateProfile()) return;
     setIsSaving(true);
@@ -559,13 +689,16 @@ export function PlayerDetailPage() {
         first_name: formData.firstName,
         last_name: formData.lastName,
         email: formData.email,
+        country_code: formData.countryCode,
         mobile: formData.phone,
         gender: formData.gender,
         date_of_birth: formData.dateOfBirth || undefined,
         nationality_id: formData.nationality || null,
+        bio: formData.bio,
+        occupation: formData.occupation,
+        preferred_language: formData.preferredLanguage,
       });
 
-      // AC-PM-015: Generate field-level audit trail entries
       const fieldLabels: Record<string, string> = {
         firstName: "First Name",
         lastName: "Last Name",
@@ -576,28 +709,30 @@ export function PlayerDetailPage() {
       };
       const now = new Date();
       const newAuditEntries: DetailAuditEvent[] = [];
-      (Object.keys(formData) as Array<keyof typeof formData>).forEach((field) => {
-        const oldVal = player[field as keyof typeof player];
-        const newVal = formData[field];
-        if (oldVal !== newVal) {
-          newAuditEntries.push({
-            id: `AE-${Date.now()}-${field}`,
-            timestamp: now,
-            actor: "Admin",
-            actorRole: "Admin",
-            module: "Players",
-            action: "Update",
-            target: `${player.firstName} ${player.lastName} (#${player.id})`,
-            targetId: player.id,
-            result: "Success",
-            metadata: {
-              field: fieldLabels[field] || field,
-              before: oldVal,
-              after: newVal,
-            },
-          });
-        }
-      });
+      (Object.keys(formData) as Array<keyof typeof formData>).forEach(
+        (field) => {
+          const oldVal = player[field as keyof typeof player];
+          const newVal = formData[field];
+          if (oldVal !== newVal) {
+            newAuditEntries.push({
+              id: `AE-${Date.now()}-${field}`,
+              timestamp: now,
+              actor: "Admin",
+              actorRole: "Admin",
+              module: "Players",
+              action: "Update",
+              target: `${player.firstName} ${player.lastName} (#${player.id})`,
+              targetId: player.id,
+              result: "Success",
+              metadata: {
+                field: fieldLabels[field] || field,
+                before: oldVal,
+                after: newVal,
+              },
+            });
+          }
+        },
+      );
 
       if (newAuditEntries.length > 0) {
         setAuditEvents((prev) => [...newAuditEntries, ...prev]);
@@ -607,7 +742,7 @@ export function PlayerDetailPage() {
       toast.success("Profile saved.");
       setIsSaving(false);
       setIsDirty(false);
-      loadData(); // REFRESH DATA
+      loadData();
     } catch (err: any) {
       setIsSaving(false);
       const errData = err?.response?.data;
@@ -650,16 +785,19 @@ export function PlayerDetailPage() {
       firstName: player.firstName,
       lastName: player.lastName,
       email: player.email,
+      countryCode: player.countryCode,
       phone: player.phone,
       dateOfBirth: player.dateOfBirth,
       gender: player.gender,
       nationality: player.nationality,
+      bio: player.bio,
+      occupation: player.occupation,
+      preferredLanguage: player.preferredLanguage,
     });
     setIsDirty(false);
     setFormErrors({});
   };
 
-  // ── Status Change Modal ───────────────────────────────
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [statusDraft, setStatusDraft] = useState<PlayerStatus>(player.status);
   const [statusReason, setStatusReason] = useState("");
@@ -730,7 +868,6 @@ export function PlayerDetailPage() {
     }
   };
 
-  // ── Unsaved changes guard ─────────────────────────────
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [pendingTab, setPendingTab] = useState<string | null>(null);
 
@@ -750,9 +887,6 @@ export function PlayerDetailPage() {
     setDiscardDialogOpen(false);
   };
 
-  // (Address/Dependent logic is now in AddressesTab/DependentsTab components)
-
-  // ── Audit Tab State ───────────────────────────────────
   const [auditSearch, setAuditSearch] = useState("");
   const [auditAction, setAuditAction] = useState("all");
   const [auditActor, setAuditActor] = useState("all");
@@ -814,7 +948,6 @@ export function PlayerDetailPage() {
     auditActor !== "all" ||
     auditResult !== "all";
 
-  // ── Bookings Tab State ──────────────────────────────────
   const [bookingSortField, setBookingSortField] = useState<
     "dateTime" | "amount"
   >("dateTime");
@@ -854,12 +987,10 @@ export function PlayerDetailPage() {
     setBookingPage(1);
   };
 
-  // ── Compute age ───────────────────────────────────────
   const playerAge = player.dateOfBirth
     ? differenceInYears(new Date(), new Date(player.dateOfBirth))
     : null;
 
-  // ── Field helper component ────────────────────────────
   const FormField = ({
     id,
     label,
@@ -958,7 +1089,6 @@ export function PlayerDetailPage() {
               </TooltipContent>
             </Tooltip>
             <div className="flex gap-1 flex-wrap">
-              {/* AC-PM-018: Show dedicated Unlock button when player is Locked */}
               {player.status === "Locked" && (
                 <button
                   onClick={() => openStatusModal("Active")}
@@ -1051,6 +1181,12 @@ export function PlayerDetailPage() {
             Friends
           </TabsTrigger>
           <TabsTrigger
+            value="settings"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Settings
+          </TabsTrigger>
+          <TabsTrigger
             value="audit"
             className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
           >
@@ -1059,7 +1195,7 @@ export function PlayerDetailPage() {
         </TabsList>
 
         {/* ════════════════════════════════════════════════════
-            TAB: PERSONAL INFO (formerly Overview)
+            TAB: PERSONAL INFO
             ════════════════════════════════════════════════════ */}
         <TabsContent value="personal-info" className="mt-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -1119,14 +1255,35 @@ export function PlayerDetailPage() {
                   error={formErrors.phone}
                   required
                 >
-                  <Input
-                    id="phone"
-                    placeholder="+1 415 555 0123"
-                    value={formData.phone}
-                    onChange={(e) => updateField("phone", e.target.value)}
-                    disabled={isSaving}
-                    className={cn(formErrors.phone && "border-red-400")}
-                  />
+                  <div className="flex gap-2">
+                    <Select
+                      value={formData.countryCode}
+                      onValueChange={(v) => updateField("countryCode", v)}
+                      disabled={isSaving}
+                    >
+                      <SelectTrigger className="w-[100px] shrink-0">
+                        <SelectValue placeholder="Code" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="+966">+966</SelectItem>
+                        <SelectItem value="+971">+971</SelectItem>
+                        <SelectItem value="+1">+1</SelectItem>
+                        <SelectItem value="+44">+44</SelectItem>
+                        <SelectItem value="+91">+91</SelectItem>
+                      </SelectContent>
+                    </Select>
+                    <Input
+                      id="phone"
+                      placeholder="555 0123"
+                      value={formData.phone}
+                      onChange={(e) => updateField("phone", e.target.value)}
+                      disabled={isSaving}
+                      className={cn(
+                        "flex-1",
+                        formErrors.phone && "border-red-400",
+                      )}
+                    />
+                  </div>
                 </FormField>
                 <FormField
                   id="gender"
@@ -1147,8 +1304,8 @@ export function PlayerDetailPage() {
                     </SelectTrigger>
                     <SelectContent>
                       {GENDER_OPTIONS.map((g) => (
-                        <SelectItem key={g} value={g.toLowerCase()}>
-                          {g}
+                        <SelectItem key={g.value} value={g.value}>
+                          {g.label}
                         </SelectItem>
                       ))}
                     </SelectContent>
@@ -1156,7 +1313,7 @@ export function PlayerDetailPage() {
                 </FormField>
                 <FormField id="nationality" label="Nationality">
                   <Select
-                    value={formData.nationality?.toLowerCase()}
+                    value={formData.nationality || ""}
                     onValueChange={(v) => updateField("nationality", v)}
                     disabled={isSaving}
                   >
@@ -1223,12 +1380,49 @@ export function PlayerDetailPage() {
                     </PopoverContent>
                   </Popover>
                 </FormField>
-                <FormField id="initialStatus" label="Initial Status">
+                <FormField id="preferredLanguage" label="Preferred Language">
+                  <Select
+                    value={formData.preferredLanguage || "en"}
+                    onValueChange={(v) => updateField("preferredLanguage", v)}
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger id="preferredLanguage">
+                      <SelectValue placeholder="Select language" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="en">English (US)</SelectItem>
+                      <SelectItem value="ar">Arabic (العربية)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </FormField>
+                <FormField id="initialStatus" label="Account Status (System)">
                   <Input
                     id="initialStatus"
                     value={player.status}
                     disabled
                     className="bg-gray-50 text-gray-500 cursor-not-allowed"
+                  />
+                </FormField>
+              </div>
+
+              <div className="grid grid-cols-1 gap-4 pt-2">
+                <FormField id="occupation" label="Occupation">
+                  <Input
+                    id="occupation"
+                    placeholder="e.g., Software Engineer"
+                    value={formData.occupation}
+                    onChange={(e) => updateField("occupation", e.target.value)}
+                    disabled={isSaving}
+                  />
+                </FormField>
+                <FormField id="bio" label="Bio / Personality">
+                  <Textarea
+                    id="bio"
+                    placeholder="Short description or personality notes..."
+                    value={formData.bio}
+                    onChange={(e) => updateField("bio", e.target.value)}
+                    disabled={isSaving}
+                    rows={4}
                   />
                 </FormField>
               </div>
@@ -1254,25 +1448,87 @@ export function PlayerDetailPage() {
             </div>
 
             {/* ── Right: Overview Card ────────────────────── */}
+            {/* FIX 2: Notification & Privacy Settings moved INSIDE this col-span-4 div */}
             <div className="lg:col-span-4 space-y-4">
               <div className="bg-white border rounded-xl p-5 space-y-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-[#003B95]/10 text-[#003B95] text-sm">
-                      {player.firstName[0]}
-                      {player.lastName[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm text-[#111827]">
-                      {player.firstName} {player.lastName}
-                    </p>
+                <div className="flex items-center gap-4">
+                  <div className="relative group">
+                    <Avatar
+                      className={cn(
+                        "h-14 w-14 ring-2 ring-transparent transition-all",
+                        isPhotoUploading
+                          ? "opacity-50"
+                          : "group-hover:ring-blue-100",
+                      )}
+                    >
+                      {player.avatarUrl && (
+                        <AvatarImage
+                          src={player.avatarUrl}
+                          alt={player.firstName}
+                        />
+                      )}
+                      <AvatarFallback className="bg-[#003B95]/10 text-[#003B95] text-sm font-semibold">
+                        {player.firstName[0]}
+                        {player.lastName[0]}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Photo Upload Overlay */}
+                    <button
+                      onClick={triggerPhotoUpload}
+                      disabled={isPhotoUploading}
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-wait"
+                      title="Update profile photo"
+                    >
+                      {isPhotoUploading ? (
+                        <RefreshCw className="h-4 w-4 text-white animate-spin" />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <Camera className="h-4 w-4 text-white" />
+                          <span className="text-[8px] text-white font-medium uppercase tracking-wider">
+                            Update
+                          </span>
+                        </div>
+                      )}
+                    </button>
+
+                    <input
+                      type="file"
+                      ref={photoInputRef}
+                      className="hidden"
+                      accept="image/*"
+                      onChange={handlePhotoUpload}
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-[#111827] truncate">
+                        {player.firstName} {player.lastName}
+                      </p>
+                      {player.avatarUrl && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={handleDeletePhoto}
+                              disabled={isPhotoUploading}
+                              className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Remove profile photo</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                     <p className="text-[11px] text-[#9CA3AF] font-mono">
                       {player.id}
                     </p>
                   </div>
                 </div>
+
                 <Separator />
+
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-[#6B7280] flex items-center gap-1.5">
@@ -1297,6 +1553,7 @@ export function PlayerDetailPage() {
                       </TooltipContent>
                     </Tooltip>
                   </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-[#6B7280] flex items-center gap-1.5">
                       <Phone className="h-3.5 w-3.5" /> Phone
@@ -1306,11 +1563,14 @@ export function PlayerDetailPage() {
                         <TooltipTrigger asChild>
                           <button
                             onClick={() =>
-                              copyToClipboard(player.phone, "phone")
+                              copyToClipboard(
+                                `${player.countryCode} ${player.phone}`,
+                                "phone",
+                              )
                             }
                             className="text-[#111827] hover:text-[#003B95] flex items-center gap-1 text-xs"
                           >
-                            {player.phone}
+                            {player.countryCode} {player.phone}
                             {copied === "phone" ? (
                               <Check className="h-3 w-3 text-emerald-500" />
                             ) : (
@@ -1326,12 +1586,14 @@ export function PlayerDetailPage() {
                       <span className="text-[#9CA3AF] text-xs italic">—</span>
                     )}
                   </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-[#6B7280] flex items-center gap-1.5">
                       <Shield className="h-3.5 w-3.5" /> Status
                     </span>
                     <StatusPill status={player.status} />
                   </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-[#6B7280] flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5" /> DOB
@@ -1365,6 +1627,7 @@ export function PlayerDetailPage() {
                         "—"}
                     </span>
                   </div>
+
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[#6B7280] flex items-center gap-1.5 shrink-0">
                       <Briefcase className="h-3.5 w-3.5" /> Occupation
@@ -1373,6 +1636,7 @@ export function PlayerDetailPage() {
                       {player.occupation || "—"}
                     </span>
                   </div>
+
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[#6B7280] flex items-center gap-1.5 shrink-0">
                       <Languages className="h-3.5 w-3.5" /> Language
@@ -1381,6 +1645,7 @@ export function PlayerDetailPage() {
                       {player.preferredLanguage || "—"}
                     </span>
                   </div>
+
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[#6B7280] flex items-center gap-1.5 shrink-0">
                       <Calendar className="h-3.5 w-3.5" /> Registered
@@ -1389,6 +1654,7 @@ export function PlayerDetailPage() {
                       {format(player.createdAt, "dd MMM yyyy")}
                     </span>
                   </div>
+
                   {player.bio && (
                     <div className="pt-1 border-t border-gray-100">
                       <p className="text-[10px] text-[#9CA3AF] uppercase font-semibold mb-1">
@@ -1399,6 +1665,7 @@ export function PlayerDetailPage() {
                       </p>
                     </div>
                   )}
+
                   {player.interestedSports &&
                     player.interestedSports.length > 0 && (
                       <div className="pt-1 border-t border-gray-100">
@@ -1420,7 +1687,7 @@ export function PlayerDetailPage() {
                 </div>
               </div>
 
-              {/* Notification & Privacy Settings */}
+              {/* Notification Settings — FIX 2: now inside lg:col-span-4 */}
               {player.notificationSettings && (
                 <div className="bg-white border rounded-xl p-5 space-y-3">
                   <h3 className="text-xs font-semibold text-[#374151] uppercase tracking-wide flex items-center gap-1.5">
@@ -1476,6 +1743,7 @@ export function PlayerDetailPage() {
                 </div>
               )}
 
+              {/* Privacy Settings — FIX 2: now inside lg:col-span-4 */}
               {player.privacySettings && (
                 <div className="bg-white border rounded-xl p-5 space-y-3">
                   <h3 className="text-xs font-semibold text-[#374151] uppercase tracking-wide flex items-center gap-1.5">
@@ -1523,6 +1791,7 @@ export function PlayerDetailPage() {
                 </div>
               )}
             </div>
+            {/* end lg:col-span-4 */}
           </div>
         </TabsContent>
 
@@ -1580,7 +1849,6 @@ export function PlayerDetailPage() {
             )}
           </div>
 
-          {/* Sports Interests Edit Dialog */}
           <Dialog open={sportsEditOpen} onOpenChange={setSportsEditOpen}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -1631,9 +1899,12 @@ export function PlayerDetailPage() {
             ════════════════════════════════════════════════════ */}
         <TabsContent value="addresses" className="mt-4">
           <AddressesTab
+            playerId={id}
             addresses={addresses}
             setAddresses={setAddresses}
             playerName={`${player.firstName} ${player.lastName}`}
+            countries={countries}
+            isLoading={isLoadingApi}
           />
         </TabsContent>
 
@@ -1642,9 +1913,11 @@ export function PlayerDetailPage() {
             ════════════════════════════════════════════════════ */}
         <TabsContent value="dependants" className="mt-4">
           <DependentsTab
+            playerId={id}
             dependents={dependents}
             setDependents={setDependents}
             playerName={`${player.firstName} ${player.lastName}`}
+            isLoading={isLoadingApi}
           />
         </TabsContent>
 
@@ -1826,7 +2099,6 @@ export function PlayerDetailPage() {
                     </TableBody>
                   </Table>
                 </div>
-                {/* Pagination */}
                 <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50/50">
                   <span className="text-xs text-[#6B7280]">
                     Showing{" "}
@@ -1896,7 +2168,6 @@ export function PlayerDetailPage() {
             TAB: WALLET
             ════════════════════════════════════════════════════ */}
         <TabsContent value="wallet" className="mt-4 space-y-4">
-          {/* Balance Card */}
           <div className="bg-white border rounded-xl p-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-[#003B95]/10 flex items-center justify-center">
@@ -1916,7 +2187,6 @@ export function PlayerDetailPage() {
             </div>
           </div>
 
-          {/* Transactions Table */}
           <div className="bg-white border rounded-xl overflow-hidden">
             <div className="p-6 pb-4">
               <h2 className="text-[#111827]">Transactions</h2>
@@ -2106,8 +2376,12 @@ export function PlayerDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {/* FIX 4: key changed from friend.id (doesn't exist) to friend.playerId */}
                     {friends.map((friend) => (
-                      <TableRow key={friend.id} className="hover:bg-gray-50/50">
+                      <TableRow
+                        key={friend.playerId}
+                        className="hover:bg-gray-50/50"
+                      >
                         <TableCell className="px-4">
                           <Link
                             to={`/players/${friend.playerId}`}
@@ -2158,10 +2432,16 @@ export function PlayerDetailPage() {
         </TabsContent>
 
         {/* ════════════════════════════════════════════════════
+            TAB: SETTINGS (Preferences)
+            ════════════════════════════════════════════════════ */}
+        <TabsContent value="settings" className="mt-4">
+          <PreferencesTab playerId={id} />
+        </TabsContent>
+
+        {/* ════════════════════════════════════════════════════
             TAB: AUDIT TRAIL
             ════════════════════════════════════════════════════ */}
         <TabsContent value="audit" className="mt-4 space-y-4">
-          {/* Filters */}
           <div className="bg-white border rounded-xl p-4 space-y-3">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
@@ -2260,7 +2540,6 @@ export function PlayerDetailPage() {
             </div>
           </div>
 
-          {/* Audit Table */}
           <div className="bg-white border rounded-xl overflow-hidden">
             {filteredAudit.length > 0 ? (
               <>
@@ -2367,7 +2646,6 @@ export function PlayerDetailPage() {
                     </TableBody>
                   </Table>
                 </div>
-                {/* Pagination */}
                 <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50/50">
                   <span className="text-xs text-[#6B7280]">
                     Showing{" "}
@@ -2421,7 +2699,6 @@ export function PlayerDetailPage() {
               <div className="text-center py-16 space-y-3">
                 <Search className="h-10 w-10 text-gray-200 mx-auto" />
                 <p className="text-sm text-[#374151]">
-                  {/* AC-PM-032 */}
                   {hasAuditFilters
                     ? "No events match your filters."
                     : "No audit history available."}
@@ -2450,7 +2727,6 @@ export function PlayerDetailPage() {
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
             <DialogTitle>
-              {/* AC-PM-016/017/018: Context-specific title */}
               {statusDraft === "Active" && player.status === "Locked"
                 ? "Are you sure you want to unlock this player's account?"
                 : statusDraft === "Active"
@@ -2466,7 +2742,8 @@ export function PlayerDetailPage() {
                   ? `${player.firstName} ${player.lastName} will be reactivated and can access Playzoon.`
                   : statusDraft === "Inactive"
                     ? `${player.firstName} ${player.lastName} will be deactivated and cannot access Playzoon.`
-                    : `Update the status for ${player.firstName} ${player.lastName} (#{player.id}).`}
+                    : // FIX 3: #{player.id} → #${player.id} (template literal expression)
+                      `Update the status for ${player.firstName} ${player.lastName} (#${player.id}).`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">

@@ -49,7 +49,7 @@ import {
   BreadcrumbPage,
   BreadcrumbSeparator,
 } from "../../ui/breadcrumb";
-import { GENDER_OPTIONS, COUNTRIES } from "./player-detail-data";
+import { GENDER_OPTIONS } from "./constants";
 import type { PlayerStatus } from "./player-data";
 
 // ─── Types ───────────────────────────────────────────────────
@@ -58,6 +58,7 @@ interface FormData {
   firstName: string;
   lastName: string;
   email: string;
+  countryCode: string;
   phone: string;
   dateOfBirth: Date | undefined;
   gender: string;
@@ -69,6 +70,7 @@ const INITIAL_FORM: FormData = {
   firstName: "",
   lastName: "",
   email: "",
+  countryCode: "+966",
   phone: "",
   dateOfBirth: undefined,
   gender: "",
@@ -372,15 +374,31 @@ export function CreatePlayerPage() {
         first_name: form.firstName,
         last_name: form.lastName,
         email: form.email,
+        country_code: form.countryCode,
         mobile: form.phone,
         gender: form.gender || undefined,
+        status: form.initialStatus.toLowerCase(),
         date_of_birth: form.dateOfBirth
           ? format(form.dateOfBirth, "yyyy-MM-dd")
           : undefined,
         nationality_id: form.nationality || undefined,
       };
       const result = await adminService.createPlayer(payload);
-      const newId = result.id || result.player?.id;
+      const newId = result.data?.id || result.id || result.player?.id;
+
+      // Upload profile picture if one was selected (2-step: create → upload)
+      if (newId && profilePicture) {
+        try {
+          await adminService.uploadPlayerPhoto(newId, profilePicture);
+        } catch (photoErr: any) {
+          // Player was created successfully, but photo upload failed — warn, don't block
+          console.error("Profile photo upload failed:", photoErr);
+          toast.warning(
+            "Player created but profile photo upload failed. You can upload it from the player detail page.",
+          );
+        }
+      }
+
       setIsDirty(false);
       showBanner(
         "success",
@@ -665,18 +683,39 @@ export function CreatePlayerPage() {
               <Label htmlFor="phone" className="text-sm text-[#374151]">
                 Mobile Number<span className="text-red-500 ml-0.5">*</span>
               </Label>
-              <Input
-                ref={fieldRefs.phone as React.RefObject<HTMLInputElement>}
-                id="phone"
-                placeholder="+1 415 555 0137"
-                value={form.phone}
-                onChange={(e) => updateField("phone", e.target.value)}
-                onBlur={() => handleBlur("phone")}
-                aria-required="true"
-                aria-invalid={!!errors.phone}
-                disabled={isSubmitting}
-                className={cn(errors.phone && "border-red-400")}
-              />
+              <div className="flex gap-2">
+                <Select
+                  value={form.countryCode}
+                  onValueChange={(v) => updateField("countryCode", v)}
+                  disabled={isSubmitting}
+                >
+                  <SelectTrigger className="w-[100px] h-10 shrink-0">
+                    <SelectValue placeholder="Code" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="+966">+966</SelectItem>
+                    <SelectItem value="+971">+971</SelectItem>
+                    <SelectItem value="+1">+1</SelectItem>
+                    <SelectItem value="+44">+44</SelectItem>
+                    <SelectItem value="+91">+91</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Input
+                  ref={fieldRefs.phone as React.RefObject<HTMLInputElement>}
+                  id="phone"
+                  placeholder="555 0137"
+                  value={form.phone}
+                  onChange={(e) => updateField("phone", e.target.value)}
+                  onBlur={() => handleBlur("phone")}
+                  aria-required="true"
+                  aria-invalid={!!errors.phone}
+                  disabled={isSubmitting}
+                  className={cn(
+                    "flex-1 h-10",
+                    errors.phone && "border-red-400",
+                  )}
+                />
+              </div>
               {errors.phone && (
                 <FieldError id="err-phone" message={errors.phone} />
               )}
@@ -688,7 +727,7 @@ export function CreatePlayerPage() {
                 Gender<span className="text-red-500 ml-0.5">*</span>
               </Label>
               <Select
-                value={form.gender.toLowerCase()}
+                value={form.gender}
                 onValueChange={(v) => {
                   updateField("gender", v);
                 }}
@@ -702,8 +741,8 @@ export function CreatePlayerPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {GENDER_OPTIONS.map((g) => (
-                    <SelectItem key={g} value={g.toLowerCase()}>
-                      {g.toLowerCase()}
+                    <SelectItem key={g.value} value={g.value}>
+                      {g.label}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -719,7 +758,7 @@ export function CreatePlayerPage() {
                 Nationality<span className="text-red-500 ml-0.5">*</span>
               </Label>
               <Select
-                value={form.nationality.toLowerCase()}
+                value={form.nationality}
                 onValueChange={(v) => {
                   updateField("nationality", v);
                 }}
@@ -795,7 +834,7 @@ export function CreatePlayerPage() {
                 Initial Status
               </Label>
               <Select
-                value={form.initialStatus.toLowerCase()}
+                value={form.initialStatus}
                 onValueChange={(v) =>
                   updateField("initialStatus", v as PlayerStatus)
                 }
@@ -806,8 +845,8 @@ export function CreatePlayerPage() {
                 </SelectTrigger>
                 <SelectContent>
                   {STATUS_OPTIONS.map((s) => (
-                    <SelectItem key={s.value} value={s.value.toLowerCase()}>
-                      {s.label.toLowerCase()}
+                    <SelectItem key={s.value} value={s.value}>
+                      {s.label}
                     </SelectItem>
                   ))}
                 </SelectContent>

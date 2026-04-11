@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { format, formatDistanceToNow } from "date-fns";
 import { cn } from "../../../ui/utils";
 import { Button } from "../../../ui/button";
@@ -35,7 +35,7 @@ import {
 import { Input } from "../../../ui/input";
 import { toast } from "sonner";
 import type { PlayerRow, PlayerAuditEvent } from "../player-data";
-import { getPlayerAuditEvents } from "../player-data";
+import { adminService } from "@/services/admin.service";
 
 // ─── Action styles ───────────────────────────────────────────
 
@@ -56,13 +56,43 @@ interface Props {
 // ─── Component ───────────────────────────────────────────────
 
 export function PlayerAuditDrawer({ player, open, onClose }: Props) {
-  const events = useMemo(() => getPlayerAuditEvents(player.id), [player.id]);
+  const [events, setEvents] = useState<PlayerAuditEvent[]>([]);
+  const [loading, setLoading] = useState(false);
   const [search, setSearch] = useState("");
   const [moduleFilter, setModuleFilter] = useState("all");
   const [actionFilter, setActionFilter] = useState("all");
   const [expandedEvent, setExpandedEvent] = useState<string | null>(null);
   const [detailEvent, setDetailEvent] = useState<PlayerAuditEvent | null>(null);
   const [copied, setCopied] = useState(false);
+
+  useEffect(() => {
+    if (!open || !player?.id) return;
+    const fetchAudit = async () => {
+      setLoading(true);
+      try {
+        const res = await adminService.getAuditTrail({ entity_id: player.id, limit: 100 });
+        const items = res.data?.entries || [];
+        const mapped = items.map((item: any) => ({
+          id: item.id,
+          timestamp: new Date(item.created_at),
+          actor: item.actor_name || "System",
+          actorRole: item.actor_role || "System",
+          action: (item.action || "UPDATE").toUpperCase(),
+          field: item.entity_type || "Unknown",
+          oldValue: item.changes?.before ?? null,
+          newValue: item.changes?.after ?? null,
+          ipAddress: item.ip_address || "N/A",
+          module: item.module || "Unknown",
+        }));
+        setEvents(mapped);
+      } catch (err) {
+        toast.error("Failed to load audit trail");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchAudit();
+  }, [open, player?.id]);
 
   const modules = useMemo(() => {
     const s = new Set(events.map((e) => e.module));
@@ -158,10 +188,12 @@ export function PlayerAuditDrawer({ player, open, onClose }: Props) {
         {/* Events */}
         <ScrollArea className="flex-1">
           <div className="p-5 space-y-2">
-            {filtered.length > 0 ? (
+            {loading ? (
+              <div className="flex justify-center p-10"><span className="text-sm text-gray-500">Loading audit trail...</span></div>
+            ) : filtered.length > 0 ? (
               filtered.map((event) => {
                 const isExpanded = expandedEvent === event.id;
-                const ac = ACTION_COLORS[event.action];
+                const ac = ACTION_COLORS[event.action] || { bg: "bg-gray-50", text: "text-gray-700" };
                 return (
                   <div key={event.id} className="border rounded-lg overflow-hidden">
                     <button
@@ -277,7 +309,7 @@ export function PlayerAuditDrawer({ player, open, onClose }: Props) {
             <DialogHeader>
               <DialogTitle className="flex items-center gap-2 text-sm">
                 Audit Event Detail
-                <Badge variant="secondary" className={cn("text-[9px] font-mono", ACTION_COLORS[detailEvent.action].bg, ACTION_COLORS[detailEvent.action].text)}>
+                <Badge variant="secondary" className={cn("text-[9px] font-mono", (ACTION_COLORS[detailEvent.action] || { bg: "bg-gray-50", text: "text-gray-700" }).bg, (ACTION_COLORS[detailEvent.action] || { bg: "bg-gray-50", text: "text-gray-700" }).text)}>
                   {detailEvent.action}
                 </Badge>
               </DialogTitle>
