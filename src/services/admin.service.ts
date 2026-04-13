@@ -57,6 +57,12 @@ export const adminService = {
   },
   deletePlayerPhoto: (id: string) =>
     api.delete(`/admin/players/${id}/profile-photo`).then(r => r.data),
+  addPlayerPaymentMethod: (id: string, data: P) =>
+    api.post(`/admin/players/${id}/payment-methods`, data).then(r => r.data),
+  removePlayerPaymentMethod: (id: string, paymentId: string) =>
+    api.delete(`/admin/players/${id}/payment-methods/${paymentId}`).then(r => r.data),
+  setPlayerDefaultPaymentMethod: (id: string, paymentId: string) =>
+    api.put(`/admin/players/${id}/payment-methods/${paymentId}/default`, {}).then(r => r.data),
 
   // ── Providers (5) ────────────────────────────────────────────────────
   listProviders: (params: P) =>
@@ -95,6 +101,9 @@ export const adminService = {
     api.get('/admin/master-data/locations', { params }).then(r => r.data),
   listMasterData: (type: string, params: P) =>
     api.get(`/admin/master-data/${type}`, { params }).then(r => r.data),
+  /** Same payload as web GET /config/countries (public). */
+  getPublicCountries: () =>
+    api.get('/config/countries').then(r => r.data),
 
   // ── Reviews (3) ──────────────────────────────────────────────────────
   listReviews: (params: P) =>

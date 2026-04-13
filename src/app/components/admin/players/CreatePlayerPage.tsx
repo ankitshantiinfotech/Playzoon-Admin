@@ -172,7 +172,7 @@ export function CreatePlayerPage() {
 
   useEffect(() => {
     adminService
-      .listMasterData("countries", { limit: 200, status: "active" })
+      .listMasterData("countries", { limit: 100, status: "active" })
       .then((res: any) => {
         if (res?.data?.items) setCountries(res.data.items);
       });

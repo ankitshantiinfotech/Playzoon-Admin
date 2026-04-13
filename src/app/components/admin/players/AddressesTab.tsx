@@ -298,7 +298,7 @@ export function AddressesTab({
         .listMasterData("cities", {
           country_id: form.country_id,
           status: "active",
-          limit: 200,
+          limit: 100,
         })
         .then((res) => setCities(res.data?.items || []))
         .catch(() => setCities([]));

@@ -1,4 +1,10 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, {
+  useState,
+  useRef,
+  useCallback,
+  useEffect,
+  type ReactNode,
+} from "react";
 import { createPortal } from "react-dom";
 import ReactCrop, {
   type Crop,
@@ -32,7 +38,7 @@ export default function ImageCropper({
   circularMask = false,
   quality = 0.85,
   title = "Crop Image",
-}: ImageCropperProps) {
+}: ImageCropperProps): ReactNode {
   const [crop, setCrop] = useState<Crop>();
   const imgRef = useRef<HTMLImageElement | null>(null);
 
@@ -167,7 +173,8 @@ export default function ImageCropper({
             crop={crop}
             onChange={(c) => setCrop(c)}
             aspect={aspect}
-            className={circularMask ? "rounded-full [&_.ReactCrop__crop-selection]:!rounded-full" : ""}
+            circularCrop={!!circularMask}
+            className={circularMask ? "max-w-full" : ""}
           >
             <img
               src={imageSrc}

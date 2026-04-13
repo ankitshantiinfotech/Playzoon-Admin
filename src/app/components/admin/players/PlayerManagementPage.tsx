@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, type ElementType } from "react";
 import { useNavigate } from "react-router";
 import { format, isBefore, isAfter, startOfDay, endOfDay } from "date-fns";
 import { toast } from "sonner";
@@ -84,7 +84,7 @@ import {
 
 import type { PlayerRow, PlayerStatus, AppliedFilters } from "./player-data";
 import { EMPTY_FILTERS } from "./player-data";
-import { adminService } from "@/services/admin.service";
+import { adminService } from "../../../../services/admin.service";
 import { StatusPill } from "./components/StatusPill";
 import {
   BulkActionsModal,
@@ -155,7 +155,7 @@ interface BannerState {
 
 const BANNER_STYLES: Record<
   BannerType,
-  { bg: string; border: string; text: string; icon: React.ElementType }
+  { bg: string; border: string; text: string; icon: ElementType }
 > = {
   success: {
     bg: "bg-emerald-50",
@@ -199,43 +199,57 @@ export function PlayerManagementPage() {
     { id: string; name_en: string }[]
   >([]);
 
-  // Map API response to PlayerRow
-  const mapApiPlayer = (p: any): PlayerRow => ({
-    id: p.id,
-    firstName: p.firstName || p.first_name || p.first_name_en || "",
-    lastName: p.lastName || p.last_name || p.last_name_en || "",
-    email: p.email || "",
-    phone: p.country_code
-      ? `${p.country_code}${p.phone || p.mobile || ""}`
-      : p.phone || p.mobile || "",
-    gender: p.gender || "",
-    status: (() => {
-      if (!p.status) throw new Error("Status missing from API response.");
-      const norm = typeof p.status === "string" ? p.status.toLowerCase() : "";
-      if (norm === "active") return "Active";
-      if (norm === "locked") return "Locked";
-      if (norm === "inactive") return "Inactive";
-      throw new Error(`Invalid player status received: ${p.status}`);
-    })(),
-    dependents: p.dependants_count || 0,
-    createdAt: new Date(p.created_at),
-    lastActiveAt: p.last_active_at
-      ? new Date(p.last_active_at)
-      : new Date(p.created_at),
-    avatarUrl: p.profile_photo_url || undefined,
-    lockedUntil: p.locked_until || undefined,
-    walletBalance: parseFloat(p.wallet_balance || "0"),
-    isSSOUser: !!p.is_sso_user,
-    nationality: p.nationality || "",
-    defaultCity: p.default_location || "",
-    savedAddressesCount: (p.extra_addresses_count || 0) + 1,
-    isLocked: !!p.is_locked,
-  });
+  // Map API response to PlayerRow (status / lock aligned with PlayerDetailPage: use `status` + `locked_until`, not a separate is_locked flag)
+  const mapApiPlayer = (p: any): PlayerRow => {
+    if (!p.status) throw new Error("Status missing from API response.");
+    const norm = typeof p.status === "string" ? p.status.toLowerCase() : "";
+    let status: PlayerStatus;
+    if (norm === "active") status = "Active";
+    else if (norm === "locked") status = "Locked";
+    else if (norm === "inactive") status = "Inactive";
+    else throw new Error(`Invalid player status received: ${p.status}`);
+
+    const extraAddr =
+      p.extra_addresses_count ?? p.extra_addresses ?? 0;
+    const savedAddressesCount =
+      typeof p.addresses_count === "number"
+        ? p.addresses_count
+        : typeof p.saved_addresses_count === "number"
+          ? p.saved_addresses_count
+          : Number(extraAddr) + 1;
+
+    return {
+      id: p.id,
+      firstName: p.firstName || p.first_name || p.first_name_en || "",
+      lastName: p.lastName || p.last_name || p.last_name_en || "",
+      email: p.email || "",
+      phone: p.country_code
+        ? `${p.country_code}${p.phone || p.mobile || ""}`
+        : p.phone || p.mobile || "",
+      gender: p.gender || "",
+      status,
+      dependents: p.dependants_count || 0,
+      createdAt: new Date(p.created_at),
+      lastActiveAt: p.last_login_at
+        ? new Date(p.last_login_at)
+        : p.last_active_at
+          ? new Date(p.last_active_at)
+          : new Date(p.created_at),
+      avatarUrl: p.profile_photo_url || undefined,
+      lockedUntil: p.locked_until || undefined,
+      walletBalance: parseFloat(p.wallet_balance || "0"),
+      isSSOUser: !!p.is_sso_user,
+      nationality: p.nationality || "",
+      defaultCity: p.default_location || "",
+      defaultCountry: p.default_country || p.defaultCountry || "",
+      savedAddressesCount,
+    };
+  };
 
   const fetchCountries = async () => {
     try {
       const res = await adminService.listMasterData("countries", {
-        limit: 250,
+        limit: 100,
       });
       if (res?.data?.items) {
         setDynamicCountries(res.data.items);

@@ -64,10 +64,10 @@ export interface PlayerDependent {
   firstName: string;
   lastName: string;
   relationship: string;
+  /** Relation type UUID (for edit form). */
+  relation_type_id?: string;
+  gender?: string;
   dateOfBirth: string;
-  email: string;
-  phone: string;
-  notes: string;
   lastUpdated: Date;
 }
 
@@ -86,7 +86,8 @@ export interface DetailAuditEvent {
 
 export interface SavedCard {
   id: string;
-  brand: "Visa" | "Mastercard" | "Mada";
+  /** Display label (matches player app / API card_brand). */
+  brand: string;
   last4: string;
   expiry: string;
   isDefault: boolean;

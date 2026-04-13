@@ -1,4 +1,13 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+  type ChangeEvent,
+  type ElementType,
+  type ReactNode,
+} from "react";
 import { useParams, useNavigate, Link, useLocation } from "react-router";
 import {
   format,
@@ -8,7 +17,15 @@ import {
   isAfter,
 } from "date-fns";
 import { toast } from "sonner";
-import { adminService } from "@/services/admin.service";
+import { parsePhoneNumber, isValidPhoneNumber } from "libphonenumber-js";
+import { adminService } from "../../../../services/admin.service";
+import {
+  BIO_MAX_PLAIN_CHARS,
+  bioPlainTextLength,
+  sanitizePlayerBioHtml,
+} from "../../../../lib/bio-html";
+import MobileNumber from "../../ui/MobileNumber";
+import { AdminPlayerBioEditor } from "./AdminPlayerBioEditor";
 import {
   ArrowLeft,
   Copy,
@@ -36,7 +53,6 @@ import {
   Languages,
   Lock as LockIcon,
   Unlock,
-  CreditCard,
   Wallet,
   Trophy,
   Users,
@@ -94,13 +110,15 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { Calendar as CalendarPicker } from "../../ui/calendar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
+import ImageCropper from "../../ImageCropper";
+import { CROP_PRESETS } from "../../../../lib/cropPresets";
 import { StatusPill } from "./components/StatusPill";
 import { AddressesTab } from "./AddressesTab";
 import { DependentsTab } from "./DependentsTab";
+import { SavedCardsTab } from "./SavedCardsTab";
 import { PreferencesTab } from "./PreferencesTab";
 import type { PlayerStatus } from "./player-data";
 import {
-  GENDER_OPTIONS,
   RELATIONSHIP_OPTIONS,
   ADDRESS_TYPE_OPTIONS,
   POPULAR_COUNTRIES as COUNTRIES,
@@ -124,9 +142,18 @@ interface BannerState {
   message: string;
   visible: boolean;
 }
+/** Normalize API date (DATEONLY or ISO) for calendar / yyyy-MM-dd inputs. */
+function toProfileDateInputValue(value: unknown): string {
+  if (value == null || value === "") return "";
+  const s = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? "" : format(d, "yyyy-MM-dd");
+}
+
 const BANNER_STYLES: Record<
   BannerType,
-  { bg: string; border: string; text: string; icon: React.ElementType }
+  { bg: string; border: string; text: string; icon: ElementType }
 > = {
   success: {
     bg: "bg-emerald-50",
@@ -153,6 +180,62 @@ const BANNER_STYLES: Record<
     icon: AlertTriangle,
   },
 };
+
+function buildPhoneE164(countryCode: string, nationalDigits: string): string {
+  const nat = (nationalDigits || "").replace(/\D/g, "");
+  if (!nat) return "";
+  const cc = (countryCode || "+966").trim();
+  const prefix = cc.startsWith("+") ? cc : `+${cc}`;
+  return `${prefix}${nat}`;
+}
+
+/** Same response shape as web GET /config/countries (api envelope + nested data). */
+function normalizeCountriesFromConfig(body: unknown): { id: string; name_en: string }[] {
+  const root = body as Record<string, unknown> | null | undefined;
+  if (!root) return [];
+  const inner = (root.data as Record<string, unknown>) ?? root;
+  const list = inner.countries;
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((c: Record<string, unknown>) => ({
+      id: String(c.id ?? ""),
+      name_en: String(c.name_en ?? c.name ?? ""),
+    }))
+    .filter((c) => c.id);
+}
+
+function ProfileFormField({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      {children}
+      {error && (
+        <p className="text-xs text-red-500" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+const MAX_PROFILE_PHOTO_MB = 5;
+const MAX_PROFILE_PHOTO_BYTES = MAX_PROFILE_PHOTO_MB * 1024 * 1024;
+const ALLOWED_PROFILE_PHOTO_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+] as const;
 
 // ─── Main Component ──────────────────────────────────────────
 export function PlayerDetailPage() {
@@ -214,20 +297,19 @@ export function PlayerDetailPage() {
   const loadData = async () => {
     setIsLoadingApi(true);
     try {
-      const [res, countriesRes] = await Promise.all([
-        adminService.getPlayer(id),
-        adminService.listMasterData("countries", {
-          limit: 200,
-          status: "active",
-        }),
-      ]);
-
-      if (countriesRes?.data?.items) {
-        setCountries(countriesRes.data.items);
-      }
-
+      const res = await adminService.getPlayer(id);
       const data = res?.data || res;
       if (!data || !data.id) throw new Error("Player not found");
+
+      // Same source as web player profile: GET /config/countries
+      adminService
+        .getPublicCountries()
+        .then((res) => {
+          setCountries(normalizeCountriesFromConfig(res));
+        })
+        .catch((err) => {
+          console.error("Failed to load countries:", err);
+        });
 
       setPlayer((prev) => ({
         ...prev,
@@ -238,7 +320,7 @@ export function PlayerDetailPage() {
         countryCode: data.country_code || "+966",
         phone: data.phone || data.mobile || "",
         gender: data.gender || "",
-        dateOfBirth: data.date_of_birth || "",
+        dateOfBirth: toProfileDateInputValue(data.date_of_birth),
         nationality:
           data.nationality_id ||
           data.nationality?.id ||
@@ -257,7 +339,10 @@ export function PlayerDetailPage() {
         bio: data.bio || "",
         occupation: data.occupation || "",
         preferredLanguage:
-          data.preferred_language || data.preferredLanguage || "",
+          data.preferred_language ||
+          data.language_preference ||
+          data.preferredLanguage ||
+          "",
         createdAt: data.created_at ? new Date(data.created_at) : prev.createdAt,
         lastActiveAt: data.last_login_at
           ? new Date(data.last_login_at)
@@ -270,15 +355,12 @@ export function PlayerDetailPage() {
         setDependents(
           data.dependants.map((d: Record<string, unknown>) => ({
             id: String(d.id || ""),
-            firstName: String(d.first_name_en || ""),
-            lastName: String(d.last_name_en || ""),
-            relationship: String(
-              d.relationship || d.relation_type_id || "Child",
-            ),
+            firstName: String(d.first_name_en || d.first_name || ""),
+            lastName: String(d.last_name_en || d.last_name || ""),
+            relationship: String(d.relationship || ""),
+            relation_type_id: String(d.relation_type_id || ""),
+            gender: String(d.gender || ""),
             dateOfBirth: String(d.dob || ""),
-            email: String(d.email || ""),
-            phone: String(d.phone || ""),
-            notes: String(d.notes || ""),
             lastUpdated: d.updated_at
               ? new Date(String(d.updated_at))
               : new Date(),
@@ -343,16 +425,22 @@ export function PlayerDetailPage() {
 
       if (data.saved_cards && Array.isArray(data.saved_cards)) {
         setSavedCards(
-          data.saved_cards.map((c: Record<string, unknown>) => ({
-            id: String(c.id || ""),
-            brand: String(c.card_brand || "Visa"),
-            last4: String(c.card_last_four || "****"),
-            expiry: `${String(c.expiry_month || "00").padStart(2, "0")}/${String(c.expiry_year || "00").slice(-2)}`,
-            isDefault: Boolean(c.is_default),
-            addedDate: c.created_at
-              ? new Date(String(c.created_at))
-              : new Date(),
-          })),
+          data.saved_cards.map((c: Record<string, unknown>) => {
+            const raw = String(c.card_brand || "").toLowerCase();
+            let brand = "Card";
+            if (raw === "visa") brand = "Visa";
+            else if (raw === "mastercard") brand = "Mastercard";
+            else if (raw === "amex") brand = "Amex";
+            else if (raw === "mada") brand = "mada";
+            else if (c.card_brand) brand = String(c.card_brand);
+            return {
+              id: String(c.id || ""),
+              brand,
+              last4: String(c.card_last_four || "****"),
+              expiry: `${String(c.expiry_month || "00").padStart(2, "0")}/${String(c.expiry_year || "00").slice(-2)}`,
+              isDefault: Boolean(c.is_default),
+            };
+          }),
         );
       }
 
@@ -559,8 +647,7 @@ export function PlayerDetailPage() {
     firstName: player.firstName,
     lastName: player.lastName,
     email: player.email,
-    countryCode: player.countryCode,
-    phone: player.phone,
+    phoneE164: buildPhoneE164(player.countryCode, player.phone),
     dateOfBirth: player.dateOfBirth,
     gender: player.gender,
     nationality: player.nationality,
@@ -578,8 +665,7 @@ export function PlayerDetailPage() {
         firstName: player.firstName,
         lastName: player.lastName,
         email: player.email,
-        countryCode: player.countryCode,
-        phone: player.phone,
+        phoneE164: buildPhoneE164(player.countryCode, player.phone),
         dateOfBirth: player.dateOfBirth,
         gender: player.gender,
         nationality: player.nationality,
@@ -619,21 +705,22 @@ export function PlayerDetailPage() {
     else if (formData.firstName.length > 50) e.firstName = "Max 50 characters.";
     if (!formData.lastName.trim()) e.lastName = "Last name is required.";
     else if (formData.lastName.length > 50) e.lastName = "Max 50 characters.";
-    if (!formData.email.trim()) e.email = "Email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+    const emailTrim = formData.email.trim();
+    if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
       e.email = "Invalid email format.";
-    if (!formData.phone?.trim()) {
-      e.phone = "mobile is not allowed to be empty";
     }
-    if (!formData.gender?.trim()) {
-      e.gender = "gender must be one of [male, female, rather_not_say]";
+    if (!formData.phoneE164?.trim()) {
+      e.phone = "Mobile number is required.";
+    } else if (!isValidPhoneNumber(formData.phoneE164)) {
+      e.phone = "Invalid phone number.";
+    }
+    if (bioPlainTextLength(formData.bio) > BIO_MAX_PLAIN_CHARS) {
+      e.bio = `Bio must be at most ${BIO_MAX_PLAIN_CHARS} characters (plain text).`;
     }
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth);
       if (isNaN(dob.getTime())) e.dateOfBirth = "Invalid date.";
       else if (isAfter(dob, new Date())) e.dateOfBirth = "Must be a past date.";
-      else if (differenceInYears(new Date(), dob) < 13)
-        e.dateOfBirth = "Player must be at least 13 years old.";
     }
     setFormErrors(e);
     return Object.keys(e).length === 0;
@@ -641,16 +728,68 @@ export function PlayerDetailPage() {
 
   const [isPhotoUploading, setIsPhotoUploading] = useState(false);
   const photoInputRef = useRef<HTMLInputElement>(null);
+  const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
 
-  const handlePhotoUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const validateProfilePhotoFile = (file: File): string | null => {
+    const type = (file.type || "").toLowerCase();
+    if (!ALLOWED_PROFILE_PHOTO_TYPES.includes(type as (typeof ALLOWED_PROFILE_PHOTO_TYPES)[number])) {
+      return "Only JPG, JPEG, PNG, or WEBP images are allowed.";
+    }
+    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
+      return `Image size must be ${MAX_PROFILE_PHOTO_MB}MB or less.`;
+    }
+    return null;
+  };
+
+  const handleCropModalOpenChange = useCallback((open: boolean) => {
+    setCropOpen(open);
+    if (!open) {
+      setRawImageSrc((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+    }
+  }, []);
+
+  const handlePhotoFileChange = (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
+    e.target.value = "";
     if (!file) return;
+    const validationError = validateProfilePhotoFile(file);
+    if (validationError) {
+      showBanner("error", validationError);
+      return;
+    }
+    setRawImageSrc((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setCropOpen(true);
+  };
+
+  const handleCropComplete = async (blob: Blob, previewUrl: string) => {
+    const previousAvatarUrl = player.avatarUrl;
+    setRawImageSrc((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setPlayer((prev) => ({ ...prev, avatarUrl: previewUrl }));
+    const file = new File([blob], "profile-photo.jpg", { type: "image/jpeg" });
     try {
       setIsPhotoUploading(true);
       const res = await adminService.uploadPlayerPhoto(id, file);
-      setPlayer((prev) => ({ ...prev, avatarUrl: res.data.profile_photo_url }));
+      const payload = (res as Record<string, unknown>)?.data ?? res;
+      const url =
+        typeof payload === "object" && payload && "profile_photo_url" in payload
+          ? String((payload as { profile_photo_url?: string }).profile_photo_url)
+          : undefined;
+      URL.revokeObjectURL(previewUrl);
+      if (url) setPlayer((prev) => ({ ...prev, avatarUrl: url }));
       showBanner("success", "Profile photo updated successfully.");
     } catch (err: any) {
+      setPlayer((prev) => ({ ...prev, avatarUrl: previousAvatarUrl }));
+      URL.revokeObjectURL(previewUrl);
       showBanner(
         "error",
         err.response?.data?.message || "Failed to upload photo.",
@@ -685,33 +824,103 @@ export function PlayerDetailPage() {
     if (!validateProfile()) return;
     setIsSaving(true);
     try {
-      await adminService.updatePlayer(id, {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        country_code: formData.countryCode,
-        mobile: formData.phone,
-        gender: formData.gender,
-        date_of_birth: formData.dateOfBirth || undefined,
-        nationality_id: formData.nationality || null,
-        bio: formData.bio,
-        occupation: formData.occupation,
-        preferred_language: formData.preferredLanguage,
-      });
+      const baselinePhoneE164 = buildPhoneE164(
+        player.countryCode,
+        player.phone,
+      ).trim();
+      const baselineDob = toProfileDateInputValue(player.dateOfBirth);
+
+      const payload: Record<string, unknown> = {};
+      if (formData.firstName.trim() !== player.firstName) {
+        payload.first_name = formData.firstName.trim();
+      }
+      if (formData.lastName.trim() !== player.lastName) {
+        payload.last_name = formData.lastName.trim();
+      }
+
+      if (formData.phoneE164.trim() !== baselinePhoneE164) {
+        const parsedPhone = parsePhoneNumber(formData.phoneE164);
+        if (!parsedPhone) {
+          setFormErrors((prev) => ({
+            ...prev,
+            phone: "Invalid phone number.",
+          }));
+          setIsSaving(false);
+          return;
+        }
+        payload.country_code = `+${parsedPhone.countryCallingCode}`;
+        payload.mobile = parsedPhone.nationalNumber;
+      }
+
+      const emailTrim = formData.email.trim();
+      const playerEmail = player.email || "";
+      if (emailTrim !== playerEmail) {
+        payload.email = emailTrim || null;
+      }
+
+      const g = (formData.gender || "").toLowerCase();
+      const pg = (player.gender || "").toLowerCase();
+      if (g !== pg) {
+        if (g === "male" || g === "female") payload.gender = g;
+        else payload.gender = null;
+      }
+
+      if ((formData.dateOfBirth || "") !== (baselineDob || "")) {
+        payload.date_of_birth = formData.dateOfBirth || null;
+      }
+
+      const nat = formData.nationality || "";
+      const pNat = player.nationality || "";
+      if (nat !== pNat) {
+        payload.nationality_id = nat || null;
+      }
+
+      const nextBio = formData.bio?.trim()
+        ? sanitizePlayerBioHtml(formData.bio)
+        : null;
+      const prevBio = player.bio?.trim() || null;
+      if (nextBio !== prevBio) {
+        payload.bio = nextBio;
+      }
+
+      if ((formData.occupation || "") !== (player.occupation || "")) {
+        payload.occupation = formData.occupation || null;
+      }
+
+      const pl = formData.preferredLanguage || "en";
+      const ppl = player.preferredLanguage || "en";
+      if (pl !== ppl) {
+        payload.preferred_language = pl;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        toast.info("No changes to save.");
+        setIsSaving(false);
+        return;
+      }
+
+      await adminService.updatePlayer(id, payload);
 
       const fieldLabels: Record<string, string> = {
         firstName: "First Name",
         lastName: "Last Name",
         email: "Email",
-        phone: "Mobile Number",
+        phoneE164: "Mobile Number",
         dateOfBirth: "Date of Birth",
         gender: "Gender",
+        nationality: "Nationality",
+        bio: "Bio",
+        occupation: "Occupation",
+        preferredLanguage: "Preferred Language",
       };
       const now = new Date();
       const newAuditEntries: DetailAuditEvent[] = [];
       (Object.keys(formData) as Array<keyof typeof formData>).forEach(
         (field) => {
-          const oldVal = player[field as keyof typeof player];
+          let oldVal: unknown =
+            field === "phoneE164"
+              ? buildPhoneE164(player.countryCode, player.phone)
+              : player[field as keyof typeof player];
           const newVal = formData[field];
           if (oldVal !== newVal) {
             newAuditEntries.push({
@@ -752,7 +961,15 @@ export function PlayerDetailPage() {
       if (errCode === "MOBILE_ALREADY_EXISTS") {
         setFormErrors((prev) => ({
           ...prev,
-          phone: "This mobile number is already registered to another player.",
+          phone: "This mobile number is already registered to another account.",
+        }));
+        return;
+      }
+
+      if (errCode === "EMAIL_ALREADY_EXISTS") {
+        setFormErrors((prev) => ({
+          ...prev,
+          email: "This email is already registered to another account.",
         }));
         return;
       }
@@ -785,8 +1002,7 @@ export function PlayerDetailPage() {
       firstName: player.firstName,
       lastName: player.lastName,
       email: player.email,
-      countryCode: player.countryCode,
-      phone: player.phone,
+      phoneE164: buildPhoneE164(player.countryCode, player.phone),
       dateOfBirth: player.dateOfBirth,
       gender: player.gender,
       nationality: player.nationality,
@@ -987,38 +1203,38 @@ export function PlayerDetailPage() {
     setBookingPage(1);
   };
 
-  const playerAge = player.dateOfBirth
-    ? differenceInYears(new Date(), new Date(player.dateOfBirth))
-    : null;
+  const previewAge = useMemo(() => {
+    if (!formData.dateOfBirth) return null;
+    const dob = new Date(formData.dateOfBirth);
+    if (isNaN(dob.getTime())) return null;
+    return differenceInYears(new Date(), dob);
+  }, [formData.dateOfBirth]);
 
-  const FormField = ({
-    id,
-    label,
-    required,
-    error,
-    children,
-  }: {
-    id: string;
-    label: string;
-    required?: boolean;
-    error?: string;
-    children: React.ReactNode;
-  }) => (
-    <div className="space-y-1.5">
-      <Label htmlFor={id}>
-        {label} {required && <span className="text-red-500">*</span>}
-      </Label>
-      {children}
-      {error && (
-        <p className="text-xs text-red-500" role="alert">
-          {error}
-        </p>
-      )}
-    </div>
+  const previewNationalityName = useMemo(
+    () =>
+      countries.find((c) => c.id === formData.nationality)?.name_en || "—",
+    [countries, formData.nationality],
+  );
+
+  const previewBioPlain = useMemo(
+    () =>
+      formData.bio
+        ? formData.bio.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+        : "",
+    [formData.bio],
   );
 
   return (
     <div className="p-6 lg:p-8 bg-[#F9FAFB] min-h-screen space-y-5 pb-24 md:pb-8">
+      {rawImageSrc && (
+        <ImageCropper
+          open={cropOpen}
+          onOpenChange={handleCropModalOpenChange}
+          imageSrc={rawImageSrc}
+          onCropComplete={handleCropComplete}
+          {...CROP_PRESETS.profilePhoto}
+        />
+      )}
       {/* ── Banner ────────────────────────────────────────── */}
       {banner.visible && (
         <div
@@ -1059,7 +1275,8 @@ export function PlayerDetailPage() {
           <div>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl text-[#111827] tracking-tight">
-                Player: {player.firstName} {player.lastName}{" "}
+                Player: {formData.firstName || player.firstName}{" "}
+                {formData.lastName || player.lastName}{" "}
                 <span className="text-[#9CA3AF]">&#183; #{player.id}</span>
               </h1>
               <div className="flex items-center gap-2">
@@ -1073,7 +1290,10 @@ export function PlayerDetailPage() {
               </div>
             </div>
             <p className="text-sm text-[#6B7280] mt-1">
-              {player.email} &#183; {player.phone || "—"}
+              {formData.email || player.email || "—"} &#183;{" "}
+              {formData.phoneE164 ||
+                buildPhoneE164(player.countryCode, player.phone) ||
+                "—"}
             </p>
           </div>
 
@@ -1203,10 +1423,9 @@ export function PlayerDetailPage() {
             <div className="lg:col-span-8 bg-white border rounded-xl p-6 space-y-5">
               <h2 className="text-[#111827]">Profile</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
+                <ProfileFormField
                   id="firstName"
                   label="First Name"
-                  required
                   error={formErrors.firstName}
                 >
                   <Input
@@ -1217,11 +1436,10 @@ export function PlayerDetailPage() {
                     disabled={isSaving}
                     className={cn(formErrors.firstName && "border-red-400")}
                   />
-                </FormField>
-                <FormField
+                </ProfileFormField>
+                <ProfileFormField
                   id="lastName"
                   label="Last Name"
-                  required
                   error={formErrors.lastName}
                 >
                   <Input
@@ -1232,11 +1450,10 @@ export function PlayerDetailPage() {
                     disabled={isSaving}
                     className={cn(formErrors.lastName && "border-red-400")}
                   />
-                </FormField>
-                <FormField
+                </ProfileFormField>
+                <ProfileFormField
                   id="email"
                   label="Email"
-                  required
                   error={formErrors.email}
                 >
                   <Input
@@ -1248,51 +1465,30 @@ export function PlayerDetailPage() {
                     disabled={isSaving}
                     className={cn(formErrors.email && "border-red-400")}
                   />
-                </FormField>
-                <FormField
+                </ProfileFormField>
+                <ProfileFormField
                   id="phone"
                   label="Mobile number"
                   error={formErrors.phone}
-                  required
                 >
-                  <div className="flex gap-2">
-                    <Select
-                      value={formData.countryCode}
-                      onValueChange={(v) => updateField("countryCode", v)}
-                      disabled={isSaving}
-                    >
-                      <SelectTrigger className="w-[100px] shrink-0">
-                        <SelectValue placeholder="Code" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="+966">+966</SelectItem>
-                        <SelectItem value="+971">+971</SelectItem>
-                        <SelectItem value="+1">+1</SelectItem>
-                        <SelectItem value="+44">+44</SelectItem>
-                        <SelectItem value="+91">+91</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <Input
-                      id="phone"
-                      placeholder="555 0123"
-                      value={formData.phone}
-                      onChange={(e) => updateField("phone", e.target.value)}
-                      disabled={isSaving}
-                      className={cn(
-                        "flex-1",
-                        formErrors.phone && "border-red-400",
-                      )}
-                    />
-                  </div>
-                </FormField>
-                <FormField
+                  <MobileNumber
+                    value={formData.phoneE164}
+                    onChange={(v) => updateField("phoneE164", v)}
+                    disabled={isSaving}
+                    error={!!formErrors.phone}
+                  />
+                </ProfileFormField>
+                <ProfileFormField
                   id="gender"
                   label="Gender"
                   error={formErrors.gender}
-                  required
                 >
                   <Select
-                    value={formData.gender?.toLowerCase()}
+                    value={
+                      formData.gender === "male" || formData.gender === "female"
+                        ? formData.gender
+                        : undefined
+                    }
                     onValueChange={(v) => updateField("gender", v)}
                     disabled={isSaving}
                   >
@@ -1303,15 +1499,12 @@ export function PlayerDetailPage() {
                       <SelectValue placeholder="Select gender" />
                     </SelectTrigger>
                     <SelectContent>
-                      {GENDER_OPTIONS.map((g) => (
-                        <SelectItem key={g.value} value={g.value}>
-                          {g.label}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormField>
-                <FormField id="nationality" label="Nationality">
+                </ProfileFormField>
+                <ProfileFormField id="nationality" label="Nationality">
                   <Select
                     value={formData.nationality || ""}
                     onValueChange={(v) => updateField("nationality", v)}
@@ -1328,8 +1521,8 @@ export function PlayerDetailPage() {
                       ))}
                     </SelectContent>
                   </Select>
-                </FormField>
-                <FormField
+                </ProfileFormField>
+                <ProfileFormField
                   id="dateOfBirth"
                   label="Date of Birth"
                   error={formErrors.dateOfBirth}
@@ -1379,8 +1572,8 @@ export function PlayerDetailPage() {
                       />
                     </PopoverContent>
                   </Popover>
-                </FormField>
-                <FormField id="preferredLanguage" label="Preferred Language">
+                </ProfileFormField>
+                <ProfileFormField id="preferredLanguage" label="Preferred Language">
                   <Select
                     value={formData.preferredLanguage || "en"}
                     onValueChange={(v) => updateField("preferredLanguage", v)}
@@ -1394,19 +1587,19 @@ export function PlayerDetailPage() {
                       <SelectItem value="ar">Arabic (العربية)</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormField>
-                <FormField id="initialStatus" label="Account Status (System)">
+                </ProfileFormField>
+                <ProfileFormField id="initialStatus" label="Account Status (System)">
                   <Input
                     id="initialStatus"
                     value={player.status}
                     disabled
                     className="bg-gray-50 text-gray-500 cursor-not-allowed"
                   />
-                </FormField>
+                </ProfileFormField>
               </div>
 
               <div className="grid grid-cols-1 gap-4 pt-2">
-                <FormField id="occupation" label="Occupation">
+                <ProfileFormField id="occupation" label="Occupation">
                   <Input
                     id="occupation"
                     placeholder="e.g., Software Engineer"
@@ -1414,17 +1607,13 @@ export function PlayerDetailPage() {
                     onChange={(e) => updateField("occupation", e.target.value)}
                     disabled={isSaving}
                   />
-                </FormField>
-                <FormField id="bio" label="Bio / Personality">
-                  <Textarea
-                    id="bio"
-                    placeholder="Short description or personality notes..."
-                    value={formData.bio}
-                    onChange={(e) => updateField("bio", e.target.value)}
-                    disabled={isSaving}
-                    rows={4}
-                  />
-                </FormField>
+                </ProfileFormField>
+                <AdminPlayerBioEditor
+                  value={formData.bio}
+                  onChange={(v) => updateField("bio", v)}
+                  error={formErrors.bio}
+                  disabled={isSaving}
+                />
               </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button
@@ -1464,12 +1653,12 @@ export function PlayerDetailPage() {
                       {player.avatarUrl && (
                         <AvatarImage
                           src={player.avatarUrl}
-                          alt={player.firstName}
+                          alt={formData.firstName || player.firstName}
                         />
                       )}
                       <AvatarFallback className="bg-[#003B95]/10 text-[#003B95] text-sm font-semibold">
-                        {player.firstName[0]}
-                        {player.lastName[0]}
+                        {(formData.firstName || player.firstName || "?").charAt(0)}
+                        {(formData.lastName || player.lastName || "?").charAt(0)}
                       </AvatarFallback>
                     </Avatar>
 
@@ -1496,15 +1685,16 @@ export function PlayerDetailPage() {
                       type="file"
                       ref={photoInputRef}
                       className="hidden"
-                      accept="image/*"
-                      onChange={handlePhotoUpload}
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handlePhotoFileChange}
                     />
                   </div>
 
                   <div className="flex-1 min-w-0">
                     <div className="flex items-center gap-2">
                       <p className="text-sm font-semibold text-[#111827] truncate">
-                        {player.firstName} {player.lastName}
+                        {formData.firstName || player.firstName}{" "}
+                        {formData.lastName || player.lastName}
                       </p>
                       {player.avatarUrl && (
                         <Tooltip>
@@ -1537,10 +1727,15 @@ export function PlayerDetailPage() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          onClick={() => copyToClipboard(player.email, "email")}
+                          onClick={() =>
+                            copyToClipboard(
+                              formData.email || player.email,
+                              "email",
+                            )
+                          }
                           className="text-[#111827] hover:text-[#003B95] flex items-center gap-1 text-xs"
                         >
-                          {player.email}
+                          {formData.email || player.email || "—"}
                           {copied === "email" ? (
                             <Check className="h-3 w-3 text-emerald-500" />
                           ) : (
@@ -1558,19 +1753,28 @@ export function PlayerDetailPage() {
                     <span className="text-[#6B7280] flex items-center gap-1.5">
                       <Phone className="h-3.5 w-3.5" /> Phone
                     </span>
-                    {player.phone ? (
+                    {formData.phoneE164 ||
+                    buildPhoneE164(player.countryCode, player.phone) ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
                             onClick={() =>
                               copyToClipboard(
-                                `${player.countryCode} ${player.phone}`,
+                                formData.phoneE164 ||
+                                  buildPhoneE164(
+                                    player.countryCode,
+                                    player.phone,
+                                  ),
                                 "phone",
                               )
                             }
                             className="text-[#111827] hover:text-[#003B95] flex items-center gap-1 text-xs"
                           >
-                            {player.countryCode} {player.phone}
+                            {formData.phoneE164 ||
+                              buildPhoneE164(
+                                player.countryCode,
+                                player.phone,
+                              )}
                             {copied === "phone" ? (
                               <Check className="h-3 w-3 text-emerald-500" />
                             ) : (
@@ -1599,10 +1803,10 @@ export function PlayerDetailPage() {
                       <Calendar className="h-3.5 w-3.5" /> DOB
                     </span>
                     <span className="text-xs text-[#111827]">
-                      {player.dateOfBirth || "—"}
-                      {playerAge !== null && (
+                      {formData.dateOfBirth || "—"}
+                      {previewAge !== null && (
                         <span className="text-[#9CA3AF] ml-1">
-                          ({playerAge}y)
+                          ({previewAge}y)
                         </span>
                       )}
                     </span>
@@ -1621,10 +1825,7 @@ export function PlayerDetailPage() {
                       <Globe className="h-3.5 w-3.5" /> Nationality
                     </span>
                     <span className="text-xs text-[#111827] text-right">
-                      {countries.find((c) => c.id === player.nationality)
-                        ?.name_en ||
-                        player.nationality ||
-                        "—"}
+                      {previewNationalityName}
                     </span>
                   </div>
 
@@ -1633,7 +1834,7 @@ export function PlayerDetailPage() {
                       <Briefcase className="h-3.5 w-3.5" /> Occupation
                     </span>
                     <span className="text-xs text-[#111827] text-right">
-                      {player.occupation || "—"}
+                      {formData.occupation || player.occupation || "—"}
                     </span>
                   </div>
 
@@ -1642,7 +1843,9 @@ export function PlayerDetailPage() {
                       <Languages className="h-3.5 w-3.5" /> Language
                     </span>
                     <span className="text-xs text-[#111827]">
-                      {player.preferredLanguage || "—"}
+                      {formData.preferredLanguage ||
+                        player.preferredLanguage ||
+                        "—"}
                     </span>
                   </div>
 
@@ -1655,13 +1858,14 @@ export function PlayerDetailPage() {
                     </span>
                   </div>
 
-                  {player.bio && (
+                  {(previewBioPlain || player.bio) && (
                     <div className="pt-1 border-t border-gray-100">
                       <p className="text-[10px] text-[#9CA3AF] uppercase font-semibold mb-1">
                         Bio
                       </p>
                       <p className="text-xs text-[#374151] leading-relaxed">
-                        {player.bio}
+                        {previewBioPlain ||
+                          (player.bio || "").replace(/<[^>]*>/g, " ").trim()}
                       </p>
                     </div>
                   )}
@@ -1925,63 +2129,12 @@ export function PlayerDetailPage() {
             TAB: SAVED CARDS
             ════════════════════════════════════════════════════ */}
         <TabsContent value="saved-cards" className="mt-4">
-          <div className="bg-white border rounded-xl overflow-hidden">
-            <div className="p-6 pb-4">
-              <h2 className="text-[#111827]">Saved Cards</h2>
-            </div>
-            {savedCards.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
-                      <TableHead className="px-4">Card Brand</TableHead>
-                      <TableHead className="px-4">Last 4 Digits</TableHead>
-                      <TableHead className="px-4">Expiry</TableHead>
-                      <TableHead className="px-4">Default</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {savedCards.map((card) => (
-                      <TableRow key={card.id}>
-                        <TableCell className="px-4">
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4 text-[#6B7280]" />
-                            <span className="text-sm text-[#111827] font-medium">
-                              {card.brand}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-4">
-                          <span className="text-sm text-[#374151] font-mono">
-                            •••• {card.last4}
-                          </span>
-                        </TableCell>
-                        <TableCell className="px-4">
-                          <span className="text-sm text-[#374151]">
-                            {card.expiry}
-                          </span>
-                        </TableCell>
-                        <TableCell className="px-4">
-                          {card.isDefault ? (
-                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50">
-                              Default
-                            </Badge>
-                          ) : (
-                            <span className="text-xs text-[#9CA3AF]">—</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-16 space-y-3">
-                <CreditCard className="h-10 w-10 text-gray-200 mx-auto" />
-                <p className="text-sm text-[#374151]">No saved cards.</p>
-              </div>
-            )}
-          </div>
+          <SavedCardsTab
+            playerId={id}
+            cards={savedCards}
+            onRefresh={loadData}
+            isLoading={isLoadingApi}
+          />
         </TabsContent>
 
         {/* ════════════════════════════════════════════════════
@@ -2749,7 +2902,7 @@ export function PlayerDetailPage() {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>
-                New Status <span className="text-red-500">*</span>
+                New Status
               </Label>
               <RadioGroup
                 value={statusDraft}
@@ -2773,7 +2926,7 @@ export function PlayerDetailPage() {
             {(statusDraft === "Inactive" || statusDraft === "Locked") && (
               <div className="space-y-1.5">
                 <Label htmlFor="st-reason">
-                  Reason <span className="text-red-500">*</span>
+                  Reason
                   <span className="text-[11px] text-gray-400 ml-2">
                     {statusReason.length}/500
                   </span>
@@ -2794,7 +2947,7 @@ export function PlayerDetailPage() {
             {statusDraft === "Locked" && (
               <div className="space-y-1.5">
                 <Label>
-                  Lock Until <span className="text-red-500">*</span>
+                  Lock Until
                 </Label>
                 <Popover>
                   <PopoverTrigger asChild>

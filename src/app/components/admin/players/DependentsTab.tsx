@@ -1,9 +1,21 @@
-import { useState, useMemo, useCallback, useEffect } from "react";
+import {
+  useState,
+  useMemo,
+  useCallback,
+  useEffect,
+  type Dispatch,
+  type ElementType,
+  type ReactNode,
+  type SetStateAction,
+} from "react";
 import {
   formatDistanceToNow,
   format,
   differenceInYears,
   isAfter,
+  isValid,
+  parseISO,
+  startOfDay,
 } from "date-fns";
 import { toast } from "sonner";
 import {
@@ -27,13 +39,12 @@ import {
   Calendar as CalendarIcon,
   AlertCircle,
 } from "lucide-react";
-import { adminService } from "@/services/admin.service";
+import { adminService } from "../../../../services/admin.service";
 import { cn } from "../../ui/utils";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";
 import { Label } from "../../ui/label";
 import { Badge } from "../../ui/badge";
-import { Textarea } from "../../ui/textarea";
 import { Skeleton } from "../../ui/skeleton";
 import {
   Table,
@@ -77,8 +88,17 @@ import {
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { Calendar } from "../../ui/calendar";
-import { GENDER_OPTIONS } from "./constants";
 import type { PlayerDependent } from "./player-detail-data";
+
+/** Same as web AddEditDependantPage / profile API: male, female only. */
+const DEPENDANT_GENDER_OPTIONS = [
+  { value: "male", label: "Male" },
+  { value: "female", label: "Female" },
+] as const;
+
+const NAME_REGEX = /^[\p{L}\s'\-]+$/u;
+const MAX_NAME_LENGTH = 50;
+const DOB_MIN_YEAR = 1940;
 
 // ─── Types ───────────────────────────────────────────────────
 type BannerType = "success" | "error" | "info" | "warning";
@@ -87,7 +107,7 @@ type SortDir = "asc" | "desc";
 
 const BANNER_STYLES: Record<
   BannerType,
-  { bg: string; border: string; text: string; icon: React.ElementType }
+  { bg: string; border: string; text: string; icon: ElementType }
 > = {
   success: {
     bg: "bg-emerald-50",
@@ -145,7 +165,7 @@ function HelperText({
   children,
   id,
 }: {
-  children: React.ReactNode;
+  children: ReactNode;
   id?: string;
 }) {
   return (
@@ -155,11 +175,82 @@ function HelperText({
   );
 }
 
+function FormField({
+  id,
+  label,
+  required,
+  error,
+  help,
+  children,
+}: {
+  id: string;
+  label: string;
+  required?: boolean;
+  error?: string;
+  help?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id} className="text-sm text-[#374151]">
+        {label}
+        {required && <span className="text-red-500 ml-0.5">*</span>}
+      </Label>
+      {children}
+      {error && <FieldError id={`${id}-error`} message={error} />}
+      {help && !error && <HelperText id={`${id}-help`}>{help}</HelperText>}
+    </div>
+  );
+}
+
+function SortableHeader({
+  field,
+  sortField,
+  sortDir,
+  onSort,
+  children,
+  className,
+}: {
+  field: SortField;
+  sortField: SortField | null;
+  sortDir: SortDir;
+  onSort: (field: SortField) => void;
+  children: ReactNode;
+  className?: string;
+}) {
+  return (
+    <TableHead
+      className={cn(
+        "px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 cursor-pointer select-none hover:bg-gray-100/50 transition-colors",
+        className,
+      )}
+    >
+      <button
+        type="button"
+        onClick={() => onSort(field)}
+        className="inline-flex items-center gap-1 w-full"
+        aria-label={`Sort by ${field}`}
+      >
+        {children}
+        {sortField === field ? (
+          sortDir === "asc" ? (
+            <ArrowUp className="h-3 w-3 text-[#003B95]" />
+          ) : (
+            <ArrowDown className="h-3 w-3 text-[#003B95]" />
+          )
+        ) : (
+          <ArrowUpDown className="h-3 w-3 text-gray-300" />
+        )}
+      </button>
+    </TableHead>
+  );
+}
+
 // ─── Props ───────────────────────────────────────────────────
 interface DependentsTabProps {
   playerId: string;
   dependents: PlayerDependent[];
-  setDependents: React.Dispatch<React.SetStateAction<PlayerDependent[]>>;
+  setDependents: Dispatch<SetStateAction<PlayerDependent[]>>;
   playerName: string;
   isLoading?: boolean;
 }
@@ -173,7 +264,7 @@ export function DependentsTab({
 }: DependentsTabProps) {
   const [isLoading, setIsLoading] = useState(false);
   const [relationTypes, setRelationTypes] = useState<
-    { id: string; name_en: string }[]
+    { id: string; name_en: string; label?: string }[]
   >([]);
 
   // Sync loading state
@@ -257,11 +348,8 @@ export function DependentsTab({
     first_name_en: "",
     last_name_en: "",
     relation_type_id: "",
-    gender: "male",
+    gender: "" as string,
     dob: "",
-    email: "",
-    phone: "",
-    notes: "",
   };
   const [form, setForm] = useState(emptyDep);
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -279,14 +367,11 @@ export function DependentsTab({
       first_name_en: dep.firstName,
       last_name_en: dep.lastName,
       relation_type_id:
-        (dep as any).relation_type_id ||
+        dep.relation_type_id ||
         relationTypes.find((r) => r.name_en === dep.relationship)?.id ||
         "",
-      gender: (dep as any).gender || "male",
+      gender: dep.gender || "",
       dob: dep.dateOfBirth,
-      email: dep.email || "",
-      phone: dep.phone || "",
-      notes: dep.notes || "",
     });
     setErrors({});
     setModalOpen(true);
@@ -294,22 +379,39 @@ export function DependentsTab({
 
   const validateField = (field: string, value: string): string => {
     switch (field) {
-      case "first_name_en":
-        if (!value.trim()) return "First name is required.";
+      case "first_name_en": {
+        const t = value.trim();
+        if (!t) return "First name is required.";
+        if (!NAME_REGEX.test(t))
+          return "First name can only contain letters and spaces.";
+        if (t.length > MAX_NAME_LENGTH)
+          return "First name cannot exceed 50 characters.";
         return "";
-      case "last_name_en":
-        if (!value.trim()) return "Last name is required.";
+      }
+      case "last_name_en": {
+        const t = value.trim();
+        if (!t) return "Last name is required.";
+        if (!NAME_REGEX.test(t))
+          return "Last name can only contain letters and spaces.";
+        if (t.length > MAX_NAME_LENGTH)
+          return "Last name cannot exceed 50 characters.";
         return "";
+      }
       case "relation_type_id":
-        return !value ? "Relationship is required." : "";
-      case "dob":
-        if (!value) return "DOB is required.";
-        if (isAfter(new Date(value), new Date())) return "Future date invalid.";
+        return !value ? "Please select a relation." : "";
+      case "gender":
+        return !value ? "Please select a gender." : "";
+      case "dob": {
+        if (!value) return "Date of birth is required.";
+        const d = parseISO(value);
+        if (!isValid(d)) return "Please select a valid date.";
+        const today = startOfDay(new Date());
+        if (isAfter(startOfDay(d), today))
+          return "Date of birth cannot be in the future.";
+        if (d.getFullYear() < DOB_MIN_YEAR)
+          return `Date of birth must be ${DOB_MIN_YEAR} or later.`;
         return "";
-      case "email":
-        if (value && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value))
-          return "Invalid email.";
-        return "";
+      }
       default:
         return "";
     }
@@ -328,7 +430,7 @@ export function DependentsTab({
 
   const validateAll = (): boolean => {
     const e: Record<string, string> = {};
-    ["first_name_en", "last_name_en", "relation_type_id", "dob"].forEach(
+    ["first_name_en", "last_name_en", "relation_type_id", "gender", "dob"].forEach(
       (f) => {
         const val = (form as Record<string, unknown>)[f] as string;
         const err = validateField(f, val);
@@ -340,50 +442,65 @@ export function DependentsTab({
   };
 
   const isFormValid = useMemo(() => {
-    return (
-      form.first_name_en.trim() &&
-      form.last_name_en.trim() &&
-      form.relation_type_id &&
-      form.dob
-    );
+    if (
+      !form.first_name_en.trim() ||
+      !form.last_name_en.trim() ||
+      !form.relation_type_id ||
+      !form.gender ||
+      !form.dob
+    ) {
+      return false;
+    }
+    const d = parseISO(form.dob);
+    if (!isValid(d)) return false;
+    if (isAfter(startOfDay(d), startOfDay(new Date()))) return false;
+    if (d.getFullYear() < DOB_MIN_YEAR) return false;
+    return true;
   }, [form]);
 
   const handleSave = async () => {
     if (!validateAll()) return;
     setIsSaving(true);
     try {
+      const payload = {
+        first_name: form.first_name_en.trim(),
+        last_name: form.last_name_en.trim(),
+        date_of_birth: form.dob,
+        gender: form.gender,
+        relation_type_id: form.relation_type_id,
+      };
       let res;
       if (editing) {
         res = await adminService.updatePlayerDependant(
           playerId,
           editing.id,
-          form,
+          payload,
         );
         toast.success("Dependent updated.");
       } else {
-        res = await adminService.addPlayerDependant(playerId, form);
+        res = await adminService.addPlayerDependant(playerId, payload);
         toast.success("Dependent added.");
       }
 
-      const backendDep = res.data || res;
+      const envelope = res as Record<string, unknown>;
+      const backendDep = (envelope?.data ?? envelope) as Record<string, unknown>;
+      const relId = String(backendDep.relation_type_id ?? "");
       const mapped: PlayerDependent = {
-        id: backendDep.id,
-        firstName: backendDep.first_name_en,
-        lastName: backendDep.last_name_en,
+        id: String(backendDep.id ?? ""),
+        firstName: String(backendDep.first_name ?? backendDep.first_name_en ?? ""),
+        lastName: String(backendDep.last_name ?? backendDep.last_name_en ?? ""),
         relationship:
-          relationTypes.find((r) => r.id === backendDep.relation_type_id)
-            ?.name_en || "Dependent",
-        dateOfBirth: backendDep.dob,
-        email: backendDep.email || "",
-        phone: backendDep.phone || "",
-        notes: backendDep.notes || "",
+          relationTypes.find((r) => r.id === relId)?.name_en ||
+          String(backendDep.relation_type_label ?? "Dependent"),
+        relation_type_id: relId,
+        gender: String(backendDep.gender ?? ""),
+        dateOfBirth: String(
+          backendDep.date_of_birth ?? backendDep.dob ?? form.dob,
+        ),
         lastUpdated: new Date(
-          backendDep.updated_at || backendDep.created_at || Date.now(),
+          String(backendDep.updated_at ?? backendDep.created_at ?? Date.now()),
         ),
       };
-      // Keep raw fields
-      (mapped as any).relation_type_id = backendDep.relation_type_id;
-      (mapped as any).gender = backendDep.gender;
 
       if (editing) {
         setDependents((prev) =>
@@ -394,7 +511,11 @@ export function DependentsTab({
       }
       setModalOpen(false);
     } catch (err: any) {
-      toast.error(err.message || "Failed to save dependent.");
+      const msg =
+        err?.response?.data?.message ||
+        err?.message ||
+        "Failed to save dependent.";
+      toast.error(msg);
     } finally {
       setIsSaving(false);
     }
@@ -414,68 +535,6 @@ export function DependentsTab({
       toast.error(err.message || "Failed to delete dependent.");
     }
   };
-
-  // ── Sort Header Helper ────────────────────────────────
-  const SortableHeader = ({
-    field,
-    children,
-    className,
-  }: {
-    field: SortField;
-    children: React.ReactNode;
-    className?: string;
-  }) => (
-    <TableHead
-      className={cn(
-        "px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 cursor-pointer select-none hover:bg-gray-100/50 transition-colors",
-        className,
-      )}
-    >
-      <button
-        onClick={() => handleSort(field)}
-        className="inline-flex items-center gap-1 w-full"
-        aria-label={`Sort by ${field}`}
-      >
-        {children}
-        {sortField === field ? (
-          sortDir === "asc" ? (
-            <ArrowUp className="h-3 w-3 text-[#003B95]" />
-          ) : (
-            <ArrowDown className="h-3 w-3 text-[#003B95]" />
-          )
-        ) : (
-          <ArrowUpDown className="h-3 w-3 text-gray-300" />
-        )}
-      </button>
-    </TableHead>
-  );
-
-  // ── FormField Helper ──────────────────────────────────
-  const FormField = ({
-    id,
-    label,
-    required,
-    error,
-    help,
-    children,
-  }: {
-    id: string;
-    label: string;
-    required?: boolean;
-    error?: string;
-    help?: string;
-    children: React.ReactNode;
-  }) => (
-    <div className="space-y-1.5">
-      <Label htmlFor={id} className="text-sm text-[#374151]">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </Label>
-      {children}
-      {error && <FieldError id={`${id}-error`} message={error} />}
-      {help && !error && <HelperText id={`${id}-help`}>{help}</HelperText>}
-    </div>
-  );
 
   return (
     <div className="space-y-4 pb-20 md:pb-0">
@@ -520,14 +579,16 @@ export function DependentsTab({
               {dependents.length}
             </Badge>
           </div>
-          <Button
-            size="sm"
-            onClick={openAdd}
-            disabled={isLoading}
-            className="bg-[#003B95] hover:bg-[#002a6b] gap-1.5 shadow-sm"
-          >
-            <Plus className="h-3.5 w-3.5" /> Add Dependent
-          </Button>
+          {dependents.length > 0 && (
+            <Button
+              size="sm"
+              onClick={openAdd}
+              disabled={isLoading}
+              className="bg-[#003B95] hover:bg-[#002a6b] gap-1.5 shadow-sm"
+            >
+              <Plus className="h-3.5 w-3.5" /> Add Dependent
+            </Button>
+          )}
         </div>
 
         {/* ── Loading State ────────────────────────────── */}
@@ -559,17 +620,33 @@ export function DependentsTab({
                 </caption>
                 <TableHeader>
                   <TableRow className="bg-gray-50/50 hover:bg-gray-50/50">
-                    <SortableHeader field="name">Full Name</SortableHeader>
-                    <SortableHeader field="relationship">
+                    <SortableHeader
+                      field="name"
+                      sortField={sortField}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                    >
+                      Full Name
+                    </SortableHeader>
+                    <SortableHeader
+                      field="relationship"
+                      sortField={sortField}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                    >
                       Relationship
                     </SortableHeader>
                     <TableHead className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 hidden md:table-cell">
                       Age / DOB
                     </TableHead>
-                    <TableHead className="px-5 py-3 text-[11px] font-bold uppercase tracking-wider text-gray-500 hidden lg:table-cell">
-                      Contact
-                    </TableHead>
-                    <SortableHeader field="lastUpdated">Updated</SortableHeader>
+                    <SortableHeader
+                      field="lastUpdated"
+                      sortField={sortField}
+                      sortDir={sortDir}
+                      onSort={handleSort}
+                    >
+                      Updated
+                    </SortableHeader>
                     <TableHead className="px-5 py-3 w-10 text-right">
                       <span className="sr-only">Actions</span>
                     </TableHead>
@@ -609,16 +686,6 @@ export function DependentsTab({
                             </span>
                             <span className="text-[11px] text-gray-400">
                               {dep.dateOfBirth}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-5 py-4 hidden lg:table-cell">
-                          <div className="flex flex-col max-w-[150px]">
-                            <span className="text-xs text-gray-700 truncate">
-                              {dep.email || "—"}
-                            </span>
-                            <span className="text-[11px] text-gray-400 truncate">
-                              {dep.phone || "—"}
                             </span>
                           </div>
                         </TableCell>
@@ -724,11 +791,6 @@ export function DependentsTab({
                         </span>
                       </div>
                     </div>
-                    {(dep.email || dep.phone) && (
-                      <p className="text-xs text-gray-600 font-medium truncate">
-                        {dep.email || dep.phone}
-                      </p>
-                    )}
                     <p className="text-[10px] text-gray-400 font-medium">
                       Updated{" "}
                       {formatDistanceToNow(dep.lastUpdated, {
@@ -810,7 +872,7 @@ export function DependentsTab({
               onClick={openAdd}
               className="bg-[#003B95] hover:bg-[#002a6b] gap-2 shadow-md"
             >
-              <Plus className="h-4 w-4" /> Add New Dependent
+              <Plus className="h-4 w-4" /> Add Dependent
             </Button>
           </div>
         )}
@@ -856,6 +918,7 @@ export function DependentsTab({
                 <Input
                   id="depFirst"
                   placeholder="Jane"
+                  maxLength={MAX_NAME_LENGTH}
                   value={form.first_name_en}
                   onChange={(e) => {
                     setForm((f) => ({ ...f, first_name_en: e.target.value }));
@@ -882,6 +945,7 @@ export function DependentsTab({
                 <Input
                   id="depLast"
                   placeholder="Doe"
+                  maxLength={MAX_NAME_LENGTH}
                   value={form.last_name_en}
                   onChange={(e) => {
                     setForm((f) => ({ ...f, last_name_en: e.target.value }));
@@ -933,23 +997,41 @@ export function DependentsTab({
                   <SelectContent>
                     {relationTypes.map((r) => (
                       <SelectItem key={r.id} value={r.id} className="text-xs">
-                        {r.name_en}
+                        {r.label ?? r.name_en}
                       </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
               </FormField>
-              <FormField id="depGender" label="Gender" required>
+              <FormField
+                id="depGender"
+                label="Gender"
+                required
+                error={errors.gender}
+              >
                 <Select
-                  value={form.gender}
-                  onValueChange={(v) => setForm((f) => ({ ...f, gender: v }))}
+                  value={form.gender || undefined}
+                  onValueChange={(v) => {
+                    setForm((f) => ({ ...f, gender: v }));
+                    setErrors((e) => {
+                      const n = { ...e };
+                      delete n.gender;
+                      return n;
+                    });
+                  }}
                   disabled={isSaving}
                 >
-                  <SelectTrigger className="h-10">
-                    <SelectValue />
+                  <SelectTrigger
+                    id="depGender"
+                    className={cn(
+                      "h-10",
+                      errors.gender && "border-red-400",
+                    )}
+                  >
+                    <SelectValue placeholder="Select gender" />
                   </SelectTrigger>
                   <SelectContent>
-                    {GENDER_OPTIONS.map((g) => (
+                    {DEPENDANT_GENDER_OPTIONS.map((g) => (
                       <SelectItem
                         key={g.value}
                         value={g.value}
@@ -963,8 +1045,8 @@ export function DependentsTab({
               </FormField>
             </div>
 
-            {/* Row 3: DOB & Contact */}
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+            {/* Row 3: DOB (aligned with web dependant form — no extra contact fields) */}
+            <div className="grid grid-cols-1 gap-5">
               <FormField
                 id="depDob"
                 label="Date of Birth"
@@ -992,21 +1074,30 @@ export function DependentsTab({
                   <PopoverContent className="w-auto p-0" align="start">
                     <Calendar
                       mode="single"
+                      captionLayout="dropdown"
+                      fromYear={DOB_MIN_YEAR}
+                      toYear={new Date().getFullYear()}
                       selected={form.dob ? new Date(form.dob) : undefined}
                       onSelect={(d) => {
                         if (d) {
                           const formatted = format(d, "yyyy-MM-dd");
                           setForm((f) => ({ ...f, dob: formatted }));
+                          // Validate with the selected value here — do not call handleBlur("dob");
+                          // deferred blur reads stale form state before setForm commits.
+                          const err = validateField("dob", formatted);
                           setErrors((prev) => {
                             const n = { ...prev };
-                            delete n.dob;
+                            if (err) n.dob = err;
+                            else delete n.dob;
                             return n;
                           });
                         }
                         setDobOpen(false);
-                        setTimeout(() => handleBlur("dob"), 0);
                       }}
-                      disabled={(d) => isAfter(d, new Date())}
+                      disabled={(d) =>
+                        isAfter(d, new Date()) ||
+                        d.getFullYear() < DOB_MIN_YEAR
+                      }
                       defaultMonth={
                         form.dob ? new Date(form.dob) : new Date(2000, 0)
                       }
@@ -1015,64 +1106,7 @@ export function DependentsTab({
                   </PopoverContent>
                 </Popover>
               </FormField>
-
-              <FormField id="depPhone" label="Contact Number" help="Optional">
-                <Input
-                  id="depPhone"
-                  placeholder="e.g. +966 50..."
-                  value={form.phone}
-                  onChange={(e) =>
-                    setForm((f) => ({ ...f, phone: e.target.value }))
-                  }
-                  disabled={isSaving}
-                  className="h-10"
-                />
-              </FormField>
             </div>
-
-            <FormField
-              id="depEmail"
-              label="Email Address"
-              error={errors.email}
-              help="Used for automated notifications"
-            >
-              <Input
-                id="depEmail"
-                type="email"
-                placeholder="jane.doe@example.com"
-                value={form.email}
-                onChange={(e) => {
-                  setForm((f) => ({ ...f, email: e.target.value }));
-                  setErrors((prev) => {
-                    const n = { ...prev };
-                    delete n.email;
-                    return n;
-                  });
-                }}
-                onBlur={() => handleBlur("email")}
-                disabled={isSaving}
-                className={cn("h-10", errors.email && "border-red-400")}
-              />
-            </FormField>
-
-            <FormField
-              id="depNotes"
-              label="Profile Notes"
-              help="Medical conditions or special requirements"
-            >
-              <Textarea
-                id="depNotes"
-                placeholder="Maximum 500 characters"
-                value={form.notes}
-                maxLength={501}
-                onChange={(e) =>
-                  setForm((f) => ({ ...f, notes: e.target.value }))
-                }
-                rows={3}
-                disabled={isSaving}
-                className="resize-none"
-              />
-            </FormField>
           </div>
 
           <div className="px-6 py-5 border-t bg-gray-50/50 flex items-center justify-end gap-3">
