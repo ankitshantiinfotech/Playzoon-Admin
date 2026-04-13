@@ -15,6 +15,7 @@ import { cn } from "../../../../lib/utils";
 import ImageCropper from "../../ImageCropper";
 import { CROP_PRESETS } from "../../../../lib/cropPresets";
 import { MasterDataEntity, MasterDataCategory } from "./types";
+import { adminService } from "../../../../services/admin.service";
 
 // ---------------------------------------------------------------------------
 // Mock data (mirrors MasterDataPage generator so edit mode can resolve an id)
@@ -105,7 +106,7 @@ const categorySlugToLabel = (slug: string): MasterDataCategory => {
 const MAX_NAME_LENGTH = 100;
 const MAX_DESCRIPTION_LENGTH = 500;
 const MAX_ICON_SIZE_BYTES = 2 * 1024 * 1024; // 2 MB
-const ACCEPTED_ICON_TYPES = ["image/jpeg", "image/png", "image/svg+xml"];
+const ACCEPTED_ICON_TYPES = ["image/jpeg", "image/png"];
 
 // ---------------------------------------------------------------------------
 // Component
@@ -139,6 +140,10 @@ export function CategoryFormPage() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  /** User removed icon or replaced file — controls PATCH icon_url null vs omit. */
+  const [iconRemoved, setIconRemoved] = useState(false);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // ── Image cropper state ─────────────────────────────────
@@ -152,22 +157,72 @@ export function CategoryFormPage() {
 
   // ---- Load existing entity in edit mode -----------------------------------
   useEffect(() => {
-    if (isEditMode && id) {
-      const entity = MOCK_LOOKUP[id];
-      if (entity) {
-        setNameEn(entity.nameEn);
-        setNameAr(entity.nameAr);
-        setStatus(entity.status);
-        setSortOrder(entity.sortOrder != null ? String(entity.sortOrder) : "");
-        setDescription(entity.description || "");
-        setCreatedAt(entity.createdAt);
-        setUpdatedAt(entity.updatedAt);
-        if (entity.icon) {
-          setIconPreview(entity.icon);
+    if (!isEditMode || !id) return;
+
+    if (isSports) {
+      let cancelled = false;
+      setLoadError(null);
+      (async () => {
+        try {
+          const res = await adminService.getMasterDataItem("sports", id);
+          const row = (res as { data?: Record<string, unknown> })?.data ?? res;
+          if (cancelled || !row || typeof row !== "object") return;
+          setNameEn(String(row.name_en ?? row.name ?? ""));
+          setStatus(row.status === "inactive" ? "inactive" : "active");
+          const iu = row.icon_url ? String(row.icon_url) : null;
+          setIconPreview(iu);
+          setIconFile(null);
+          setIconRemoved(false);
+          const cr = row.created_at;
+          const up = row.updated_at;
+          setCreatedAt(
+            cr ? String(cr).split("T")[0] : null,
+          );
+          setUpdatedAt(
+            up ? String(up).split("T")[0] : null,
+          );
+        } catch {
+          if (!cancelled) {
+            setLoadError("Failed to load sport.");
+            toast.error("Failed to load sport.");
+          }
         }
+      })();
+      return () => {
+        cancelled = true;
+      };
+    }
+
+    const entity = MOCK_LOOKUP[id];
+    if (entity) {
+      setNameEn(entity.nameEn);
+      setNameAr(entity.nameAr);
+      setStatus(entity.status);
+      setSortOrder(entity.sortOrder != null ? String(entity.sortOrder) : "");
+      setDescription(entity.description || "");
+      setCreatedAt(entity.createdAt);
+      setUpdatedAt(entity.updatedAt);
+      if (entity.icon) {
+        setIconPreview(entity.icon);
       }
     }
-  }, [isEditMode, id]);
+  }, [isEditMode, id, isSports]);
+
+  useEffect(() => {
+    if (!isSports || isEditMode) return;
+    setNameEn("");
+    setNameAr("");
+    setDescription("");
+    setStatus("active");
+    setSortOrder("");
+    setIconFile(null);
+    setIconPreview(null);
+    setIconRemoved(false);
+    setCreatedAt(null);
+    setUpdatedAt(null);
+    setErrors({});
+    setLoadError(null);
+  }, [isSports, isEditMode, categorySlug]);
 
   // ---- Validation ----------------------------------------------------------
   const validate = (): boolean => {
@@ -179,10 +234,12 @@ export function CategoryFormPage() {
       newErrors.nameEn = `Maximum ${MAX_NAME_LENGTH} characters allowed.`;
     }
 
-    if (!nameAr.trim()) {
-      newErrors.nameAr = "Name (Arabic) is required.";
-    } else if (nameAr.length > MAX_NAME_LENGTH) {
-      newErrors.nameAr = `Maximum ${MAX_NAME_LENGTH} characters allowed.`;
+    if (!isSports) {
+      if (!nameAr.trim()) {
+        newErrors.nameAr = "Name (Arabic) is required.";
+      } else if (nameAr.length > MAX_NAME_LENGTH) {
+        newErrors.nameAr = `Maximum ${MAX_NAME_LENGTH} characters allowed.`;
+      }
     }
 
     if (isSports && iconFile) {
@@ -190,7 +247,7 @@ export function CategoryFormPage() {
         newErrors.icon = "Icon file must be 2 MB or less.";
       }
       if (!ACCEPTED_ICON_TYPES.includes(iconFile.type)) {
-        newErrors.icon = "Only JPEG, PNG, and SVG files are accepted.";
+        newErrors.icon = "Only JPEG and PNG files are accepted.";
       }
     }
 
@@ -218,7 +275,7 @@ export function CategoryFormPage() {
     if (!ACCEPTED_ICON_TYPES.includes(file.type)) {
       setErrors((prev) => ({
         ...prev,
-        icon: "Only JPEG, PNG, and SVG files are accepted.",
+        icon: "Only JPEG and PNG files are accepted.",
       }));
       return;
     }
@@ -228,18 +285,12 @@ export function CategoryFormPage() {
       return rest;
     });
 
-    // SVG files skip cropper; raster images open cropper
-    if (file.type === "image/svg+xml") {
-      setIconFile(file);
-      setIconPreview(URL.createObjectURL(file));
-    } else {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setCropRawSrc(reader.result as string);
-        setCropOpen(true);
-      };
-      reader.readAsDataURL(file);
-    }
+    const reader = new FileReader();
+    reader.onload = () => {
+      setCropRawSrc(reader.result as string);
+      setCropOpen(true);
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleIconCropComplete = (blob: Blob, previewUrl: string) => {
@@ -248,11 +299,13 @@ export function CategoryFormPage() {
     });
     setIconFile(croppedFile);
     setIconPreview(previewUrl);
+    setIconRemoved(false);
   };
 
   const removeIcon = () => {
     setIconFile(null);
     setIconPreview(null);
+    setIconRemoved(true);
     if (fileInputRef.current) {
       fileInputRef.current.value = "";
     }
@@ -262,26 +315,75 @@ export function CategoryFormPage() {
     if (!validate()) return;
 
     setIsSaving(true);
-    // Simulate API delay
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsSaving(false);
+    try {
+      if (isSports) {
+        const body: Record<string, unknown> = {
+          name: nameEn.trim(),
+          status,
+        };
+        if (iconFile) {
+          const upRes = await adminService.uploadSportIcon(iconFile);
+          const uploaded = (upRes as { data?: { url?: string } })?.data ?? upRes;
+          const url = (uploaded as { url?: string })?.url;
+          if (!url) throw new Error("NO_ICON_URL");
+          body.icon_url = url;
+        } else if (iconRemoved && isEditMode) {
+          body.icon_url = null;
+        }
 
-    toast.success(
-      isEditMode
-        ? `${categoryLabel} updated successfully`
-        : `New ${categoryLabel} created successfully`,
-    );
-    navigate("/master-data");
+        if (isEditMode && id) {
+          await adminService.patchMasterDataItem("sports", id, body);
+        } else {
+          await adminService.createMasterDataItem("sports", body);
+        }
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      }
+
+      toast.success(
+        isEditMode
+          ? `${categoryLabel} updated successfully`
+          : `New ${categoryLabel} created successfully`,
+      );
+      navigate("/master-data");
+    } catch (err) {
+      const msg =
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        (err as { response?: { data?: { message?: string } } }).response?.data
+          ?.message;
+      toast.error(
+        msg ||
+          (isSports ? "Could not save sport. Check image size and format." : "Save failed"),
+      );
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    await new Promise((resolve) => setTimeout(resolve, 800));
-    setIsDeleting(false);
-    setShowDeleteModal(false);
-
-    toast.success(`${categoryLabel} deleted successfully`);
-    navigate("/master-data");
+    try {
+      if (isSports && id) {
+        await adminService.deleteMasterDataItem("sports", id);
+      } else {
+        await new Promise((resolve) => setTimeout(resolve, 800));
+      }
+      setShowDeleteModal(false);
+      toast.success(`${categoryLabel} deleted successfully`);
+      navigate("/master-data");
+    } catch (err) {
+      const msg =
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        (err as { response?: { data?: { message?: string } } }).response?.data
+          ?.message;
+      toast.error(msg || "Could not delete this item.");
+    } finally {
+      setIsDeleting(false);
+    }
   };
 
   const handleCancel = () => {
@@ -323,6 +425,12 @@ export function CategoryFormPage() {
         </ol>
       </nav>
 
+      {loadError && (
+        <div className="max-w-[720px] mx-auto rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {loadError}
+        </div>
+      )}
+
       {/* Page header */}
       <div className="flex items-center gap-4">
         <button
@@ -341,13 +449,21 @@ export function CategoryFormPage() {
       <div className="max-w-[720px] mx-auto">
         <div className="bg-white rounded-lg shadow-sm border border-[#E5E7EB] overflow-hidden">
           <div className="p-6 sm:p-8 space-y-6">
-            {/* Name (English) */}
+            {/* Name (English) / Sport name */}
             <div>
               <label
                 htmlFor="nameEn"
                 className="block text-sm font-medium text-[#111827]"
               >
-                Name (English) <span className="text-red-500">*</span>
+                {isSports ? (
+                  <>
+                    Sport Name <span className="text-red-500">*</span>
+                  </>
+                ) : (
+                  <>
+                    Name (English) <span className="text-red-500">*</span>
+                  </>
+                )}
               </label>
               <div className="mt-1">
                 <input
@@ -382,49 +498,51 @@ export function CategoryFormPage() {
               </div>
             </div>
 
-            {/* Name (Arabic) */}
-            <div>
-              <label
-                htmlFor="nameAr"
-                className="block text-sm font-medium text-[#111827] text-right"
-              >
-                <span className="text-red-500">*</span> (AR) الاسم
-              </label>
-              <div className="mt-1">
-                <input
-                  id="nameAr"
-                  type="text"
-                  dir="rtl"
-                  maxLength={MAX_NAME_LENGTH}
-                  value={nameAr}
-                  onChange={(e) => {
-                    setNameAr(e.target.value);
-                    if (errors.nameAr)
-                      setErrors((prev) => {
-                        const { nameAr, ...rest } = prev;
-                        return rest;
-                      });
-                  }}
-                  placeholder="\u0645\u062B\u0627\u0644: \u0643\u0631\u0629 \u0627\u0644\u0642\u062F\u0645"
-                  className={cn(
-                    "block w-full rounded-md border shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2 font-arabic",
-                    errors.nameAr ? "border-red-300" : "border-gray-300",
-                  )}
-                />
-                <div className="mt-1 flex items-center justify-between">
-                  {errors.nameAr ? (
-                    <p className="text-sm text-red-600 text-right">
-                      {errors.nameAr}
-                    </p>
-                  ) : (
-                    <span />
-                  )}
-                  <span className="text-xs text-[#6B7280]">
-                    {nameAr.length}/{MAX_NAME_LENGTH}
-                  </span>
+            {/* Name (Arabic) — not used for Sports */}
+            {!isSports && (
+              <div>
+                <label
+                  htmlFor="nameAr"
+                  className="block text-sm font-medium text-[#111827] text-right"
+                >
+                  <span className="text-red-500">*</span> (AR) الاسم
+                </label>
+                <div className="mt-1">
+                  <input
+                    id="nameAr"
+                    type="text"
+                    dir="rtl"
+                    maxLength={MAX_NAME_LENGTH}
+                    value={nameAr}
+                    onChange={(e) => {
+                      setNameAr(e.target.value);
+                      if (errors.nameAr)
+                        setErrors((prev) => {
+                          const { nameAr, ...rest } = prev;
+                          return rest;
+                        });
+                    }}
+                    placeholder="\u0645\u062B\u0627\u0644: \u0643\u0631\u0629 \u0627\u0644\u0642\u062F\u0645"
+                    className={cn(
+                      "block w-full rounded-md border shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2 font-arabic",
+                      errors.nameAr ? "border-red-300" : "border-gray-300",
+                    )}
+                  />
+                  <div className="mt-1 flex items-center justify-between">
+                    {errors.nameAr ? (
+                      <p className="text-sm text-red-600 text-right">
+                        {errors.nameAr}
+                      </p>
+                    ) : (
+                      <span />
+                    )}
+                    <span className="text-xs text-[#6B7280]">
+                      {nameAr.length}/{MAX_NAME_LENGTH}
+                    </span>
+                  </div>
                 </div>
               </div>
-            </div>
+            )}
 
             {/* Icon Upload (Sports only) */}
             {isSports && (
@@ -433,7 +551,7 @@ export function CategoryFormPage() {
                   Icon
                 </label>
                 <p className="text-xs text-[#6B7280] mb-2">
-                  Accepted formats: JPEG, PNG, SVG. Max size: 2 MB.
+                  Accepted formats: JPEG, PNG. Max size: 2 MB.
                 </p>
 
                 {iconPreview ? (
@@ -465,7 +583,7 @@ export function CategoryFormPage() {
                       Click to upload
                     </span>
                     <span className="text-xs text-[#6B7280] mt-1">
-                      JPEG, PNG, SVG up to 2 MB
+                      JPEG, PNG up to 2 MB
                     </span>
                   </button>
                 )}
@@ -473,7 +591,7 @@ export function CategoryFormPage() {
                 <input
                   ref={fileInputRef}
                   type="file"
-                  accept=".jpg,.jpeg,.png,.svg"
+                  accept=".jpg,.jpeg,.png"
                   onChange={handleIconChange}
                   className="hidden"
                 />
@@ -565,27 +683,29 @@ export function CategoryFormPage() {
               </button>
             </div>
 
-            {/* Sort Order */}
-            <div>
-              <label
-                htmlFor="sortOrder"
-                className="block text-sm font-medium text-[#111827]"
-              >
-                Sort Order
-              </label>
-              <p className="text-xs text-[#6B7280] mb-1">
-                Optional. Auto-assigned if left empty.
-              </p>
-              <input
-                id="sortOrder"
-                type="number"
-                min={0}
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value)}
-                placeholder="e.g. 1"
-                className="block w-40 rounded-md border border-gray-300 shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2"
-              />
-            </div>
+            {/* Sort Order — not used for Sports */}
+            {!isSports && (
+              <div>
+                <label
+                  htmlFor="sortOrder"
+                  className="block text-sm font-medium text-[#111827]"
+                >
+                  Sort Order
+                </label>
+                <p className="text-xs text-[#6B7280] mb-1">
+                  Optional. Auto-assigned if left empty.
+                </p>
+                <input
+                  id="sortOrder"
+                  type="number"
+                  min={0}
+                  value={sortOrder}
+                  onChange={(e) => setSortOrder(e.target.value)}
+                  placeholder="e.g. 1"
+                  className="block w-40 rounded-md border border-gray-300 shadow-sm focus:border-[#003B95] focus:ring-[#003B95] sm:text-sm px-3 py-2"
+                />
+              </div>
+            )}
 
             {/* Edit-mode metadata */}
             {isEditMode && (createdAt || updatedAt) && (
@@ -646,7 +766,9 @@ export function CategoryFormPage() {
               </button>
               <button
                 type="button"
-                disabled={isSaving}
+                disabled={
+                  isSaving || (isSports && isEditMode && Boolean(loadError))
+                }
                 onClick={handleSave}
                 className="inline-flex items-center justify-center rounded-md border border-transparent bg-[#003B95] px-6 py-2 text-sm font-medium text-white shadow-sm hover:bg-[#002d73] focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
               >

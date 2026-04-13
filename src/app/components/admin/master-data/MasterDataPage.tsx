@@ -1,4 +1,5 @@
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router";
 import {
   Plus,
   ChevronDown,
@@ -15,6 +16,7 @@ import { AdminLayout } from "../AdminLayout";
 import { cn } from "../../../../lib/utils";
 import { toast } from "sonner";
 import { MasterDataEntity, MasterDataCategory, CATEGORIES } from "./types";
+import { adminService } from "../../../../services/admin.service";
 
 // ─── Audit Trail Types & Mock Data ───────────────────────────────────────────
 
@@ -139,7 +141,34 @@ const generateMockData = (category: MasterDataCategory): MasterDataEntity[] => {
   return data;
 };
 
+function mapSportApiRowToEntity(row: Record<string, unknown>): MasterDataEntity {
+  const createdRaw = row.created_at;
+  const updatedRaw = row.updated_at;
+  const createdAt =
+    typeof createdRaw === "string"
+      ? createdRaw.split("T")[0]
+      : createdRaw
+        ? String(createdRaw).split("T")[0]
+        : "";
+  const updatedAt =
+    typeof updatedRaw === "string"
+      ? updatedRaw.split("T")[0]
+      : updatedRaw
+        ? String(updatedRaw).split("T")[0]
+        : "";
+  return {
+    id: String(row.id ?? ""),
+    nameEn: String(row.name_en ?? row.name ?? ""),
+    nameAr: "",
+    status: row.status === "inactive" ? "inactive" : "active",
+    createdAt,
+    updatedAt,
+    icon: row.icon_url ? String(row.icon_url) : undefined,
+  };
+}
+
 export function MasterDataPage() {
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<MasterDataCategory>("Sports");
   const [data, setData] = useState<
     Record<MasterDataCategory, MasterDataEntity[]>
@@ -156,6 +185,28 @@ export function MasterDataPage() {
   const [statusFilter, setStatusFilter] = useState<
     "all" | "active" | "inactive"
   >("all");
+
+  const [sportsLoading, setSportsLoading] = useState(false);
+
+  const fetchSportsList = useCallback(async () => {
+    setSportsLoading(true);
+    try {
+      const res = await adminService.listSports({
+        page: 1,
+        limit: 200,
+        ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+      });
+      const payload = (res as { data?: { items?: unknown[] } })?.data ?? res;
+      const items = Array.isArray(payload?.items)
+        ? (payload.items as Record<string, unknown>[]).map(mapSportApiRowToEntity)
+        : [];
+      setData((prev) => ({ ...prev, Sports: items }));
+    } catch {
+      toast.error("Failed to load sports. Please try again.");
+    } finally {
+      setSportsLoading(false);
+    }
+  }, [statusFilter]);
   const [exportOpen, setExportOpen] = useState(false);
   const exportRef = useRef<HTMLDivElement>(null);
   const [auditOpen, setAuditOpen] = useState(false);
@@ -167,11 +218,19 @@ export function MasterDataPage() {
   const [itemToDeactivate, setItemToDeactivate] =
     useState<MasterDataEntity | null>(null);
 
-  // Filtered data based on status
+  useEffect(() => {
+    if (activeTab === "Sports") {
+      void fetchSportsList();
+    }
+  }, [activeTab, fetchSportsList]);
+
+  // Filtered data: Sports list is already filtered by API when status ≠ all
   const filteredByStatus =
-    statusFilter === "all"
+    activeTab === "Sports"
       ? data[activeTab]
-      : data[activeTab].filter((item) => item.status === statusFilter);
+      : statusFilter === "all"
+        ? data[activeTab]
+        : data[activeTab].filter((item) => item.status === statusFilter);
 
   // Export handler
   const handleExport = (format: string) => {
@@ -181,21 +240,45 @@ export function MasterDataPage() {
 
   // Actions
   const handleAdd = () => {
+    if (activeTab === "Sports") {
+      navigate("/master-data/sports/new");
+      return;
+    }
     setEditingItem(null);
     setIsAddEditOpen(true);
   };
 
   const handleEdit = (item: MasterDataEntity) => {
+    if (activeTab === "Sports") {
+      navigate(`/master-data/sports/${item.id}/edit`);
+      return;
+    }
     setEditingItem(item);
     setIsAddEditOpen(true);
   };
 
-  const handleToggleStatus = (item: MasterDataEntity) => {
+  const handleToggleStatus = async (item: MasterDataEntity) => {
+    if (activeTab === "Sports") {
+      if (item.status === "active") {
+        setItemToDeactivate(item);
+        setIsDeactivateOpen(true);
+      } else {
+        try {
+          await adminService.patchMasterDataItem("sports", item.id, {
+            status: "active",
+          });
+          await fetchSportsList();
+          toast.success(`${item.nameEn} activated successfully`);
+        } catch {
+          toast.error("Failed to update sport status.");
+        }
+      }
+      return;
+    }
     if (item.status === "active") {
       setItemToDeactivate(item);
       setIsDeactivateOpen(true);
     } else {
-      // Activate immediately
       updateItemStatus(item.id, "active");
       toast.success(`${item.nameEn} activated successfully`);
     }
@@ -254,7 +337,22 @@ export function MasterDataPage() {
   const handleDeactivateConfirm = async () => {
     if (!itemToDeactivate) return;
 
-    // Simulate API call
+    if (activeTab === "Sports") {
+      try {
+        await adminService.patchMasterDataItem(
+          "sports",
+          itemToDeactivate.id,
+          { status: "inactive" },
+        );
+        await fetchSportsList();
+        toast.success(`${itemToDeactivate.nameEn} deactivated`);
+      } catch {
+        toast.error("Failed to deactivate sport.");
+        throw new Error("DEACTIVATE_FAILED");
+      }
+      return;
+    }
+
     await new Promise((resolve) => setTimeout(resolve, 800));
 
     updateItemStatus(itemToDeactivate.id, "inactive");
@@ -375,6 +473,7 @@ export function MasterDataPage() {
         data={filteredByStatus}
         onEdit={handleEdit}
         onToggleStatus={handleToggleStatus}
+        loading={activeTab === "Sports" && sportsLoading}
       />
 
       {/* ─── Audit Trail (Collapsible) ─────────────────────────── */}

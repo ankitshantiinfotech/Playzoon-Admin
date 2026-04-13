@@ -60,6 +60,7 @@ import {
   ChevronDown,
   Pencil,
   Camera,
+  Loader2,
   Trash2, // FIX 1: Added missing Trash2 import
   Settings as SettingsIcon,
 } from "lucide-react";
@@ -125,6 +126,7 @@ import {
 } from "./constants";
 import type {
   PlayerDetail,
+  PlayerSportInterest,
   PlayerAddress,
   PlayerDependent,
   DetailAuditEvent,
@@ -335,6 +337,9 @@ export function PlayerDetailPage() {
           if (norm === "inactive") return "Inactive";
           throw new Error(`Invalid player status received: ${data.status}`);
         })(),
+        lockedUntil: data.locked_until
+          ? String(data.locked_until).slice(0, 10)
+          : undefined,
         avatarUrl: data.avatar_url || data.profile_photo_url || undefined,
         bio: data.bio || "",
         occupation: data.occupation || "",
@@ -418,7 +423,11 @@ export function PlayerDetailPage() {
         setPlayer((prev) => ({
           ...prev,
           interestedSports: data.sports_interests.map(
-            (s: Record<string, unknown>) => String(s.name_en || ""),
+            (s: Record<string, unknown>) => ({
+              id: String(s.id ?? ""),
+              name: String(s.name_en ?? s.name ?? ""),
+              iconUrl: s.icon_url ? String(s.icon_url) : null,
+            }),
           ),
         }));
       }
@@ -572,6 +581,29 @@ export function PlayerDetailPage() {
     loadData();
   }, [id]);
 
+  const [activeSportsCatalog, setActiveSportsCatalog] = useState<
+    PlayerSportInterest[]
+  >([]);
+
+  useEffect(() => {
+    adminService
+      .listSports({ status: "active", limit: 200, page: 1 })
+      .then((res) => {
+        const payload = (res as { data?: { items?: unknown[] } })?.data ?? res;
+        const items = Array.isArray(payload?.items)
+          ? (payload.items as Record<string, unknown>[])
+          : [];
+        setActiveSportsCatalog(
+          items.map((row) => ({
+            id: String(row.id ?? ""),
+            name: String(row.name_en ?? row.name ?? ""),
+            iconUrl: row.icon_url ? String(row.icon_url) : null,
+          })),
+        );
+      })
+      .catch(() => setActiveSportsCatalog([]));
+  }, []);
+
   const [banner, setBanner] = useState<BannerState>({
     type: "info",
     message: "",
@@ -584,32 +616,50 @@ export function PlayerDetailPage() {
   const [copied, setCopied] = useState<string | null>(null);
   const [dobOpen, setDobOpen] = useState(false);
 
-  const ALL_SPORTS = [
-    "Football",
-    "Basketball",
-    "Tennis",
-    "Padel",
-    "Swimming",
-    "Cricket",
-  ];
   const [sportsEditOpen, setSportsEditOpen] = useState(false);
-  const [editingSports, setEditingSports] = useState<string[]>([]);
+  const [editingSportIds, setEditingSportIds] = useState<string[]>([]);
+  const [sportsSaveLoading, setSportsSaveLoading] = useState(false);
 
   const openSportsEdit = () => {
-    setEditingSports([...player.interestedSports]);
+    setEditingSportIds(player.interestedSports.map((s) => s.id));
     setSportsEditOpen(true);
   };
 
-  const toggleSport = (sport: string) => {
-    setEditingSports((prev) =>
-      prev.includes(sport) ? prev.filter((s) => s !== sport) : [...prev, sport],
+  const toggleSport = (sportId: string) => {
+    setEditingSportIds((prev) =>
+      prev.includes(sportId)
+        ? prev.filter((s) => s !== sportId)
+        : [...prev, sportId],
     );
   };
 
-  const handleSaveSports = () => {
-    setPlayer((prev) => ({ ...prev, interestedSports: editingSports }));
-    setSportsEditOpen(false);
-    toast.success("Sports interests updated successfully.");
+  const handleSaveSports = async () => {
+    try {
+      setSportsSaveLoading(true);
+      await adminService.updatePlayer(id, {
+        sports_interest_ids: editingSportIds,
+      });
+      const byId = new Map(activeSportsCatalog.map((s) => [s.id, s]));
+      const merged: PlayerSportInterest[] = editingSportIds.map((sid) => {
+        const c = byId.get(sid);
+        if (c) return c;
+        const existing = player.interestedSports.find((x) => x.id === sid);
+        return existing || { id: sid, name: sid, iconUrl: null };
+      });
+      setPlayer((prev) => ({ ...prev, interestedSports: merged }));
+      setSportsEditOpen(false);
+      toast.success("Sports interests updated successfully.");
+    } catch (err) {
+      const msg =
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        (err as { response?: { data?: { message?: string } } }).response?.data
+          ?.message;
+      toast.error(msg || "Failed to update sports interests.");
+    } finally {
+      setSportsSaveLoading(false);
+    }
   };
 
   const showBanner = useCallback((type: BannerType, message: string) => {
@@ -1045,9 +1095,8 @@ export function PlayerDetailPage() {
       e.reason = "Reason is required.";
     }
     if (statusReason.length > 500) e.reason = "Max 500 characters.";
-    if (statusDraft === "Locked") {
-      if (!statusLockUntil) e.lockUntil = "Lock until date is required.";
-      else if (isBefore(statusLockUntil, startOfToday()))
+    if (statusDraft === "Locked" && statusLockUntil) {
+      if (isBefore(statusLockUntil, startOfToday()))
         e.lockUntil = "Must be a future date.";
     }
     setStatusErrors(e);
@@ -1063,6 +1112,11 @@ export function PlayerDetailPage() {
       if (statusDraft === "Locked") {
         payload.is_locked = true;
         payload.lock_reason = statusReason;
+        if (statusLockUntil) {
+          const end = new Date(statusLockUntil);
+          end.setHours(23, 59, 59, 999);
+          payload.locked_until = end.toISOString();
+        }
       } else if (statusDraft === "Active" && player.status === "Locked") {
         payload.is_locked = false;
       }
@@ -1879,10 +1933,10 @@ export function PlayerDetailPage() {
                         <div className="flex flex-wrap gap-1">
                           {player.interestedSports.map((s) => (
                             <span
-                              key={s}
+                              key={s.id}
                               className="text-[10px] bg-blue-50 text-blue-600 border border-blue-100 px-1.5 py-0.5 rounded-md"
                             >
-                              {s}
+                              {s.name}
                             </span>
                           ))}
                         </div>
@@ -2030,15 +2084,23 @@ export function PlayerDetailPage() {
                   };
                   return (
                     <span
-                      key={sport}
+                      key={sport.id}
                       className={cn(
                         "inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full text-sm font-medium border",
-                        colors[sport] ||
+                        colors[sport.name] ||
                           "bg-gray-50 text-gray-700 border-gray-200",
                       )}
                     >
-                      <Heart className="h-3.5 w-3.5" />
-                      {sport}
+                      {sport.iconUrl ? (
+                        <img
+                          src={sport.iconUrl}
+                          alt=""
+                          className="h-4 w-4 object-contain rounded-sm"
+                        />
+                      ) : (
+                        <Heart className="h-3.5 w-3.5" />
+                      )}
+                      {sport.name}
                     </span>
                   );
                 })}
@@ -2062,36 +2124,60 @@ export function PlayerDetailPage() {
                 </DialogDescription>
               </DialogHeader>
               <div className="grid grid-cols-2 gap-3 py-4">
-                {ALL_SPORTS.map((sport) => (
-                  <label
-                    key={sport}
-                    className={cn(
-                      "flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors",
-                      editingSports.includes(sport)
-                        ? "border-[#003B95] bg-blue-50/50"
-                        : "border-gray-200 hover:bg-gray-50",
-                    )}
-                  >
-                    <Checkbox
-                      checked={editingSports.includes(sport)}
-                      onCheckedChange={() => toggleSport(sport)}
-                    />
-                    <span className="text-sm text-[#374151]">{sport}</span>
-                  </label>
-                ))}
+                {activeSportsCatalog.length === 0 ? (
+                  <p className="col-span-2 text-sm text-[#6B7280] text-center py-4">
+                    No active sports available. Add sports in Master Data.
+                  </p>
+                ) : (
+                  activeSportsCatalog.map((sport) => (
+                    <label
+                      key={sport.id}
+                      className={cn(
+                        "flex items-center gap-2.5 px-3 py-2.5 rounded-lg border cursor-pointer transition-colors",
+                        editingSportIds.includes(sport.id)
+                          ? "border-[#003B95] bg-blue-50/50"
+                          : "border-gray-200 hover:bg-gray-50",
+                      )}
+                    >
+                      <Checkbox
+                        checked={editingSportIds.includes(sport.id)}
+                        onCheckedChange={() => toggleSport(sport.id)}
+                      />
+                      {sport.iconUrl ? (
+                        <img
+                          src={sport.iconUrl}
+                          alt=""
+                          className="h-6 w-6 object-contain rounded-sm shrink-0"
+                        />
+                      ) : null}
+                      <span className="text-sm text-[#374151]">{sport.name}</span>
+                    </label>
+                  ))
+                )}
               </div>
               <DialogFooter>
                 <Button
                   variant="outline"
                   onClick={() => setSportsEditOpen(false)}
+                  disabled={sportsSaveLoading}
                 >
                   Cancel
                 </Button>
                 <Button
-                  className="bg-[#003B95] hover:bg-[#002a6b]"
-                  onClick={handleSaveSports}
+                  className="bg-[#003B95] hover:bg-[#002a6b] inline-flex items-center gap-2"
+                  onClick={() => void handleSaveSports()}
+                  disabled={
+                    sportsSaveLoading || activeSportsCatalog.length === 0
+                  }
                 >
-                  Save Changes
+                  {sportsSaveLoading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                      Saving…
+                    </>
+                  ) : (
+                    "Save Changes"
+                  )}
                 </Button>
               </DialogFooter>
             </DialogContent>
