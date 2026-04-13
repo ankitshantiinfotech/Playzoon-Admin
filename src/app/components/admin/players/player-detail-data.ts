@@ -18,6 +18,13 @@ export interface PrivacySettings {
   shareWithCoaches: boolean;
 }
 
+/** Sports interest row from master data (GET player / sports_interests). */
+export interface PlayerSportInterest {
+  id: string;
+  name: string;
+  iconUrl?: string | null;
+}
+
 export interface PlayerDetail {
   id: string;
   firstName: string;
@@ -33,7 +40,7 @@ export interface PlayerDetail {
   username: string;
   bio: string;
   occupation: string;
-  interestedSports: string[];
+  interestedSports: PlayerSportInterest[];
   preferredLanguage: string;
   notes: string;
   walletBalance: number;

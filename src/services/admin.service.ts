@@ -101,6 +101,21 @@ export const adminService = {
     api.get('/admin/master-data/locations', { params }).then(r => r.data),
   listMasterData: (type: string, params: P) =>
     api.get(`/admin/master-data/${type}`, { params }).then(r => r.data),
+  getMasterDataItem: (type: string, itemId: string) =>
+    api.get(`/admin/master-data/${type}/${itemId}`).then(r => r.data),
+  createMasterDataItem: (type: string, body: P) =>
+    api.post(`/admin/master-data/${type}`, body).then(r => r.data),
+  patchMasterDataItem: (type: string, itemId: string, body: P) =>
+    api.patch(`/admin/master-data/${type}/${itemId}`, body).then(r => r.data),
+  deleteMasterDataItem: (type: string, itemId: string) =>
+    api.delete(`/admin/master-data/${type}/${itemId}`).then(r => r.data),
+  uploadSportIcon: (file: File) => {
+    const formData = new FormData();
+    formData.append('icon', file);
+    return api.post('/admin/master-data/sports/upload-icon', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data);
+  },
   /** Same payload as web GET /config/countries (public). */
   getPublicCountries: () =>
     api.get('/config/countries').then(r => r.data),

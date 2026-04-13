@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import { differenceInYears, isAfter, format } from "date-fns";
+import { parsePhoneNumber, isValidPhoneNumber } from "libphonenumber-js";
 import { toast } from "sonner";
 import { adminService } from "@/services/admin.service";
 import {
@@ -17,6 +18,7 @@ import {
   User,
 } from "lucide-react";
 import { cn } from "../../ui/utils";
+import MobileNumber from "../../ui/MobileNumber";
 import ImageCropper from "../../ImageCropper";
 import { CROP_PRESETS } from "../../../../lib/cropPresets";
 import { Button } from "../../ui/button";
@@ -58,8 +60,7 @@ interface FormData {
   firstName: string;
   lastName: string;
   email: string;
-  countryCode: string;
-  phone: string;
+  phoneE164: string;
   dateOfBirth: Date | undefined;
   gender: string;
   nationality: string;
@@ -70,8 +71,7 @@ const INITIAL_FORM: FormData = {
   firstName: "",
   lastName: "",
   email: "",
-  countryCode: "+966",
-  phone: "",
+  phoneE164: "",
   dateOfBirth: undefined,
   gender: "",
   nationality: "",
@@ -217,8 +217,8 @@ export function CreatePlayerPage() {
     firstName: useRef<HTMLInputElement>(null),
     lastName: useRef<HTMLInputElement>(null),
     email: useRef<HTMLInputElement>(null),
-    phone: useRef<HTMLInputElement>(null),
   };
+  const phoneWrapRef = useRef<HTMLDivElement>(null);
 
   const trimmedValue = (s: string) => s.trim().replace(/\s+/g, " ");
 
@@ -298,19 +298,16 @@ export function CreatePlayerPage() {
         break;
       }
       case "phone": {
-        const v = form.phone.trim();
-        if (!v)
-          error = "Mobile number is required."; // AC-PM-023
-        else if (!/^[+\d\s\-()]+$/.test(v))
-          error = "Please enter a valid mobile number."; // AC-PM-025
+        const v = form.phoneE164.trim();
+        if (!v) error = "Mobile number is required.";
+        else if (!isValidPhoneNumber(v))
+          error = "Please enter a valid mobile number.";
         break;
       }
       case "gender": {
-        if (!form.gender) error = "Gender is required."; // AC-PM-023
         break;
       }
       case "nationality": {
-        if (!form.nationality) error = "Nationality is required."; // AC-PM-023
         break;
       }
       case "dateOfBirth": {
@@ -337,15 +334,7 @@ export function CreatePlayerPage() {
   const handleBlur = (field: string) => validateField(field);
 
   const validateAll = (): boolean => {
-    const fields = [
-      "firstName",
-      "lastName",
-      "email",
-      "phone",
-      "gender",
-      "nationality",
-      "dateOfBirth",
-    ];
+    const fields = ["firstName", "lastName", "email", "phone"];
     const newErrors: Record<string, string> = {};
     for (const field of fields) {
       const err = validateField(field, false);
@@ -353,8 +342,13 @@ export function CreatePlayerPage() {
     }
     setErrors(newErrors);
     const firstErr = fields.find((f) => newErrors[f]);
-    if (firstErr && fieldRefs[firstErr]?.current)
+    if (firstErr === "phone") {
+      phoneWrapRef.current
+        ?.querySelector<HTMLInputElement>(".PhoneInputInput")
+        ?.focus();
+    } else if (firstErr && fieldRefs[firstErr]?.current) {
       fieldRefs[firstErr].current?.focus();
+    }
     return Object.keys(newErrors).length === 0;
   };
 
@@ -370,12 +364,21 @@ export function CreatePlayerPage() {
     setIsSubmitting(true);
     setBanner((b) => ({ ...b, visible: false }));
     try {
+      const parsedPhone = parsePhoneNumber(form.phoneE164.trim());
+      if (!parsedPhone) {
+        setErrors((prev) => ({ ...prev, phone: "Invalid phone number." }));
+        phoneWrapRef.current
+          ?.querySelector<HTMLInputElement>(".PhoneInputInput")
+          ?.focus();
+        setIsSubmitting(false);
+        return;
+      }
       const payload: Record<string, unknown> = {
         first_name: form.firstName,
         last_name: form.lastName,
         email: form.email,
-        country_code: form.countryCode,
-        mobile: form.phone,
+        country_code: `+${parsedPhone.countryCallingCode}`,
+        mobile: parsedPhone.nationalNumber,
         gender: form.gender || undefined,
         status: form.initialStatus.toLowerCase(),
         date_of_birth: form.dateOfBirth
@@ -405,7 +408,7 @@ export function CreatePlayerPage() {
         `Player created. A password setup email has been sent to ${form.email}.`,
       );
       toast.success("Player created successfully.");
-      if (newId) setTimeout(() => navigate(`/players/${newId}`), 1000);
+      if (newId) setTimeout(() => navigate("/players"), 800);
     } catch (err: any) {
       const resp = err?.response?.data;
       const errorCode = resp?.error?.code;
@@ -416,7 +419,9 @@ export function CreatePlayerPage() {
         fieldRefs.email.current?.focus();
       } else if (errorCode === "MOBILE_ALREADY_EXISTS") {
         setErrors((prev) => ({ ...prev, phone: errorMessage }));
-        fieldRefs.phone.current?.focus();
+        phoneWrapRef.current
+          ?.querySelector<HTMLInputElement>(".PhoneInputInput")
+          ?.focus();
       }
 
       const details = resp?.error?.details;
@@ -678,44 +683,18 @@ export function CreatePlayerPage() {
               )}
             </div>
 
-            {/* Mobile Number */}
-            <div className="space-y-1.5">
+            {/* Mobile Number — same PhoneInput + country selector as player detail */}
+            <div className="space-y-1.5" ref={phoneWrapRef}>
               <Label htmlFor="phone" className="text-sm text-[#374151]">
                 Mobile Number<span className="text-red-500 ml-0.5">*</span>
               </Label>
-              <div className="flex gap-2">
-                <Select
-                  value={form.countryCode}
-                  onValueChange={(v) => updateField("countryCode", v)}
-                  disabled={isSubmitting}
-                >
-                  <SelectTrigger className="w-[100px] h-10 shrink-0">
-                    <SelectValue placeholder="Code" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="+966">+966</SelectItem>
-                    <SelectItem value="+971">+971</SelectItem>
-                    <SelectItem value="+1">+1</SelectItem>
-                    <SelectItem value="+44">+44</SelectItem>
-                    <SelectItem value="+91">+91</SelectItem>
-                  </SelectContent>
-                </Select>
-                <Input
-                  ref={fieldRefs.phone as React.RefObject<HTMLInputElement>}
-                  id="phone"
-                  placeholder="555 0137"
-                  value={form.phone}
-                  onChange={(e) => updateField("phone", e.target.value)}
-                  onBlur={() => handleBlur("phone")}
-                  aria-required="true"
-                  aria-invalid={!!errors.phone}
-                  disabled={isSubmitting}
-                  className={cn(
-                    "flex-1 h-10",
-                    errors.phone && "border-red-400",
-                  )}
-                />
-              </div>
+              <MobileNumber
+                value={form.phoneE164}
+                onChange={(v) => updateField("phoneE164", v)}
+                onBlur={() => handleBlur("phone")}
+                disabled={isSubmitting}
+                error={!!errors.phone}
+              />
               {errors.phone && (
                 <FieldError id="err-phone" message={errors.phone} />
               )}
@@ -724,7 +703,8 @@ export function CreatePlayerPage() {
             {/* Gender */}
             <div className="space-y-1.5">
               <Label htmlFor="gender" className="text-sm text-[#374151]">
-                Gender<span className="text-red-500 ml-0.5">*</span>
+                Gender{" "}
+                <span className="text-[#9CA3AF] font-normal">(optional)</span>
               </Label>
               <Select
                 value={form.gender}
@@ -735,7 +715,7 @@ export function CreatePlayerPage() {
               >
                 <SelectTrigger
                   id="gender"
-                  className={cn("h-10", errors.gender && "border-red-400")}
+                  className="h-10"
                 >
                   <SelectValue placeholder="Select gender" />
                 </SelectTrigger>
@@ -747,15 +727,13 @@ export function CreatePlayerPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.gender && (
-                <FieldError id="err-gender" message={errors.gender} />
-              )}
             </div>
 
             {/* Nationality */}
             <div className="space-y-1.5">
               <Label htmlFor="nationality" className="text-sm text-[#374151]">
-                Nationality<span className="text-red-500 ml-0.5">*</span>
+                Nationality{" "}
+                <span className="text-[#9CA3AF] font-normal">(optional)</span>
               </Label>
               <Select
                 value={form.nationality}
@@ -764,10 +742,7 @@ export function CreatePlayerPage() {
                 }}
                 disabled={isSubmitting}
               >
-                <SelectTrigger
-                  id="nationality"
-                  className={cn("h-10", errors.nationality && "border-red-400")}
-                >
+                <SelectTrigger id="nationality" className="h-10">
                   <SelectValue placeholder="Select nationality" />
                 </SelectTrigger>
                 <SelectContent>
@@ -778,14 +753,14 @@ export function CreatePlayerPage() {
                   ))}
                 </SelectContent>
               </Select>
-              {errors.nationality && (
-                <FieldError id="err-nationality" message={errors.nationality} />
-              )}
             </div>
 
             {/* Date of Birth */}
             <div className="space-y-1.5">
-              <Label className="text-sm text-[#374151]">Date of Birth</Label>
+              <Label className="text-sm text-[#374151]">
+                Date of Birth{" "}
+                <span className="text-[#9CA3AF] font-normal">(optional)</span>
+              </Label>
               <Popover open={dobOpen} onOpenChange={setDobOpen}>
                 <PopoverTrigger asChild>
                   <Button

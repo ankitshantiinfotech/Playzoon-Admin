@@ -21,13 +21,15 @@ interface MasterDataTableProps {
   category: MasterDataCategory;
   onEdit: (item: MasterDataEntity) => void;
   onToggleStatus: (item: MasterDataEntity) => void;
+  loading?: boolean;
 }
 
 export function MasterDataTable({ 
   data, 
   category,
   onEdit, 
-  onToggleStatus 
+  onToggleStatus,
+  loading = false,
 }: MasterDataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
   const [sortConfig, setSortConfig] = useState<{ 
@@ -77,6 +79,20 @@ export function MasterDataTable({
     setSortConfig({ key, direction });
   };
 
+  const tableHeaders: (keyof MasterDataEntity)[] =
+    category === "Sports"
+      ? ["id", "nameEn", "icon", "status", "createdAt", "updatedAt"]
+      : ["id", "nameEn", "nameAr", "status", "createdAt", "updatedAt"];
+
+  const headerLabel = (header: keyof MasterDataEntity) => {
+    if (header === "nameEn") return "Name (EN)";
+    if (header === "nameAr") return "Name (AR)";
+    if (header === "icon") return "Icon";
+    if (header === "createdAt") return "Created At";
+    if (header === "updatedAt") return "Updated At";
+    return header.charAt(0).toUpperCase() + header.slice(1);
+  };
+
   const StatusPill = ({ status }: { status: "active" | "inactive" }) => (
     <span className={cn(
       "inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium",
@@ -114,17 +130,15 @@ export function MasterDataTable({
         <table className="min-w-full divide-y divide-[#E5E7EB]">
           <thead className="bg-[#F9FAFB]">
             <tr>
-              {["id", "nameEn", "nameAr", "status", "createdAt", "updatedAt"].map((header) => (
+              {tableHeaders.map((header) => (
                 <th
                   key={header}
                   scope="col"
                   className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors select-none"
-                  onClick={() => requestSort(header as keyof MasterDataEntity)}
+                  onClick={() => requestSort(header)}
                 >
                   <div className="flex items-center gap-1">
-                    {header === "nameEn" ? "Name (EN)" : 
-                     header === "nameAr" ? "Name (AR)" : 
-                     header.charAt(0).toUpperCase() + header.slice(1).replace(/([A-Z])/g, ' $1')}
+                    {headerLabel(header)}
                     <ChevronDown size={14} className={cn(
                       "transition-transform",
                       sortConfig?.key === header && sortConfig.direction === "desc" ? "rotate-180" : ""
@@ -138,30 +152,80 @@ export function MasterDataTable({
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-[#E5E7EB]">
-            {currentData.length > 0 ? (
+            {loading ? (
+              <tr>
+                <td colSpan={tableHeaders.length + 1} className="px-6 py-12 text-center text-sm text-gray-500">
+                  Loading…
+                </td>
+              </tr>
+            ) : currentData.length > 0 ? (
               currentData.map((item) => (
                 <tr 
                   key={item.id} 
                   className="hover:bg-[#F9FAFB] transition-colors group"
                 >
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                    {item.id}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.nameEn}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-arabic" dir="rtl">
-                    {item.nameAr}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    <StatusPill status={item.status} />
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.createdAt}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
-                    {item.updatedAt}
-                  </td>
+                  {tableHeaders.map((header) => {
+                    if (header === "icon") {
+                      return (
+                        <td key={header} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {item.icon ? (
+                            <img
+                              src={item.icon}
+                              alt=""
+                              className="h-8 w-8 object-contain rounded border border-gray-100 bg-gray-50"
+                            />
+                          ) : (
+                            <span className="text-gray-400 text-xs">—</span>
+                          )}
+                        </td>
+                      );
+                    }
+                    if (header === "id") {
+                      return (
+                        <td key={header} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
+                          {item.id}
+                        </td>
+                      );
+                    }
+                    if (header === "nameEn") {
+                      return (
+                        <td key={header} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {item.nameEn}
+                        </td>
+                      );
+                    }
+                    if (header === "nameAr") {
+                      return (
+                        <td key={header} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500 font-arabic" dir="rtl">
+                          {item.nameAr}
+                        </td>
+                      );
+                    }
+                    if (header === "status") {
+                      return (
+                        <td key={header} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          <StatusPill status={item.status} />
+                        </td>
+                      );
+                    }
+                    if (header === "createdAt") {
+                      return (
+                        <td key={header} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {item.createdAt}
+                        </td>
+                      );
+                    }
+                    if (header === "updatedAt") {
+                      return (
+                        <td key={header} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                          {item.updatedAt}
+                        </td>
+                      );
+                    }
+                    return (
+                      <td key={header} className="px-6 py-4 whitespace-nowrap text-sm text-gray-500" />
+                    );
+                  })}
                   <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                     <div className="flex items-center justify-end gap-3 opacity-0 group-hover:opacity-100 transition-opacity">
                       <button
@@ -196,7 +260,7 @@ export function MasterDataTable({
               ))
             ) : (
               <tr>
-                <td colSpan={7} className="px-6 py-12 text-center text-sm text-gray-500">
+                <td colSpan={tableHeaders.length + 1} className="px-6 py-12 text-center text-sm text-gray-500">
                   No data found matching your search.
                 </td>
               </tr>
