@@ -32,6 +32,37 @@ export const adminService = {
     api.delete(`/admin/players/${id}`).then(r => r.data),
   exportPlayers: (data: P) =>
     api.post('/admin/players/export', data).then(r => r.data),
+  addPlayerAddress: (id: string, data: P) =>
+    api.post(`/admin/players/${id}/addresses`, data).then(r => r.data),
+  updatePlayerAddress: (id: string, addressId: string, data: P) =>
+    api.put(`/admin/players/${id}/addresses/${addressId}`, data).then(r => r.data),
+  deletePlayerAddress: (id: string, addressId: string) =>
+    api.delete(`/admin/players/${id}/addresses/${addressId}`).then(r => r.data),
+  addPlayerDependant: (id: string, data: P) =>
+    api.post(`/admin/players/${id}/dependents`, data).then(r => r.data),
+  updatePlayerDependant: (id: string, dependantId: string, data: P) =>
+    api.put(`/admin/players/${id}/dependents/${dependantId}`, data).then(r => r.data),
+  deletePlayerDependant: (id: string, dependantId: string) =>
+    api.delete(`/admin/players/${id}/dependents/${dependantId}`).then(r => r.data),
+  getPlayerPreferences: (id: string) =>
+    api.get(`/admin/players/${id}/preferences`).then(r => r.data),
+  updatePlayerPreferences: (id: string, data: P) =>
+    api.patch(`/admin/players/${id}/preferences`, data).then(r => r.data),
+  uploadPlayerPhoto: (id: string, file: File) => {
+    const formData = new FormData();
+    formData.append('photo', file);
+    return api.post(`/admin/players/${id}/profile-photo`, formData, {
+      headers: { 'Content-Type': 'multipart/form-data' },
+    }).then(r => r.data);
+  },
+  deletePlayerPhoto: (id: string) =>
+    api.delete(`/admin/players/${id}/profile-photo`).then(r => r.data),
+  addPlayerPaymentMethod: (id: string, data: P) =>
+    api.post(`/admin/players/${id}/payment-methods`, data).then(r => r.data),
+  removePlayerPaymentMethod: (id: string, paymentId: string) =>
+    api.delete(`/admin/players/${id}/payment-methods/${paymentId}`).then(r => r.data),
+  setPlayerDefaultPaymentMethod: (id: string, paymentId: string) =>
+    api.put(`/admin/players/${id}/payment-methods/${paymentId}/default`, {}).then(r => r.data),
 
   // ── Providers (5) ────────────────────────────────────────────────────
   listProviders: (params: P) =>
@@ -70,6 +101,9 @@ export const adminService = {
     api.get('/admin/master-data/locations', { params }).then(r => r.data),
   listMasterData: (type: string, params: P) =>
     api.get(`/admin/master-data/${type}`, { params }).then(r => r.data),
+  /** Same payload as web GET /config/countries (public). */
+  getPublicCountries: () =>
+    api.get('/config/countries').then(r => r.data),
 
   // ── Reviews (3) ──────────────────────────────────────────────────────
   listReviews: (params: P) =>

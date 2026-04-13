@@ -13,7 +13,7 @@ function authState() {
 const api: AxiosInstance = axios.create({
   baseURL: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api/v1',
   timeout: 30_000,
-  withCredentials: true,
+  withCredentials: true, // sends adminRefreshToken HTTP-only cookie automatically
   headers: { 'Content-Type': 'application/json' },
 });
 
@@ -31,7 +31,7 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
   return config;
 });
 
-// ── Response interceptor — 401 → refresh ───────────────────────────
+// ── Response interceptor — 401 → refresh → retry ──────────────────
 let isRefreshing = false;
 let failedQueue: Array<{
   resolve: (token: string | null) => void;
@@ -48,43 +48,53 @@ api.interceptors.response.use(
   async (error: AxiosError) => {
     const req = error.config as InternalAxiosRequestConfig & { _retry?: boolean };
 
-    if (
-      error.response?.status === 401 &&
-      !req._retry &&
-      !req.url?.includes('/auth/')
-    ) {
-      if (isRefreshing) {
-        return new Promise((resolve, reject) => {
-          failedQueue.push({
-            resolve: (token) => {
-              if (token) req.headers.set('Authorization', `Bearer ${token}`);
-              resolve(api(req));
-            },
-            reject,
-          });
-        });
-      }
-
-      req._retry = true;
-      isRefreshing = true;
-
-      try {
-        const newToken = await authState().refreshAccessToken();
-        processQueue(null, newToken);
-        if (newToken) {
-          req.headers.set('Authorization', `Bearer ${newToken}`);
-          return api(req);
-        }
-      } catch (refreshError) {
-        processQueue(refreshError, null);
-        authState().logout();
-        return Promise.reject(refreshError);
-      } finally {
-        isRefreshing = false;
-      }
+    // Do not attempt refresh for:
+    //  - non-401 errors
+    //  - requests that already retried (_retry flag)
+    //  - auth endpoints (avoids infinite refresh loops)
+    const isAuthEndpoint = req.url?.includes('/auth/');
+    if (error.response?.status !== 401 || req._retry || isAuthEndpoint) {
+      return Promise.reject(error);
     }
 
-    return Promise.reject(error);
+    // Queue concurrent requests while a refresh is already in progress
+    if (isRefreshing) {
+      return new Promise((resolve, reject) => {
+        failedQueue.push({
+          resolve: (token) => {
+            if (token) req.headers.set('Authorization', `Bearer ${token}`);
+            resolve(api(req));
+          },
+          reject,
+        });
+      });
+    }
+
+    req._retry = true;
+    isRefreshing = true;
+
+    try {
+      const newToken = await authState().refreshAccessToken();
+      processQueue(null, newToken);
+      if (newToken) {
+        req.headers.set('Authorization', `Bearer ${newToken}`);
+        return api(req);
+      }
+      // refreshAccessToken returned null (refresh token expired) — session is dead
+      processQueue(new Error('Session expired'), null);
+      return Promise.reject(error);
+    } catch (refreshError) {
+      processQueue(refreshError, null);
+      // Only force-logout on a definitive auth rejection from the refresh endpoint.
+      // Do NOT logout on network errors, timeouts, or server errors — those are transient.
+      const status = (refreshError as AxiosError)?.response?.status;
+      if (status === 401 || status === 403) {
+        authState().logout();
+      }
+      return Promise.reject(refreshError);
+    } finally {
+      isRefreshing = false;
+    }
   },
 );
 

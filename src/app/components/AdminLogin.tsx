@@ -14,7 +14,10 @@ import { Alert, AlertDescription, AlertTitle } from "./ui/alert";
 import logo from "../assets/logo.svg";
 
 const loginSchema = z.object({
-  email: z.string().min(1, "Email is required").email("Please enter a valid email address"),
+  email: z
+    .string()
+    .min(1, "Email is required")
+    .email("Please enter a valid email address"),
   password: z.string().min(1, "Password is required"),
 });
 
@@ -50,7 +53,8 @@ export function AdminLogin() {
       });
       navigate("/");
     } catch (error: any) {
-      const msg = error?.response?.data?.message || "Invalid email or password.";
+      const msg =
+        error?.response?.data?.message || "Invalid email or password.";
       setServerError(msg);
       toast.error("Login failed");
     } finally {
@@ -72,10 +76,18 @@ export function AdminLogin() {
 
         <Card className="border-[#E5E7EB] shadow-sm bg-white">
           <CardContent className="pt-6">
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4" aria-label="Admin login">
-
+            <form
+              onSubmit={handleSubmit(onSubmit)}
+              className="space-y-4"
+              aria-label="Admin login"
+            >
               {serverError && (
-                <Alert variant="destructive" className="mb-2" role="alert" aria-live="assertive">
+                <Alert
+                  variant="destructive"
+                  className="mb-2"
+                  role="alert"
+                  aria-live="assertive"
+                >
                   <AlertCircle className="h-4 w-4" />
                   <AlertTitle>Error</AlertTitle>
                   <AlertDescription>{serverError}</AlertDescription>
@@ -83,7 +95,9 @@ export function AdminLogin() {
               )}
 
               <div className="space-y-2">
-                <Label htmlFor="email" className="text-[#111827]">Email Address</Label>
+                <Label htmlFor="email" className="text-[#111827]">
+                  Email Address
+                </Label>
                 <Input
                   id="email"
                   type="email"
@@ -97,13 +111,22 @@ export function AdminLogin() {
                   className="bg-white"
                 />
                 {errors.email && (
-                  <p id="email-error" className="text-xs text-[#EF4444]" role="alert" aria-live="assertive">{errors.email.message}</p>
+                  <p
+                    id="email-error"
+                    className="text-xs text-[#EF4444]"
+                    role="alert"
+                    aria-live="assertive"
+                  >
+                    {errors.email.message}
+                  </p>
                 )}
               </div>
 
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-[#111827]">Password</Label>
+                  <Label htmlFor="password" className="text-[#111827]">
+                    Password
+                  </Label>
                 </div>
                 <div className="relative">
                   <Input
@@ -113,7 +136,9 @@ export function AdminLogin() {
                     error={!!errors.password}
                     aria-required="true"
                     aria-invalid={!!errors.password}
-                    aria-describedby={errors.password ? "password-error" : undefined}
+                    aria-describedby={
+                      errors.password ? "password-error" : undefined
+                    }
                     className="pr-10 bg-white"
                     {...register("password")}
                     disabled={isLoading}
@@ -122,7 +147,9 @@ export function AdminLogin() {
                     type="button"
                     onClick={() => setShowPassword(!showPassword)}
                     className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#111827] focus:outline-none"
-                    aria-label={showPassword ? "Hide password" : "Show password"}
+                    aria-label={
+                      showPassword ? "Hide password" : "Show password"
+                    }
                     aria-pressed={showPassword}
                   >
                     {showPassword ? (
@@ -133,17 +160,33 @@ export function AdminLogin() {
                   </button>
                 </div>
                 {errors.password && (
-                  <p id="password-error" className="text-xs text-[#EF4444]" role="alert" aria-live="assertive">{errors.password.message}</p>
+                  <p
+                    id="password-error"
+                    className="text-xs text-[#EF4444]"
+                    role="alert"
+                    aria-live="assertive"
+                  >
+                    {errors.password.message}
+                  </p>
                 )}
               </div>
 
               <div className="flex items-center justify-end pt-2">
-                <Link to="/forgot-password" className="text-sm font-medium text-[#003B95] hover:underline" aria-label="Forgot password? Reset your password">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm font-medium text-[#003B95] hover:underline"
+                  aria-label="Forgot password? Reset your password"
+                >
                   Forgot Password?
                 </Link>
               </div>
 
-              <Button type="submit" className="w-full bg-[#003B95] hover:bg-[#003B95]/90 mt-2" disabled={isLoading} aria-label={isLoading ? "Signing in..." : undefined}>
+              <Button
+                type="submit"
+                className="w-full bg-[#003B95] hover:bg-[#003B95]/90 mt-2"
+                disabled={isLoading}
+                aria-label={isLoading ? "Signing in..." : undefined}
+              >
                 {isLoading ? (
                   <>
                     <Loader2 className="mr-2 h-4 w-4 animate-spin" />

@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, type ElementType } from "react";
 import { useNavigate } from "react-router";
 import { format, isBefore, isAfter, startOfDay, endOfDay } from "date-fns";
 import { toast } from "sonner";
@@ -70,7 +70,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "../../ui/collapsible";
-import { Avatar, AvatarFallback } from "../../ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "../../ui/avatar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -84,7 +84,7 @@ import {
 
 import type { PlayerRow, PlayerStatus, AppliedFilters } from "./player-data";
 import { EMPTY_FILTERS } from "./player-data";
-import { adminService } from "@/services/admin.service";
+import { adminService } from "../../../../services/admin.service";
 import { StatusPill } from "./components/StatusPill";
 import {
   BulkActionsModal,
@@ -155,7 +155,7 @@ interface BannerState {
 
 const BANNER_STYLES: Record<
   BannerType,
-  { bg: string; border: string; text: string; icon: React.ElementType }
+  { bg: string; border: string; text: string; icon: ElementType }
 > = {
   success: {
     bg: "bg-emerald-50",
@@ -195,44 +195,77 @@ export function PlayerManagementPage() {
   // ── Data ──────────────────────────────────────────────
   const [players, setPlayers] = useState<PlayerRow[]>([]);
 
-  // Map API response to PlayerRow
-  const mapApiPlayer = (p: any): PlayerRow => ({
-    id: p.id,
-    firstName: p.first_name || p.first_name_en || "",
-    lastName: p.last_name || p.last_name_en || "",
-    email: p.email || "",
-    phone: p.country_code
-      ? `${p.country_code}${p.phone || p.mobile || ""}`
-      : p.phone || p.mobile || "",
-    gender: p.gender || "",
-    status: (p.status === "active"
-      ? "Active"
-      : p.status === "locked"
-        ? "Locked"
-        : "Inactive") as PlayerStatus,
-    dependents: p.dependants_count || 0,
-    createdAt: new Date(p.created_at),
-    lastActiveAt: p.last_active_at
-      ? new Date(p.last_active_at)
-      : new Date(p.created_at),
-    avatarUrl: p.avatar_url || undefined,
-    lockedUntil: p.locked_until || undefined,
-    walletBalance: parseFloat(p.wallet_balance || "0"),
-    isSSOUser: !!p.is_sso_user,
-    nationality: p.nationality?.name_en || "",
-    defaultCity: p.default_city || "",
-    defaultCountry: p.default_country || "",
-    savedAddressesCount: p.addresses_count || 0,
-  });
+  const [dynamicCountries, setDynamicCountries] = useState<
+    { id: string; name_en: string }[]
+  >([]);
+
+  // Map API response to PlayerRow (status / lock aligned with PlayerDetailPage: use `status` + `locked_until`, not a separate is_locked flag)
+  const mapApiPlayer = (p: any): PlayerRow => {
+    if (!p.status) throw new Error("Status missing from API response.");
+    const norm = typeof p.status === "string" ? p.status.toLowerCase() : "";
+    let status: PlayerStatus;
+    if (norm === "active") status = "Active";
+    else if (norm === "locked") status = "Locked";
+    else if (norm === "inactive") status = "Inactive";
+    else throw new Error(`Invalid player status received: ${p.status}`);
+
+    const extraAddr =
+      p.extra_addresses_count ?? p.extra_addresses ?? 0;
+    const savedAddressesCount =
+      typeof p.addresses_count === "number"
+        ? p.addresses_count
+        : typeof p.saved_addresses_count === "number"
+          ? p.saved_addresses_count
+          : Number(extraAddr) + 1;
+
+    return {
+      id: p.id,
+      firstName: p.firstName || p.first_name || p.first_name_en || "",
+      lastName: p.lastName || p.last_name || p.last_name_en || "",
+      email: p.email || "",
+      phone: p.country_code
+        ? `${p.country_code}${p.phone || p.mobile || ""}`
+        : p.phone || p.mobile || "",
+      gender: p.gender || "",
+      status,
+      dependents: p.dependants_count || 0,
+      createdAt: new Date(p.created_at),
+      lastActiveAt: p.last_login_at
+        ? new Date(p.last_login_at)
+        : p.last_active_at
+          ? new Date(p.last_active_at)
+          : new Date(p.created_at),
+      avatarUrl: p.profile_photo_url || undefined,
+      lockedUntil: p.locked_until || undefined,
+      walletBalance: parseFloat(p.wallet_balance || "0"),
+      isSSOUser: !!p.is_sso_user,
+      nationality: p.nationality || "",
+      defaultCity: p.default_location || "",
+      defaultCountry: p.default_country || p.defaultCountry || "",
+      savedAddressesCount,
+    };
+  };
+
+  const fetchCountries = async () => {
+    try {
+      const res = await adminService.listMasterData("countries", {
+        limit: 100,
+      });
+      if (res?.data?.items) {
+        setDynamicCountries(res.data.items);
+      }
+    } catch (err) {
+      console.error("Failed to fetch countries:", err);
+    }
+  };
 
   const fetchPlayers = async (params: Record<string, unknown> = {}) => {
     setIsLoading(true);
     try {
       const res = await adminService.listPlayers(params);
-      // API returns { success, data: { players, pagination }, message }
-      // adminService unwraps one level (r.data), so res = { success, data: { players, pagination } }
       const payload = res?.data || res;
-      const list = payload?.players || payload || [];
+      // The backend now returns { players, pagination }
+      const list = payload?.players || payload?.items || payload || [];
       const mapped = Array.isArray(list) ? list.map(mapApiPlayer) : [];
       setPlayers(mapped);
       setTotalRecords(
@@ -249,7 +282,7 @@ export function PlayerManagementPage() {
   };
 
   useEffect(() => {
-    fetchPlayers({ page: 1, limit: 25 });
+    fetchCountries();
   }, []);
 
   // ── Banner ────────────────────────────────────────────
@@ -281,7 +314,7 @@ export function PlayerManagementPage() {
 
   // ── Pagination ────────────────────────────────────────
   const [page, setPage] = useState(1);
-  const [pageSize, setPageSize] = useState(25);
+  const [pageSize, setPageSize] = useState(10);
 
   // ── Selection ─────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
@@ -319,20 +352,39 @@ export function PlayerManagementPage() {
     return () => window.removeEventListener("keydown", handler);
   }, []);
 
-  // ── Apply search on Enter ─────────────────────────────
+  // ── Apply Search & Debouncing ─────────────────────────────
   const submitSearch = () => {
     if (searchInput.length > 200) {
       toast.error("Search query must be 200 characters or less.");
       return;
     }
-    setFilters((f) => ({ ...f, search: searchInput }));
-    setPage(1);
+    setFilters((f) => {
+      if (f.search === searchInput) return f;
+      setTimeout(() => setPage(1), 0);
+      return { ...f, search: searchInput };
+    });
   };
+
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (searchInput.length <= 200) {
+        setFilters((f) => {
+          if (f.search === searchInput) return f;
+          setTimeout(() => setPage(1), 0);
+          return { ...f, search: searchInput };
+        });
+      }
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
 
   const clearSearch = () => {
     setSearchInput("");
-    setFilters((f) => ({ ...f, search: "" }));
-    setPage(1);
+    setFilters((f) => {
+      if (f.search === "") return f;
+      setTimeout(() => setPage(1), 0);
+      return { ...f, search: "" };
+    });
   };
 
   // ── Filter validation ─────────────────────────────────
@@ -386,6 +438,18 @@ export function PlayerManagementPage() {
         label: "Status",
         value: filters.statuses.join(", "),
       });
+    if (filters.nationalities.length > 0) {
+      const names = filters.nationalities
+        .map((id) => dynamicCountries.find((c) => c.id === id)?.name_en || id)
+        .join(", ");
+      c.push({ key: "nationalities", label: "Nationality", value: names });
+    }
+    if (filters.lockStatuses.length > 0)
+      c.push({
+        key: "lockStatuses",
+        label: "Lock Status",
+        value: filters.lockStatuses.join(", "),
+      });
     if (filters.createdFrom)
       c.push({
         key: "createdFrom",
@@ -423,6 +487,8 @@ export function PlayerManagementPage() {
         setSearchInput("");
       }
       if (key === "statuses") next.statuses = [];
+      if (key === "nationalities") next.nationalities = [];
+      if (key === "lockStatuses") next.lockStatuses = [];
       if (key === "createdFrom") next.createdFrom = undefined;
       if (key === "createdTo") next.createdTo = undefined;
       if (key === "lastActiveFrom") next.lastActiveFrom = undefined;
@@ -433,6 +499,8 @@ export function PlayerManagementPage() {
     setFilterDraft((d) => {
       const next = { ...d };
       if (key === "statuses") next.statuses = [];
+      if (key === "nationalities") next.nationalities = [];
+      if (key === "lockStatuses") next.lockStatuses = [];
       if (key === "createdFrom") next.createdFrom = undefined;
       if (key === "createdTo") next.createdTo = undefined;
       if (key === "lastActiveFrom") next.lastActiveFrom = undefined;
@@ -450,83 +518,35 @@ export function PlayerManagementPage() {
     setPage(1);
   };
 
-  // ── Filtering ─────────────────────────────────────────
-  const filtered = useMemo(() => {
-    return players.filter((p) => {
-      if (filters.search) {
-        const q = filters.search.toLowerCase();
-        const fullName = `${p.firstName} ${p.lastName}`.toLowerCase();
-        if (
-          !fullName.includes(q) &&
-          !p.email.toLowerCase().includes(q) &&
-          !p.phone.includes(q) &&
-          !p.id.toLowerCase().includes(q)
-        )
-          return false;
-      }
-      if (filters.statuses.length > 0 && !filters.statuses.includes(p.status))
-        return false;
-      if (
-        filters.createdFrom &&
-        isBefore(p.createdAt, startOfDay(filters.createdFrom))
-      )
-        return false;
-      if (
-        filters.createdTo &&
-        isAfter(p.createdAt, endOfDay(filters.createdTo))
-      )
-        return false;
-      if (
-        filters.lastActiveFrom &&
-        isBefore(p.lastActiveAt, startOfDay(filters.lastActiveFrom))
-      )
-        return false;
-      if (
-        filters.lastActiveTo &&
-        isAfter(p.lastActiveAt, endOfDay(filters.lastActiveTo))
-      )
-        return false;
-      if (filters.hasDependents && p.dependents === 0) return false;
-      return true;
-    });
-  }, [players, filters]);
-
-  // ── Sorting ───────────────────────────────────────────
-  const sorted = useMemo(() => {
-    return [...filtered].sort((a, b) => {
-      let cmp = 0;
-      switch (sortField) {
-        case "name":
-          cmp = `${a.firstName} ${a.lastName}`.localeCompare(
-            `${b.firstName} ${b.lastName}`,
-          );
-          break;
-        case "email":
-          cmp = a.email.localeCompare(b.email);
-          break;
-        case "status": {
-          const order: Record<PlayerStatus, number> = {
-            Active: 0,
-            Inactive: 1,
-            Locked: 2,
-          };
-          cmp = order[a.status] - order[b.status];
-          break;
-        }
-        case "createdAt":
-          cmp = a.createdAt.getTime() - b.createdAt.getTime();
-          break;
-      }
-      return sortDir === "asc" ? cmp : -cmp;
-    });
-  }, [filtered, sortField, sortDir]);
-
-  // ── Pagination ────────────────────────────────────────
-  const totalPages = Math.max(1, Math.ceil(sorted.length / pageSize));
+  // ── Pagination & Data Mapping ─────────────────────────
+  const totalPages = Math.max(1, Math.ceil(totalRecords / pageSize));
   const safePage = Math.min(page, totalPages);
-  const paged = sorted.slice((safePage - 1) * pageSize, safePage * pageSize);
-  const rangeStart = sorted.length > 0 ? (safePage - 1) * pageSize + 1 : 0;
-  const rangeEnd = Math.min(safePage * pageSize, sorted.length);
+  const paged = players;
+  const rangeStart = totalRecords > 0 ? (safePage - 1) * pageSize + 1 : 0;
+  const rangeEnd = Math.min(safePage * pageSize, totalRecords);
+
+  // ── Sync Server Data ──────────────────────────────────
+  useEffect(() => {
+    fetchPlayers({
+      page,
+      limit: pageSize,
+      search: filters.search || undefined,
+      status: filters.statuses[0]?.toLowerCase() || undefined,
+      sort_by:
+        sortField === "createdAt"
+          ? "created_at"
+          : sortField === "name"
+            ? "name"
+            : sortField === "email"
+              ? "email"
+              : "status",
+      sort_order: sortDir,
+      registered_from: filters.createdFrom?.toISOString() || undefined,
+      registered_to: filters.createdTo?.toISOString() || undefined,
+      nationality: filters.nationalities[0] || undefined,
+      lock_status: filters.lockStatuses[0]?.toLowerCase() || undefined,
+    });
+  }, [page, pageSize, sortField, sortDir, filters]); // eslint-disable-line
 
   // ── Sort handler ──────────────────────────────────────
   const handleSort = (field: SortField) => {
@@ -591,36 +611,46 @@ export function PlayerManagementPage() {
   };
 
   // ── Bulk action handler ───────────────────────────────
-  const handleBulkConfirm = (result: BulkActionResult) => {
-    if (result.type === "change_status" && result.newStatus) {
-      const count = effectiveSelectedCount;
-      setPlayers((prev) =>
-        prev.map((p) =>
-          selectedIds.has(p.id) ? { ...p, status: result.newStatus! } : p,
-        ),
-      );
-      showBanner(
-        "success",
-        `Status updated for ${count} player${count !== 1 ? "s" : ""}.`,
-      );
-    } else if (result.type === "send_notification") {
-      showBanner(
-        "success",
-        `Your message was sent to ${effectiveSelectedCount} player${effectiveSelectedCount !== 1 ? "s" : ""}.`,
-      );
+  const handleBulkConfirm = async (result: BulkActionResult) => {
+    const ids = Array.from(selectedIds);
+    if (ids.length === 0) return;
+
+    let action = "";
+    if (result.type === "change_status") {
+      action =
+        result.newStatus?.toLowerCase() === "locked"
+          ? "lock"
+          : result.newStatus?.toLowerCase() === "active"
+            ? "activate"
+            : "deactivate";
     } else if (result.type === "delete") {
-      // AC-PM-020: Remove selected players
-      const count = selectedIds.size;
-      setPlayers((prev) => prev.filter((p) => !selectedIds.has(p.id)));
-      showBanner(
-        "success",
-        `${count} player${count !== 1 ? "s" : ""} permanently deleted.`,
-      );
-      toast.success(
-        `${count} player${count !== 1 ? "s have" : " has"} been deleted.`,
-      );
+      action = "delete";
+    } else {
+      showBanner("info", "Feature coming soon.");
+      return;
     }
-    clearSelection();
+
+    try {
+      const res = await adminService.bulkPlayerAction({
+        player_ids: ids,
+        action,
+        reason: result.reason,
+      });
+
+      const successful = res.data?.successful || 0;
+      const failed = res.data?.failed || 0;
+
+      if (successful > 0) {
+        showBanner("success", `Successfully processed ${successful} players.`);
+        fetchPlayers({ page, limit: pageSize });
+        clearSelection();
+      }
+      if (failed > 0) {
+        toast.error(`Failed to process ${failed} players.`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Bulk action failed.");
+    }
   };
 
   // AC-PM-019: Simple bulk deactivate handler
@@ -819,26 +849,33 @@ export function PlayerManagementPage() {
                 <div className="space-y-1.5">
                   <Label>Status</Label>
                   <div className="flex flex-wrap gap-2">
-                    {(["Active", "Inactive", "Locked"] as PlayerStatus[]).map(
-                      (s) => (
-                        <button
-                          key={s}
-                          onClick={() => toggleStatusFilter(s)}
-                          className={cn(
-                            "px-3 py-1.5 rounded-full border text-xs transition-colors",
-                            filterDraft.statuses.includes(s)
-                              ? s === "Active"
-                                ? "bg-emerald-100 border-emerald-300 text-emerald-800"
-                                : s === "Locked"
-                                  ? "bg-red-100 border-red-300 text-red-800"
+                    {(
+                      [
+                        "Active",
+                        "Inactive",
+                        "Locked",
+                        "Unlocked",
+                      ] as PlayerStatus[]
+                    ).map((s) => (
+                      <button
+                        key={s}
+                        onClick={() => toggleStatusFilter(s)}
+                        className={cn(
+                          "px-3 py-1.5 rounded-full border text-xs transition-colors",
+                          filterDraft.statuses.includes(s)
+                            ? s === "Active"
+                              ? "bg-emerald-100 border-emerald-300 text-emerald-800"
+                              : s === "Locked"
+                                ? "bg-red-100 border-red-300 text-red-800"
+                                : s === "Unlocked"
+                                  ? "bg-blue-100 border-blue-300 text-blue-800"
                                   : "bg-gray-200 border-gray-300 text-gray-800"
-                              : "bg-white border-gray-200 text-gray-500 hover:border-gray-300",
-                          )}
-                        >
-                          {s}
-                        </button>
-                      ),
-                    )}
+                            : "bg-white border-gray-200 text-gray-500 hover:border-gray-300",
+                        )}
+                      >
+                        {s}
+                      </button>
+                    ))}
                   </div>
                   <p className="text-[11px] text-gray-400">
                     Select one or more statuses.
@@ -862,6 +899,55 @@ export function PlayerManagementPage() {
                       Has Dependents
                     </Label>
                   </div>
+                </div>
+
+                {/* Nationality */}
+                <div className="space-y-1.5">
+                  <Label>Nationality</Label>
+                  <Select
+                    value={filterDraft.nationalities[0] || "all"}
+                    onValueChange={(v) =>
+                      setFilterDraft((d) => ({
+                        ...d,
+                        nationalities: v === "all" ? [] : [v],
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Nationalities" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Nationalities</SelectItem>
+                      {dynamicCountries.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name_en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Lock Status */}
+                <div className="space-y-1.5">
+                  <Label>Lock Status</Label>
+                  <Select
+                    value={filterDraft.lockStatuses[0] || "all"}
+                    onValueChange={(v) =>
+                      setFilterDraft((d) => ({
+                        ...d,
+                        lockStatuses: v === "all" ? [] : [v as any],
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Accounts" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Accounts</SelectItem>
+                      <SelectItem value="Locked">Locked Only</SelectItem>
+                      <SelectItem value="Unlocked">Unlocked Only</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 {/* Created From / To */}
@@ -1247,6 +1333,12 @@ export function PlayerManagementPage() {
                       <TableCell className="px-3">
                         <div className="flex items-center gap-2.5">
                           <Avatar className="h-8 w-8 shrink-0">
+                            {player.avatarUrl && (
+                              <AvatarImage
+                                src={player.avatarUrl}
+                                alt={player.firstName}
+                              />
+                            )}
                             <AvatarFallback className="text-[11px] bg-[#003B95]/10 text-[#003B95]">
                               {player.firstName[0]}
                               {player.lastName[0]}
@@ -1255,7 +1347,7 @@ export function PlayerManagementPage() {
                           <div className="min-w-0">
                             <button
                               onClick={() => navigate(`/players/${player.id}`)}
-                              className="text-sm text-[#111827] truncate hover:text-[#003B95] hover:underline text-left"
+                              className="text-sm text-[#111827] truncate hover:text-[#003B95] hover:underline text-left cursor-pointer"
                             >
                               {player.firstName} {player.lastName}
                             </button>
@@ -1266,16 +1358,22 @@ export function PlayerManagementPage() {
                         </div>
                       </TableCell>
                       <TableCell className="px-3 text-sm text-[#374151] truncate max-w-[180px]">
-                        {player.email}
+                        {player.email || "-"}
                       </TableCell>
                       <TableCell className="px-3 text-xs text-[#6B7280] hidden lg:table-cell">
-                        {player.phone}
+                        {player.phone || "-"}
                       </TableCell>
                       <TableCell className="px-3 text-xs text-[#6B7280] hidden lg:table-cell">
-                        {player.gender}
+                        {player.gender
+                          ? player.gender.charAt(0).toUpperCase() +
+                            player.gender.slice(1)
+                          : "-"}
                       </TableCell>
                       <TableCell className="px-3 text-xs text-[#6B7280] hidden lg:table-cell">
-                        {player.nationality}
+                        {player.nationality
+                          ? player.nationality.charAt(0).toUpperCase() +
+                            player.nationality.slice(1)
+                          : "-"}
                       </TableCell>
                       <TableCell className="px-3">
                         <Tooltip>
@@ -1322,7 +1420,7 @@ export function PlayerManagementPage() {
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="h-7 w-7 opacity-0 group-hover:opacity-100 focus:opacity-100 transition-opacity"
+                              className="h-7 w-7"
                               aria-label="Row actions"
                             >
                               <MoreHorizontal className="h-4 w-4" />
@@ -1343,13 +1441,19 @@ export function PlayerManagementPage() {
                             </DropdownMenuItem>
                             <DropdownMenuSeparator />
                             <DropdownMenuItem
-                              onClick={() => navigate(`/players/${player.id}`)}
+                              className="cursor-pointer"
+                              onClick={() =>
+                                navigate(`/players/${player.id}?tab=addresses`)
+                              }
                             >
                               <MapPin className="h-3.5 w-3.5 mr-2" />
                               Addresses
                             </DropdownMenuItem>
                             <DropdownMenuItem
-                              onClick={() => navigate(`/players/${player.id}`)}
+                              className="cursor-pointer"
+                              onClick={() =>
+                                navigate(`/players/${player.id}?tab=dependants`)
+                              }
                             >
                               <Users className="h-3.5 w-3.5 mr-2" />
                               Dependents
@@ -1424,12 +1528,12 @@ export function PlayerManagementPage() {
         </div>
 
         {/* ── Pagination ──────────────────────────────────── */}
-        {sorted.length > 0 && (
+        {totalRecords > 0 && (
           <div className="flex flex-col sm:flex-row items-center justify-between px-4 py-3 border-t bg-gray-50/50 gap-3">
             <div className="flex items-center gap-3 text-xs text-[#6B7280]">
               <span>
                 Showing {rangeStart.toLocaleString()}–
-                {rangeEnd.toLocaleString()} of {sorted.length.toLocaleString()}
+                {rangeEnd.toLocaleString()} of {totalRecords.toLocaleString()}
               </span>
               <div className="flex items-center gap-1.5">
                 <span className="text-[#9CA3AF]">Rows:</span>
@@ -1514,7 +1618,7 @@ export function PlayerManagementPage() {
         open={exportModalOpen}
         onOpenChange={setExportModalOpen}
         selectedCount={selectedIds.size}
-        totalFiltered={sorted.length}
+        totalFiltered={totalRecords}
         defaultScope={exportScope as any}
       />
 

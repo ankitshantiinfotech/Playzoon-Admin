@@ -1,5 +1,14 @@
-import { useState, useMemo, useEffect, useCallback, useRef } from "react";
-import { useParams, useNavigate, Link } from "react-router";
+import React, {
+  useState,
+  useMemo,
+  useEffect,
+  useCallback,
+  useRef,
+  type ChangeEvent,
+  type ElementType,
+  type ReactNode,
+} from "react";
+import { useParams, useNavigate, Link, useLocation } from "react-router";
 import {
   format,
   differenceInYears,
@@ -8,7 +17,15 @@ import {
   isAfter,
 } from "date-fns";
 import { toast } from "sonner";
-import { adminService } from "@/services/admin.service";
+import { parsePhoneNumber, isValidPhoneNumber } from "libphonenumber-js";
+import { adminService } from "../../../../services/admin.service";
+import {
+  BIO_MAX_PLAIN_CHARS,
+  bioPlainTextLength,
+  sanitizePlayerBioHtml,
+} from "../../../../lib/bio-html";
+import MobileNumber from "../../ui/MobileNumber";
+import { AdminPlayerBioEditor } from "./AdminPlayerBioEditor";
 import {
   ArrowLeft,
   Copy,
@@ -36,13 +53,15 @@ import {
   Languages,
   Lock as LockIcon,
   Unlock,
-  CreditCard,
   Wallet,
   Trophy,
   Users,
   ChevronUp,
   ChevronDown,
   Pencil,
+  Camera,
+  Trash2, // FIX 1: Added missing Trash2 import
+  Settings as SettingsIcon,
 } from "lucide-react";
 import { cn } from "../../ui/utils";
 import { Button } from "../../ui/button";
@@ -52,7 +71,7 @@ import { Badge } from "../../ui/badge";
 import { Checkbox } from "../../ui/checkbox";
 import { Textarea } from "../../ui/textarea";
 import { Separator } from "../../ui/separator";
-import { Avatar, AvatarFallback } from "../../ui/avatar";
+import { Avatar, AvatarImage, AvatarFallback } from "../../ui/avatar";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "../../ui/tabs";
 import { RadioGroup, RadioGroupItem } from "../../ui/radio-group";
 import {
@@ -91,26 +110,29 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
 import { Calendar as CalendarPicker } from "../../ui/calendar";
 import { Tooltip, TooltipContent, TooltipTrigger } from "../../ui/tooltip";
+import ImageCropper from "../../ImageCropper";
+import { CROP_PRESETS } from "../../../../lib/cropPresets";
 import { StatusPill } from "./components/StatusPill";
 import { AddressesTab } from "./AddressesTab";
 import { DependentsTab } from "./DependentsTab";
+import { SavedCardsTab } from "./SavedCardsTab";
+import { PreferencesTab } from "./PreferencesTab";
 import type { PlayerStatus } from "./player-data";
 import {
-  getPlayerDetail,
-  getPlayerAddresses,
-  getPlayerDependents,
-  getDetailAuditEvents,
-  GENDER_OPTIONS,
-  COUNTRIES,
-  type PlayerDetail,
-  type PlayerAddress,
-  type PlayerDependent,
-  type DetailAuditEvent,
-  type SavedCard,
-  type PlayerBooking,
-  type WalletTransaction,
-  type PlayerTournament,
-  type PlayerFriend,
+  RELATIONSHIP_OPTIONS,
+  ADDRESS_TYPE_OPTIONS,
+  POPULAR_COUNTRIES as COUNTRIES,
+} from "./constants";
+import type {
+  PlayerDetail,
+  PlayerAddress,
+  PlayerDependent,
+  DetailAuditEvent,
+  SavedCard,
+  PlayerBooking,
+  WalletTransaction,
+  PlayerTournament,
+  PlayerFriend,
 } from "./player-detail-data";
 
 // ─── Banner ──────────────────────────────────────────────────
@@ -120,9 +142,18 @@ interface BannerState {
   message: string;
   visible: boolean;
 }
+/** Normalize API date (DATEONLY or ISO) for calendar / yyyy-MM-dd inputs. */
+function toProfileDateInputValue(value: unknown): string {
+  if (value == null || value === "") return "";
+  const s = String(value);
+  if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+  const d = new Date(s);
+  return Number.isNaN(d.getTime()) ? "" : format(d, "yyyy-MM-dd");
+}
+
 const BANNER_STYLES: Record<
   BannerType,
-  { bg: string; border: string; text: string; icon: React.ElementType }
+  { bg: string; border: string; text: string; icon: ElementType }
 > = {
   success: {
     bg: "bg-emerald-50",
@@ -150,13 +181,104 @@ const BANNER_STYLES: Record<
   },
 };
 
+function buildPhoneE164(countryCode: string, nationalDigits: string): string {
+  const nat = (nationalDigits || "").replace(/\D/g, "");
+  if (!nat) return "";
+  const cc = (countryCode || "+966").trim();
+  const prefix = cc.startsWith("+") ? cc : `+${cc}`;
+  return `${prefix}${nat}`;
+}
+
+/** Same response shape as web GET /config/countries (api envelope + nested data). */
+function normalizeCountriesFromConfig(body: unknown): { id: string; name_en: string }[] {
+  const root = body as Record<string, unknown> | null | undefined;
+  if (!root) return [];
+  const inner = (root.data as Record<string, unknown>) ?? root;
+  const list = inner.countries;
+  if (!Array.isArray(list)) return [];
+  return list
+    .map((c: Record<string, unknown>) => ({
+      id: String(c.id ?? ""),
+      name_en: String(c.name_en ?? c.name ?? ""),
+    }))
+    .filter((c) => c.id);
+}
+
+function ProfileFormField({
+  id,
+  label,
+  error,
+  children,
+}: {
+  id: string;
+  label: string;
+  error?: string;
+  children: ReactNode;
+}) {
+  return (
+    <div className="space-y-1.5">
+      <Label htmlFor={id}>{label}</Label>
+      {children}
+      {error && (
+        <p className="text-xs text-red-500" role="alert">
+          {error}
+        </p>
+      )}
+    </div>
+  );
+}
+
+const MAX_PROFILE_PHOTO_MB = 5;
+const MAX_PROFILE_PHOTO_BYTES = MAX_PROFILE_PHOTO_MB * 1024 * 1024;
+const ALLOWED_PROFILE_PHOTO_TYPES = [
+  "image/jpeg",
+  "image/jpg",
+  "image/png",
+  "image/webp",
+] as const;
+
 // ─── Main Component ──────────────────────────────────────────
 export function PlayerDetailPage() {
   const { id: routeId } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const id = routeId || "P-104392";
 
-  const [player, setPlayer] = useState<PlayerDetail>(() => getPlayerDetail(id));
+  const [player, setPlayer] = useState<PlayerDetail>({
+    id: id,
+    firstName: "",
+    lastName: "",
+    email: "",
+    countryCode: "+966",
+    phone: "",
+    status: "Active",
+    dateOfBirth: "",
+    gender: "",
+    nationality: "",
+    username: "",
+    bio: "",
+    occupation: "",
+    interestedSports: [],
+    preferredLanguage: "",
+    notes: "",
+    walletBalance: 0,
+    isSSOUser: false,
+    createdAt: new Date(),
+    lastActiveAt: new Date(),
+    notificationSettings: {
+      emailBookingConfirm: false,
+      emailCancellation: false,
+      emailPromotions: false,
+      pushReminders: false,
+      pushSessionUpdates: false,
+      smsAlerts: false,
+    },
+    privacySettings: {
+      profileVisible: false,
+      showActivityHistory: false,
+      allowFriendRequests: false,
+      shareWithCoaches: false,
+    },
+  });
   const [addresses, setAddresses] = useState<PlayerAddress[]>([]);
   const [dependents, setDependents] = useState<PlayerDependent[]>([]);
   const [auditEvents, setAuditEvents] = useState<DetailAuditEvent[]>([]);
@@ -167,245 +289,301 @@ export function PlayerDetailPage() {
   >([]);
   const [tournaments, setTournaments] = useState<PlayerTournament[]>([]);
   const [friends, setFriends] = useState<PlayerFriend[]>([]);
+  const [countries, setCountries] = useState<{ id: string; name_en: string }[]>(
+    [],
+  );
   const [isLoadingApi, setIsLoadingApi] = useState(true);
 
-  // Fetch from real API and merge with detail data
-  useEffect(() => {
-    (async () => {
-      try {
-        const res = await adminService.getPlayer(id);
-        // adminService returns r.data = { success, data: { player fields }, message }
-        const data = res?.data || res;
-        if (!data || !data.id) throw new Error("Player not found");
-        // Map API response to PlayerDetail shape, merging with defaults
+  const loadData = async () => {
+    setIsLoadingApi(true);
+    try {
+      const res = await adminService.getPlayer(id);
+      const data = res?.data || res;
+      if (!data || !data.id) throw new Error("Player not found");
+
+      // Same source as web player profile: GET /config/countries
+      adminService
+        .getPublicCountries()
+        .then((res) => {
+          setCountries(normalizeCountriesFromConfig(res));
+        })
+        .catch((err) => {
+          console.error("Failed to load countries:", err);
+        });
+
+      setPlayer((prev) => ({
+        ...prev,
+        id: data.id ? String(data.id) : prev.id,
+        firstName: data.first_name || data.first_name_en || "",
+        lastName: data.last_name || data.last_name_en || "",
+        email: data.email || "",
+        countryCode: data.country_code || "+966",
+        phone: data.phone || data.mobile || "",
+        gender: data.gender || "",
+        dateOfBirth: toProfileDateInputValue(data.date_of_birth),
+        nationality:
+          data.nationality_id ||
+          data.nationality?.id ||
+          (typeof data.nationality === "string" ? data.nationality : ""),
+        status: (() => {
+          if (!data.status)
+            throw new Error("Status missing from API response.");
+          const norm =
+            typeof data.status === "string" ? data.status.toLowerCase() : "";
+          if (norm === "active") return "Active";
+          if (norm === "locked") return "Locked";
+          if (norm === "inactive") return "Inactive";
+          throw new Error(`Invalid player status received: ${data.status}`);
+        })(),
+        avatarUrl: data.avatar_url || data.profile_photo_url || undefined,
+        bio: data.bio || "",
+        occupation: data.occupation || "",
+        preferredLanguage:
+          data.preferred_language ||
+          data.language_preference ||
+          data.preferredLanguage ||
+          "",
+        createdAt: data.created_at ? new Date(data.created_at) : prev.createdAt,
+        lastActiveAt: data.last_login_at
+          ? new Date(data.last_login_at)
+          : prev.lastActiveAt,
+        walletBalance:
+          data.wallet_balance != null ? parseFloat(data.wallet_balance) : 0,
+      }));
+
+      if (data.dependants && Array.isArray(data.dependants)) {
+        setDependents(
+          data.dependants.map((d: Record<string, unknown>) => ({
+            id: String(d.id || ""),
+            firstName: String(d.first_name_en || d.first_name || ""),
+            lastName: String(d.last_name_en || d.last_name || ""),
+            relationship: String(d.relationship || ""),
+            relation_type_id: String(d.relation_type_id || ""),
+            gender: String(d.gender || ""),
+            dateOfBirth: String(d.dob || ""),
+            lastUpdated: d.updated_at
+              ? new Date(String(d.updated_at))
+              : new Date(),
+          })),
+        );
+      } else {
+        setDependents([]);
+      }
+
+      if (data.addresses && Array.isArray(data.addresses)) {
+        setAddresses(
+          data.addresses.map((a: Record<string, unknown>) => ({
+            id: String(a.id || ""),
+            addressType: String(a.label || "home"),
+            addressLine1:
+              `${a.building_number || ""} ${a.street_name || ""}`.trim(),
+            addressLine2: String(a.apartment_floor || ""),
+            city: String(a.city_name || ""),
+            state: "",
+            postalCode: "",
+            country: String(a.country_name || ""),
+            isDefault: Boolean(a.is_default),
+            lastUpdated: a.updated_at
+              ? new Date(String(a.updated_at))
+              : new Date(),
+          })),
+        );
+      } else {
+        setAddresses([]);
+      }
+
+      if (
+        data.recent_audit_trail &&
+        Array.isArray(data.recent_audit_trail) &&
+        data.recent_audit_trail.length > 0
+      ) {
+        setAuditEvents(
+          data.recent_audit_trail.map((a: Record<string, unknown>) => ({
+            id: String(a.id || ""),
+            timestamp: a.created_at
+              ? new Date(String(a.created_at))
+              : new Date(),
+            actor: String(a.actor_name || "System"),
+            actorRole: "Admin",
+            module: "Players",
+            action: String(a.action || ""),
+            target: String(a.description || ""),
+            result: "Success" as const,
+            metadata: String(a.changes || ""),
+          })),
+        );
+      }
+
+      if (data.sports_interests && Array.isArray(data.sports_interests)) {
         setPlayer((prev) => ({
           ...prev,
-          id: data.id ? String(data.id) : prev.id,
-          firstName: data.first_name || data.first_name_en || "",
-          lastName: data.last_name || data.last_name_en || "",
-          email: data.email || "",
-          phone: data.country_code
-            ? `${data.country_code}${data.phone || data.mobile || ""}`
-            : data.phone || data.mobile || "",
-          gender: data.gender || "",
-          dateOfBirth: data.date_of_birth || "",
-          nationality:
-            data.nationality?.name_en ||
-            (typeof data.nationality === "string" ? data.nationality : ""),
-          status: (data.status === "active"
-            ? "Active"
-            : data.status === "locked"
-              ? "Locked"
-              : "Inactive") as PlayerStatus,
-          avatarUrl: data.avatar_url || data.profile_photo_url || undefined,
-          bio: data.bio || "",
-          createdAt: data.created_at
-            ? new Date(data.created_at)
-            : prev.createdAt,
-          lastActiveAt: data.last_login_at
-            ? new Date(data.last_login_at)
-            : prev.lastActiveAt,
-          walletBalance:
-            data.wallet_balance != null ? parseFloat(data.wallet_balance) : 0,
+          interestedSports: data.sports_interests.map(
+            (s: Record<string, unknown>) => String(s.name_en || ""),
+          ),
         }));
+      }
 
-        // Load dependants from API
-        if (data.dependants && Array.isArray(data.dependants)) {
-          setDependents(
-            data.dependants.map((d: Record<string, unknown>) => ({
-              id: String(d.id || ""),
-              firstName: String(d.first_name_en || ""),
-              lastName: String(d.last_name_en || ""),
-              relationship: String(
-                d.relationship || d.relation_type_id || "Child",
-              ),
-              dateOfBirth: String(d.dob || ""),
-              email: String(d.email || ""),
-              phone: String(d.phone || ""),
-              notes: String(d.notes || ""),
-              lastUpdated: d.updated_at
-                ? new Date(String(d.updated_at))
-                : new Date(),
-            })),
-          );
-        } else {
-          setDependents([]);
-        }
-
-        // Load addresses from API
-        if (data.addresses && Array.isArray(data.addresses)) {
-          setAddresses(
-            data.addresses.map((a: Record<string, unknown>) => ({
-              id: String(a.id || ""),
-              addressType: String(a.label || "home"),
-              addressLine1:
-                `${a.building_number || ""} ${a.street_name || ""}`.trim(),
-              addressLine2: String(a.apartment_floor || ""),
-              city: String(a.city_name || ""),
-              state: "",
-              postalCode: "",
-              country: String(a.country_name || ""),
-              isDefault: Boolean(a.is_default),
-              lastUpdated: a.updated_at
-                ? new Date(String(a.updated_at))
-                : new Date(),
-            })),
-          );
-        } else {
-          setAddresses([]);
-        }
-
-        // Load audit trail from API
-        if (
-          data.recent_audit_trail &&
-          Array.isArray(data.recent_audit_trail) &&
-          data.recent_audit_trail.length > 0
-        ) {
-          setAuditEvents(
-            data.recent_audit_trail.map((a: Record<string, unknown>) => ({
-              id: String(a.id || ""),
-              timestamp: a.created_at
-                ? new Date(String(a.created_at))
-                : new Date(),
-              actor: String(a.actor_name || "System"),
-              actorRole: "Admin",
-              module: "Players",
-              action: String(a.action || ""),
-              target: String(a.description || ""),
-              result: "Success" as const,
-              metadata: String(a.changes || ""),
-            })),
-          );
-        }
-
-        // Sports interests from API
-        if (data.sports_interests && Array.isArray(data.sports_interests)) {
-          setPlayer((prev) => ({
-            ...prev,
-            interestedSports: data.sports_interests.map(
-              (s: Record<string, unknown>) => String(s.name_en || ""),
-            ),
-          }));
-        }
-
-        // Saved cards from API
-        if (data.saved_cards && Array.isArray(data.saved_cards)) {
-          setSavedCards(
-            data.saved_cards.map((c: Record<string, unknown>) => ({
+      if (data.saved_cards && Array.isArray(data.saved_cards)) {
+        setSavedCards(
+          data.saved_cards.map((c: Record<string, unknown>) => {
+            const raw = String(c.card_brand || "").toLowerCase();
+            let brand = "Card";
+            if (raw === "visa") brand = "Visa";
+            else if (raw === "mastercard") brand = "Mastercard";
+            else if (raw === "amex") brand = "Amex";
+            else if (raw === "mada") brand = "mada";
+            else if (c.card_brand) brand = String(c.card_brand);
+            return {
               id: String(c.id || ""),
-              brand: String(c.card_brand || "Visa"),
+              brand,
               last4: String(c.card_last_four || "****"),
               expiry: `${String(c.expiry_month || "00").padStart(2, "0")}/${String(c.expiry_year || "00").slice(-2)}`,
               isDefault: Boolean(c.is_default),
-              addedDate: c.created_at
-                ? new Date(String(c.created_at))
-                : new Date(),
-            })),
-          );
-        }
+            };
+          }),
+        );
+      }
 
-        // Recent bookings from API
-        if (data.recent_bookings && Array.isArray(data.recent_bookings)) {
-          setBookings(
-            data.recent_bookings.map((b: Record<string, unknown>) => ({
-              id: String(b.id || ""),
-              type: (String(b.type || "facility")
-                .charAt(0)
-                .toUpperCase() + String(b.type || "facility").slice(1)) as
-                | "Facility"
-                | "Training"
-                | "Coach"
-                | "Tournament",
-              entityName: String(b.entity_name || "—"),
-              dateTime: b.start_time
-                ? new Date(String(b.start_time))
-                : new Date(),
-              status: String(b.status || "pending"),
-              amount: Number(b.amount || 0),
-            })),
-          );
-        }
+      if (data.recent_bookings && Array.isArray(data.recent_bookings)) {
+        setBookings(
+          data.recent_bookings.map((b: Record<string, unknown>) => ({
+            id: String(b.id || ""),
+            type: (String(b.type || "facility")
+              .charAt(0)
+              .toUpperCase() + String(b.type || "facility").slice(1)) as
+              | "Facility"
+              | "Training"
+              | "Coach"
+              | "Tournament",
+            entityName: String(b.entity_name || "—"),
+            dateTime: b.start_time
+              ? new Date(String(b.start_time))
+              : new Date(),
+            status: String(b.status || "pending"),
+            amount: Number(b.amount || 0),
+          })),
+        );
+      }
 
-        // Tournaments from API
-        if (data.tournaments && Array.isArray(data.tournaments)) {
-          setTournaments(
-            data.tournaments.map((t: Record<string, unknown>) => ({
-              id: String(t.id || ""),
-              name: String(t.name || ""),
-              sport: String(t.sport || ""),
-              date: t.date ? new Date(String(t.date)) : new Date(),
-              status: String(t.status || "upcoming"),
-              teamOrSolo: "Solo" as const,
-              result: "—",
-            })),
-          );
-        }
+      if (data.tournaments && Array.isArray(data.tournaments)) {
+        setTournaments(
+          data.tournaments.map((t: Record<string, unknown>) => ({
+            id: String(t.id || ""),
+            name: String(t.name || ""),
+            sport: String(t.sport || ""),
+            date: t.date ? new Date(String(t.date)) : new Date(),
+            status: String(t.status || "upcoming"),
+            teamOrSolo: "Solo" as const,
+            result: "—",
+          })),
+        );
+      }
 
-        // Friends from API
-        if (data.friends && Array.isArray(data.friends)) {
-          setFriends(
-            data.friends.map((f: Record<string, unknown>) => ({
-              playerId: String(f.friend_user_id || ""),
-              name: String(f.friend_name || ""),
-              status: (String(f.status || "pending")
-                .charAt(0)
-                .toUpperCase() + String(f.status || "pending").slice(1)) as
-                | "Accepted"
-                | "Pending",
-              addedDate: f.created_at
-                ? new Date(String(f.created_at))
-                : new Date(),
-            })),
-          );
-        }
+      if (data.friends && Array.isArray(data.friends)) {
+        setFriends(
+          data.friends.map((f: Record<string, unknown>) => ({
+            playerId: String(f.friend_user_id || ""),
+            name: String(f.friend_name || ""),
+            status: (String(f.status || "pending")
+              .charAt(0)
+              .toUpperCase() + String(f.status || "pending").slice(1)) as
+              | "Accepted"
+              | "Pending",
+            addedDate: f.created_at
+              ? new Date(String(f.created_at))
+              : new Date(),
+          })),
+        );
+      }
 
-        // Wallet transactions from API
-        if (
-          data.wallet_transactions &&
-          Array.isArray(data.wallet_transactions)
-        ) {
-          setWalletTransactions(
-            data.wallet_transactions.map((wt: Record<string, unknown>) => ({
-              id: String(wt.id || ""),
-              type: (Number(wt.amount || 0) >= 0 ? "Credit" : "Debit") as
-                | "Credit"
-                | "Debit",
-              amount: Math.abs(Number(wt.amount || 0)),
-              description: String(
-                wt.description || wt.reference_type || wt.type || "",
-              ),
-              date: wt.created_at
-                ? new Date(String(wt.created_at))
-                : new Date(),
-              status: String(wt.status || "completed"),
-            })),
-          );
-        }
+      if (data.wallet_transactions && Array.isArray(data.wallet_transactions)) {
+        setWalletTransactions(
+          data.wallet_transactions.map((wt: Record<string, unknown>) => ({
+            id: String(wt.id || ""),
+            type: (Number(wt.amount || 0) >= 0 ? "Credit" : "Debit") as
+              | "Credit"
+              | "Debit",
+            amount: Math.abs(Number(wt.amount || 0)),
+            description: String(
+              wt.description || wt.reference_type || wt.type || "",
+            ),
+            date: wt.created_at ? new Date(String(wt.created_at)) : new Date(),
+            status: String(wt.status || "completed"),
+          })),
+        );
+      }
 
-        // Wallet balance from summary
-        if (data.wallet_summary) {
+      if (data.wallet_summary) {
+        setPlayer((prev) => ({
+          ...prev,
+          walletBalance: Number(data.wallet_summary.current_balance || 0),
+        }));
+      }
+
+      try {
+        const prefsRes = await adminService.getPlayerPreferences(id);
+        const prefs = prefsRes?.data;
+        if (prefs) {
           setPlayer((prev) => ({
             ...prev,
-            walletBalance: Number(data.wallet_summary.current_balance || 0),
+            notificationSettings: {
+              emailBookingConfirm:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "booking_confirmed",
+                )?.email ?? false,
+              emailCancellation:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "booking_cancelled",
+                )?.email ?? false,
+              emailPromotions:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "payment_success",
+                )?.email ?? false,
+              pushReminders:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "booking_reminder",
+                )?.push ?? false,
+              pushSessionUpdates:
+                prefs.notifications?.find(
+                  (n: any) => n.event_type === "tournament_joined",
+                )?.push ?? false,
+              smsAlerts: false,
+            },
+            privacySettings: {
+              profileVisible: prefs.privacy === "public",
+              showActivityHistory:
+                prefs.privacy === "public" || prefs.privacy === "friends",
+              allowFriendRequests: prefs.privacy !== "private",
+              shareWithCoaches: prefs.privacy === "public",
+            },
           }));
         }
-      } catch (err) {
-        console.error("Failed to load player from API:", err);
-      } finally {
-        setIsLoadingApi(false);
+      } catch {
+        // Preferences endpoint may not have data for new players - use defaults
       }
-    })();
+    } catch (err) {
+      console.error("Failed to load player from API:", err);
+    } finally {
+      setIsLoadingApi(false);
+    }
+  };
+
+  useEffect(() => {
+    loadData();
   }, [id]);
+
   const [banner, setBanner] = useState<BannerState>({
     type: "info",
     message: "",
     visible: false,
   });
-  const [activeTab, setActiveTab] = useState("personal-info");
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const initialTab = searchParams.get("tab") || "personal-info";
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [copied, setCopied] = useState<string | null>(null);
   const [dobOpen, setDobOpen] = useState(false);
 
-  // ── Sports Interests Edit State ─────────────────────
   const ALL_SPORTS = [
     "Football",
     "Basketball",
@@ -440,7 +618,6 @@ export function PlayerDetailPage() {
       setTimeout(() => setBanner((b) => ({ ...b, visible: false })), 5000);
   }, []);
 
-  // Show locked warning
   useEffect(() => {
     if (player.status === "Locked") {
       const past =
@@ -466,36 +643,51 @@ export function PlayerDetailPage() {
     setTimeout(() => setCopied(null), 1500);
   };
 
-  // ── Profile Form State ────────────────────────────────
   const [formData, setFormData] = useState({
     firstName: player.firstName,
     lastName: player.lastName,
     email: player.email,
-    phone: player.phone,
+    phoneE164: buildPhoneE164(player.countryCode, player.phone),
     dateOfBirth: player.dateOfBirth,
     gender: player.gender,
-    username: player.username,
-    notes: player.notes,
+    nationality: player.nationality,
+    bio: player.bio,
+    occupation: player.occupation,
+    preferredLanguage: player.preferredLanguage,
   });
   const [formErrors, setFormErrors] = useState<Record<string, string>>({});
   const [isDirty, setIsDirty] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
 
-  // Sync form data when player state updates from API
   useEffect(() => {
     if (!isLoadingApi) {
       setFormData({
         firstName: player.firstName,
         lastName: player.lastName,
         email: player.email,
-        phone: player.phone,
+        phoneE164: buildPhoneE164(player.countryCode, player.phone),
         dateOfBirth: player.dateOfBirth,
         gender: player.gender,
-        username: player.username,
-        notes: player.notes,
+        nationality: player.nationality,
+        bio: player.bio,
+        occupation: player.occupation,
+        preferredLanguage: player.preferredLanguage,
       });
     }
-  }, [isLoadingApi, player.firstName, player.lastName, player.email]); // eslint-disable-line
+  }, [
+    isLoadingApi,
+    player.firstName,
+    player.lastName,
+    player.email,
+    player.countryCode,
+    player.phone,
+    player.dateOfBirth,
+    player.gender,
+    player.nationality,
+    player.bio,
+    player.occupation,
+    player.preferredLanguage,
+  ]); // eslint-disable-line
 
   const updateField = (field: string, value: string) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
@@ -513,96 +705,296 @@ export function PlayerDetailPage() {
     else if (formData.firstName.length > 50) e.firstName = "Max 50 characters.";
     if (!formData.lastName.trim()) e.lastName = "Last name is required.";
     else if (formData.lastName.length > 50) e.lastName = "Max 50 characters.";
-    if (!formData.email.trim()) e.email = "Email is required.";
-    else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+    const emailTrim = formData.email.trim();
+    if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
       e.email = "Invalid email format.";
+    }
+    if (!formData.phoneE164?.trim()) {
+      e.phone = "Mobile number is required.";
+    } else if (!isValidPhoneNumber(formData.phoneE164)) {
+      e.phone = "Invalid phone number.";
+    }
+    if (bioPlainTextLength(formData.bio) > BIO_MAX_PLAIN_CHARS) {
+      e.bio = `Bio must be at most ${BIO_MAX_PLAIN_CHARS} characters (plain text).`;
+    }
     if (formData.dateOfBirth) {
       const dob = new Date(formData.dateOfBirth);
       if (isNaN(dob.getTime())) e.dateOfBirth = "Invalid date.";
       else if (isAfter(dob, new Date())) e.dateOfBirth = "Must be a past date.";
-      else if (differenceInYears(new Date(), dob) < 13)
-        e.dateOfBirth = "Player must be at least 13 years old.";
     }
-    if (
-      formData.username &&
-      (formData.username.length < 3 || formData.username.length > 30)
-    ) {
-      e.username = "Username must be 3–30 characters.";
-    } else if (
-      formData.username &&
-      !/^[a-zA-Z0-9._-]+$/.test(formData.username)
-    ) {
-      e.username = "Only letters, numbers, . _ - allowed.";
-    }
-    if (formData.notes.length > 1000) e.notes = "Max 1000 characters.";
     setFormErrors(e);
     return Object.keys(e).length === 0;
+  };
+
+  const [isPhotoUploading, setIsPhotoUploading] = useState(false);
+  const photoInputRef = useRef<HTMLInputElement>(null);
+  const [rawImageSrc, setRawImageSrc] = useState<string | null>(null);
+  const [cropOpen, setCropOpen] = useState(false);
+
+  const validateProfilePhotoFile = (file: File): string | null => {
+    const type = (file.type || "").toLowerCase();
+    if (!ALLOWED_PROFILE_PHOTO_TYPES.includes(type as (typeof ALLOWED_PROFILE_PHOTO_TYPES)[number])) {
+      return "Only JPG, JPEG, PNG, or WEBP images are allowed.";
+    }
+    if (file.size > MAX_PROFILE_PHOTO_BYTES) {
+      return `Image size must be ${MAX_PROFILE_PHOTO_MB}MB or less.`;
+    }
+    return null;
+  };
+
+  const handleCropModalOpenChange = useCallback((open: boolean) => {
+    setCropOpen(open);
+    if (!open) {
+      setRawImageSrc((prev) => {
+        if (prev) URL.revokeObjectURL(prev);
+        return null;
+      });
+    }
+  }, []);
+
+  const handlePhotoFileChange = (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const validationError = validateProfilePhotoFile(file);
+    if (validationError) {
+      showBanner("error", validationError);
+      return;
+    }
+    setRawImageSrc((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return URL.createObjectURL(file);
+    });
+    setCropOpen(true);
+  };
+
+  const handleCropComplete = async (blob: Blob, previewUrl: string) => {
+    const previousAvatarUrl = player.avatarUrl;
+    setRawImageSrc((prev) => {
+      if (prev) URL.revokeObjectURL(prev);
+      return null;
+    });
+    setPlayer((prev) => ({ ...prev, avatarUrl: previewUrl }));
+    const file = new File([blob], "profile-photo.jpg", { type: "image/jpeg" });
+    try {
+      setIsPhotoUploading(true);
+      const res = await adminService.uploadPlayerPhoto(id, file);
+      const payload = (res as Record<string, unknown>)?.data ?? res;
+      const url =
+        typeof payload === "object" && payload && "profile_photo_url" in payload
+          ? String((payload as { profile_photo_url?: string }).profile_photo_url)
+          : undefined;
+      URL.revokeObjectURL(previewUrl);
+      if (url) setPlayer((prev) => ({ ...prev, avatarUrl: url }));
+      showBanner("success", "Profile photo updated successfully.");
+    } catch (err: any) {
+      setPlayer((prev) => ({ ...prev, avatarUrl: previousAvatarUrl }));
+      URL.revokeObjectURL(previewUrl);
+      showBanner(
+        "error",
+        err.response?.data?.message || "Failed to upload photo.",
+      );
+    } finally {
+      setIsPhotoUploading(false);
+    }
+  };
+
+  const triggerPhotoUpload = () => {
+    photoInputRef.current?.click();
+  };
+
+  const handleDeletePhoto = async () => {
+    if (!player.avatarUrl) return;
+    try {
+      setIsPhotoUploading(true);
+      await adminService.deletePlayerPhoto(id);
+      setPlayer((prev) => ({ ...prev, avatarUrl: undefined }));
+      showBanner("success", "Profile photo removed successfully.");
+    } catch (err: any) {
+      showBanner(
+        "error",
+        err.response?.data?.message || "Failed to remove photo.",
+      );
+    } finally {
+      setIsPhotoUploading(false);
+    }
   };
 
   const handleSaveProfile = async () => {
     if (!validateProfile()) return;
     setIsSaving(true);
     try {
-      await adminService.updatePlayer(id, {
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        mobile: formData.phone,
-        gender: formData.gender,
-        date_of_birth: formData.dateOfBirth || undefined,
-        notes: formData.notes || undefined,
-      });
+      const baselinePhoneE164 = buildPhoneE164(
+        player.countryCode,
+        player.phone,
+      ).trim();
+      const baselineDob = toProfileDateInputValue(player.dateOfBirth);
+
+      const payload: Record<string, unknown> = {};
+      if (formData.firstName.trim() !== player.firstName) {
+        payload.first_name = formData.firstName.trim();
+      }
+      if (formData.lastName.trim() !== player.lastName) {
+        payload.last_name = formData.lastName.trim();
+      }
+
+      if (formData.phoneE164.trim() !== baselinePhoneE164) {
+        const parsedPhone = parsePhoneNumber(formData.phoneE164);
+        if (!parsedPhone) {
+          setFormErrors((prev) => ({
+            ...prev,
+            phone: "Invalid phone number.",
+          }));
+          setIsSaving(false);
+          return;
+        }
+        payload.country_code = `+${parsedPhone.countryCallingCode}`;
+        payload.mobile = parsedPhone.nationalNumber;
+      }
+
+      const emailTrim = formData.email.trim();
+      const playerEmail = player.email || "";
+      if (emailTrim !== playerEmail) {
+        payload.email = emailTrim || null;
+      }
+
+      const g = (formData.gender || "").toLowerCase();
+      const pg = (player.gender || "").toLowerCase();
+      if (g !== pg) {
+        if (g === "male" || g === "female") payload.gender = g;
+        else payload.gender = null;
+      }
+
+      if ((formData.dateOfBirth || "") !== (baselineDob || "")) {
+        payload.date_of_birth = formData.dateOfBirth || null;
+      }
+
+      const nat = formData.nationality || "";
+      const pNat = player.nationality || "";
+      if (nat !== pNat) {
+        payload.nationality_id = nat || null;
+      }
+
+      const nextBio = formData.bio?.trim()
+        ? sanitizePlayerBioHtml(formData.bio)
+        : null;
+      const prevBio = player.bio?.trim() || null;
+      if (nextBio !== prevBio) {
+        payload.bio = nextBio;
+      }
+
+      if ((formData.occupation || "") !== (player.occupation || "")) {
+        payload.occupation = formData.occupation || null;
+      }
+
+      const pl = formData.preferredLanguage || "en";
+      const ppl = player.preferredLanguage || "en";
+      if (pl !== ppl) {
+        payload.preferred_language = pl;
+      }
+
+      if (Object.keys(payload).length === 0) {
+        toast.info("No changes to save.");
+        setIsSaving(false);
+        return;
+      }
+
+      await adminService.updatePlayer(id, payload);
+
+      const fieldLabels: Record<string, string> = {
+        firstName: "First Name",
+        lastName: "Last Name",
+        email: "Email",
+        phoneE164: "Mobile Number",
+        dateOfBirth: "Date of Birth",
+        gender: "Gender",
+        nationality: "Nationality",
+        bio: "Bio",
+        occupation: "Occupation",
+        preferredLanguage: "Preferred Language",
+      };
+      const now = new Date();
+      const newAuditEntries: DetailAuditEvent[] = [];
+      (Object.keys(formData) as Array<keyof typeof formData>).forEach(
+        (field) => {
+          let oldVal: unknown =
+            field === "phoneE164"
+              ? buildPhoneE164(player.countryCode, player.phone)
+              : player[field as keyof typeof player];
+          const newVal = formData[field];
+          if (oldVal !== newVal) {
+            newAuditEntries.push({
+              id: `AE-${Date.now()}-${field}`,
+              timestamp: now,
+              actor: "Admin",
+              actorRole: "Admin",
+              module: "Players",
+              action: "Update",
+              target: `${player.firstName} ${player.lastName} (#${player.id})`,
+              targetId: player.id,
+              result: "Success",
+              metadata: {
+                field: fieldLabels[field] || field,
+                before: oldVal,
+                after: newVal,
+              },
+            });
+          }
+        },
+      );
+
+      if (newAuditEntries.length > 0) {
+        setAuditEvents((prev) => [...newAuditEntries, ...prev]);
+      }
+
+      showBanner("success", "Player profile updated successfully.");
+      toast.success("Profile saved.");
+      setIsSaving(false);
+      setIsDirty(false);
+      loadData();
     } catch (err: any) {
       setIsSaving(false);
-      const msg = err?.response?.data?.message || "Failed to update player.";
+      const errData = err?.response?.data;
+      const msg = errData?.message || "Failed to update player.";
+      const errCode = errData?.error?.code;
+
+      if (errCode === "MOBILE_ALREADY_EXISTS") {
+        setFormErrors((prev) => ({
+          ...prev,
+          phone: "This mobile number is already registered to another account.",
+        }));
+        return;
+      }
+
+      if (errCode === "EMAIL_ALREADY_EXISTS") {
+        setFormErrors((prev) => ({
+          ...prev,
+          email: "This email is already registered to another account.",
+        }));
+        return;
+      }
+
+      if (
+        errCode === "VALIDATION_ERROR" &&
+        Array.isArray(errData?.error?.details)
+      ) {
+        let hasValidationError = false;
+        errData.error.details.forEach((detail: any) => {
+          if (detail.field === "mobile") {
+            setFormErrors((prev) => ({ ...prev, phone: detail.message }));
+            hasValidationError = true;
+          }
+          if (detail.field === "gender") {
+            setFormErrors((prev) => ({ ...prev, gender: detail.message }));
+            hasValidationError = true;
+          }
+        });
+        if (hasValidationError) return;
+      }
+
       showBanner("error", msg);
       return;
     }
-
-    // AC-PM-015: Generate field-level audit trail entries
-    const fieldLabels: Record<string, string> = {
-      firstName: "First Name",
-      lastName: "Last Name",
-      email: "Email",
-      phone: "Phone",
-      dateOfBirth: "Date of Birth",
-      gender: "Gender",
-      username: "Username",
-      notes: "Notes",
-    };
-    const now = new Date();
-    const newAuditEntries: DetailAuditEvent[] = [];
-    (Object.keys(formData) as Array<keyof typeof formData>).forEach((field) => {
-      const oldVal = player[field as keyof typeof player];
-      const newVal = formData[field];
-      if (oldVal !== newVal) {
-        newAuditEntries.push({
-          id: `AE-${Date.now()}-${field}`,
-          timestamp: now,
-          actor: "Admin",
-          actorRole: "Admin",
-          module: "Players",
-          action: "Update",
-          target: `${player.firstName} ${player.lastName} (#${player.id})`,
-          targetId: player.id,
-          result: "Success",
-          metadata: {
-            field: fieldLabels[field] || field,
-            before: oldVal,
-            after: newVal,
-          },
-        });
-      }
-    });
-
-    if (newAuditEntries.length > 0) {
-      setAuditEvents((prev) => [...newAuditEntries, ...prev]);
-    }
-
-    setPlayer((prev) => ({ ...prev, ...formData }));
-    setIsSaving(false);
-    setIsDirty(false);
-    showBanner("success", "Profile updated successfully.");
   };
 
   const handleCancelProfile = () => {
@@ -610,17 +1002,18 @@ export function PlayerDetailPage() {
       firstName: player.firstName,
       lastName: player.lastName,
       email: player.email,
-      phone: player.phone,
+      phoneE164: buildPhoneE164(player.countryCode, player.phone),
       dateOfBirth: player.dateOfBirth,
       gender: player.gender,
-      username: player.username,
-      notes: player.notes,
+      nationality: player.nationality,
+      bio: player.bio,
+      occupation: player.occupation,
+      preferredLanguage: player.preferredLanguage,
     });
     setIsDirty(false);
     setFormErrors({});
   };
 
-  // ── Status Change Modal ───────────────────────────────
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [statusDraft, setStatusDraft] = useState<PlayerStatus>(player.status);
   const [statusReason, setStatusReason] = useState("");
@@ -691,7 +1084,6 @@ export function PlayerDetailPage() {
     }
   };
 
-  // ── Unsaved changes guard ─────────────────────────────
   const [discardDialogOpen, setDiscardDialogOpen] = useState(false);
   const [pendingTab, setPendingTab] = useState<string | null>(null);
 
@@ -711,9 +1103,6 @@ export function PlayerDetailPage() {
     setDiscardDialogOpen(false);
   };
 
-  // (Address/Dependent logic is now in AddressesTab/DependentsTab components)
-
-  // ── Audit Tab State ───────────────────────────────────
   const [auditSearch, setAuditSearch] = useState("");
   const [auditAction, setAuditAction] = useState("all");
   const [auditActor, setAuditActor] = useState("all");
@@ -775,7 +1164,6 @@ export function PlayerDetailPage() {
     auditActor !== "all" ||
     auditResult !== "all";
 
-  // ── Bookings Tab State ──────────────────────────────────
   const [bookingSortField, setBookingSortField] = useState<
     "dateTime" | "amount"
   >("dateTime");
@@ -815,40 +1203,38 @@ export function PlayerDetailPage() {
     setBookingPage(1);
   };
 
-  // ── Compute age ───────────────────────────────────────
-  const playerAge = player.dateOfBirth
-    ? differenceInYears(new Date(), new Date(player.dateOfBirth))
-    : null;
+  const previewAge = useMemo(() => {
+    if (!formData.dateOfBirth) return null;
+    const dob = new Date(formData.dateOfBirth);
+    if (isNaN(dob.getTime())) return null;
+    return differenceInYears(new Date(), dob);
+  }, [formData.dateOfBirth]);
 
-  // ── Field helper component ────────────────────────────
-  const FormField = ({
-    id,
-    label,
-    required,
-    error,
-    children,
-  }: {
-    id: string;
-    label: string;
-    required?: boolean;
-    error?: string;
-    children: React.ReactNode;
-  }) => (
-    <div className="space-y-1.5">
-      <Label htmlFor={id}>
-        {label} {required && <span className="text-red-500">*</span>}
-      </Label>
-      {children}
-      {error && (
-        <p className="text-xs text-red-500" role="alert">
-          {error}
-        </p>
-      )}
-    </div>
+  const previewNationalityName = useMemo(
+    () =>
+      countries.find((c) => c.id === formData.nationality)?.name_en || "—",
+    [countries, formData.nationality],
+  );
+
+  const previewBioPlain = useMemo(
+    () =>
+      formData.bio
+        ? formData.bio.replace(/<[^>]*>/g, " ").replace(/\s+/g, " ").trim()
+        : "",
+    [formData.bio],
   );
 
   return (
     <div className="p-6 lg:p-8 bg-[#F9FAFB] min-h-screen space-y-5 pb-24 md:pb-8">
+      {rawImageSrc && (
+        <ImageCropper
+          open={cropOpen}
+          onOpenChange={handleCropModalOpenChange}
+          imageSrc={rawImageSrc}
+          onCropComplete={handleCropComplete}
+          {...CROP_PRESETS.profilePhoto}
+        />
+      )}
       {/* ── Banner ────────────────────────────────────────── */}
       {banner.visible && (
         <div
@@ -889,7 +1275,8 @@ export function PlayerDetailPage() {
           <div>
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl text-[#111827] tracking-tight">
-                Player: {player.firstName} {player.lastName}{" "}
+                Player: {formData.firstName || player.firstName}{" "}
+                {formData.lastName || player.lastName}{" "}
                 <span className="text-[#9CA3AF]">&#183; #{player.id}</span>
               </h1>
               <div className="flex items-center gap-2">
@@ -903,7 +1290,10 @@ export function PlayerDetailPage() {
               </div>
             </div>
             <p className="text-sm text-[#6B7280] mt-1">
-              {player.email} &#183; {player.phone || "—"}
+              {formData.email || player.email || "—"} &#183;{" "}
+              {formData.phoneE164 ||
+                buildPhoneE164(player.countryCode, player.phone) ||
+                "—"}
             </p>
           </div>
 
@@ -919,7 +1309,6 @@ export function PlayerDetailPage() {
               </TooltipContent>
             </Tooltip>
             <div className="flex gap-1 flex-wrap">
-              {/* AC-PM-018: Show dedicated Unlock button when player is Locked */}
               {player.status === "Locked" && (
                 <button
                   onClick={() => openStatusModal("Active")}
@@ -956,21 +1345,77 @@ export function PlayerDetailPage() {
 
       {/* ── Tabs ──────────────────────────────────────────── */}
       <Tabs value={activeTab} onValueChange={handleTabChange}>
-        <TabsList className="bg-white border overflow-x-auto">
-          <TabsTrigger value="personal-info">Personal Info</TabsTrigger>
-          <TabsTrigger value="sports-interests">Sports Interests</TabsTrigger>
-          <TabsTrigger value="dependants">Dependants</TabsTrigger>
-          <TabsTrigger value="addresses">Addresses</TabsTrigger>
-          <TabsTrigger value="saved-cards">Saved Cards</TabsTrigger>
-          <TabsTrigger value="bookings">Bookings</TabsTrigger>
-          <TabsTrigger value="wallet">Wallet</TabsTrigger>
-          <TabsTrigger value="tournaments">Tournaments</TabsTrigger>
-          <TabsTrigger value="friends">Friends</TabsTrigger>
-          <TabsTrigger value="audit">Audit Trail</TabsTrigger>
+        <TabsList className="bg-white border overflow-x-auto p-1">
+          <TabsTrigger
+            value="personal-info"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Personal Info
+          </TabsTrigger>
+          <TabsTrigger
+            value="sports-interests"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Sports Interests
+          </TabsTrigger>
+          <TabsTrigger
+            value="dependants"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Dependants
+          </TabsTrigger>
+          <TabsTrigger
+            value="addresses"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Addresses
+          </TabsTrigger>
+          <TabsTrigger
+            value="saved-cards"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Saved Cards
+          </TabsTrigger>
+          <TabsTrigger
+            value="bookings"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Bookings
+          </TabsTrigger>
+          <TabsTrigger
+            value="wallet"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Wallet
+          </TabsTrigger>
+          <TabsTrigger
+            value="tournaments"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Tournaments
+          </TabsTrigger>
+          <TabsTrigger
+            value="friends"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Friends
+          </TabsTrigger>
+          <TabsTrigger
+            value="settings"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Settings
+          </TabsTrigger>
+          <TabsTrigger
+            value="audit"
+            className="data-[state=active]:bg-[#003B95] data-[state=active]:text-white duration-0"
+          >
+            Audit Trail
+          </TabsTrigger>
         </TabsList>
 
         {/* ════════════════════════════════════════════════════
-            TAB: PERSONAL INFO (formerly Overview)
+            TAB: PERSONAL INFO
             ════════════════════════════════════════════════════ */}
         <TabsContent value="personal-info" className="mt-4">
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
@@ -978,10 +1423,9 @@ export function PlayerDetailPage() {
             <div className="lg:col-span-8 bg-white border rounded-xl p-6 space-y-5">
               <h2 className="text-[#111827]">Profile</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <FormField
+                <ProfileFormField
                   id="firstName"
                   label="First Name"
-                  required
                   error={formErrors.firstName}
                 >
                   <Input
@@ -992,11 +1436,10 @@ export function PlayerDetailPage() {
                     disabled={isSaving}
                     className={cn(formErrors.firstName && "border-red-400")}
                   />
-                </FormField>
-                <FormField
+                </ProfileFormField>
+                <ProfileFormField
                   id="lastName"
                   label="Last Name"
-                  required
                   error={formErrors.lastName}
                 >
                   <Input
@@ -1007,11 +1450,10 @@ export function PlayerDetailPage() {
                     disabled={isSaving}
                     className={cn(formErrors.lastName && "border-red-400")}
                   />
-                </FormField>
-                <FormField
+                </ProfileFormField>
+                <ProfileFormField
                   id="email"
                   label="Email"
-                  required
                   error={formErrors.email}
                 >
                   <Input
@@ -1023,17 +1465,64 @@ export function PlayerDetailPage() {
                     disabled={isSaving}
                     className={cn(formErrors.email && "border-red-400")}
                   />
-                </FormField>
-                <FormField id="phone" label="Phone" error={formErrors.phone}>
-                  <Input
-                    id="phone"
-                    placeholder="+1 415 555 0123"
-                    value={formData.phone}
-                    onChange={(e) => updateField("phone", e.target.value)}
+                </ProfileFormField>
+                <ProfileFormField
+                  id="phone"
+                  label="Mobile number"
+                  error={formErrors.phone}
+                >
+                  <MobileNumber
+                    value={formData.phoneE164}
+                    onChange={(v) => updateField("phoneE164", v)}
                     disabled={isSaving}
+                    error={!!formErrors.phone}
                   />
-                </FormField>
-                <FormField
+                </ProfileFormField>
+                <ProfileFormField
+                  id="gender"
+                  label="Gender"
+                  error={formErrors.gender}
+                >
+                  <Select
+                    value={
+                      formData.gender === "male" || formData.gender === "female"
+                        ? formData.gender
+                        : undefined
+                    }
+                    onValueChange={(v) => updateField("gender", v)}
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger
+                      id="gender"
+                      className={cn(formErrors.gender && "border-red-400")}
+                    >
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </ProfileFormField>
+                <ProfileFormField id="nationality" label="Nationality">
+                  <Select
+                    value={formData.nationality || ""}
+                    onValueChange={(v) => updateField("nationality", v)}
+                    disabled={isSaving}
+                  >
+                    <SelectTrigger id="nationality">
+                      <SelectValue placeholder="Select nationality" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {countries.map((c) => (
+                        <SelectItem key={c.id} value={c.id}>
+                          {c.name_en}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </ProfileFormField>
+                <ProfileFormField
                   id="dateOfBirth"
                   label="Date of Birth"
                   error={formErrors.dateOfBirth}
@@ -1083,64 +1572,49 @@ export function PlayerDetailPage() {
                       />
                     </PopoverContent>
                   </Popover>
-                </FormField>
-                <FormField id="gender" label="Gender">
+                </ProfileFormField>
+                <ProfileFormField id="preferredLanguage" label="Preferred Language">
                   <Select
-                    value={formData.gender?.toLowerCase()}
-                    onValueChange={(v) => updateField("gender", v)}
+                    value={formData.preferredLanguage || "en"}
+                    onValueChange={(v) => updateField("preferredLanguage", v)}
                     disabled={isSaving}
                   >
-                    <SelectTrigger id="gender">
-                      <SelectValue placeholder="Select gender" />
+                    <SelectTrigger id="preferredLanguage">
+                      <SelectValue placeholder="Select language" />
                     </SelectTrigger>
                     <SelectContent>
-                      {GENDER_OPTIONS.map((g) => (
-                        <SelectItem key={g} value={g.toLowerCase()}>
-                          {g}
-                        </SelectItem>
-                      ))}
+                      <SelectItem value="en">English (US)</SelectItem>
+                      <SelectItem value="ar">Arabic (العربية)</SelectItem>
                     </SelectContent>
                   </Select>
-                </FormField>
-                <FormField
-                  id="username"
-                  label="Username"
-                  error={formErrors.username}
-                >
-                  <Input
-                    id="username"
-                    placeholder="3–30 chars; letters, numbers, . _ -"
-                    value={formData.username}
-                    onChange={(e) => updateField("username", e.target.value)}
-                    disabled={isSaving}
-                    className={cn(formErrors.username && "border-red-400")}
-                  />
-                </FormField>
-                <FormField id="initialStatus" label="Initial Status">
+                </ProfileFormField>
+                <ProfileFormField id="initialStatus" label="Account Status (System)">
                   <Input
                     id="initialStatus"
                     value={player.status}
                     disabled
                     className="bg-gray-50 text-gray-500 cursor-not-allowed"
                   />
-                </FormField>
+                </ProfileFormField>
               </div>
-              <FormField id="notes" label="Notes" error={formErrors.notes}>
-                <div className="relative">
-                  <Textarea
-                    id="notes"
-                    placeholder="Internal admin notes (max 1000 chars)."
-                    value={formData.notes}
-                    onChange={(e) => updateField("notes", e.target.value)}
+
+              <div className="grid grid-cols-1 gap-4 pt-2">
+                <ProfileFormField id="occupation" label="Occupation">
+                  <Input
+                    id="occupation"
+                    placeholder="e.g., Software Engineer"
+                    value={formData.occupation}
+                    onChange={(e) => updateField("occupation", e.target.value)}
                     disabled={isSaving}
-                    rows={3}
-                    className={cn(formErrors.notes && "border-red-400")}
                   />
-                  <span className="absolute bottom-2 right-3 text-[10px] text-gray-400">
-                    {formData.notes.length}/1000
-                  </span>
-                </div>
-              </FormField>
+                </ProfileFormField>
+                <AdminPlayerBioEditor
+                  value={formData.bio}
+                  onChange={(v) => updateField("bio", v)}
+                  error={formErrors.bio}
+                  disabled={isSaving}
+                />
+              </div>
               <div className="flex justify-end gap-3 pt-2">
                 <Button
                   variant="outline"
@@ -1163,25 +1637,88 @@ export function PlayerDetailPage() {
             </div>
 
             {/* ── Right: Overview Card ────────────────────── */}
+            {/* FIX 2: Notification & Privacy Settings moved INSIDE this col-span-4 div */}
             <div className="lg:col-span-4 space-y-4">
               <div className="bg-white border rounded-xl p-5 space-y-4">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-[#003B95]/10 text-[#003B95] text-sm">
-                      {player.firstName[0]}
-                      {player.lastName[0]}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <p className="text-sm text-[#111827]">
-                      {player.firstName} {player.lastName}
-                    </p>
+                <div className="flex items-center gap-4">
+                  <div className="relative group">
+                    <Avatar
+                      className={cn(
+                        "h-14 w-14 ring-2 ring-transparent transition-all",
+                        isPhotoUploading
+                          ? "opacity-50"
+                          : "group-hover:ring-blue-100",
+                      )}
+                    >
+                      {player.avatarUrl && (
+                        <AvatarImage
+                          src={player.avatarUrl}
+                          alt={formData.firstName || player.firstName}
+                        />
+                      )}
+                      <AvatarFallback className="bg-[#003B95]/10 text-[#003B95] text-sm font-semibold">
+                        {(formData.firstName || player.firstName || "?").charAt(0)}
+                        {(formData.lastName || player.lastName || "?").charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+
+                    {/* Photo Upload Overlay */}
+                    <button
+                      onClick={triggerPhotoUpload}
+                      disabled={isPhotoUploading}
+                      className="absolute inset-0 flex items-center justify-center bg-black/40 rounded-full opacity-0 group-hover:opacity-100 transition-opacity disabled:cursor-wait"
+                      title="Update profile photo"
+                    >
+                      {isPhotoUploading ? (
+                        <RefreshCw className="h-4 w-4 text-white animate-spin" />
+                      ) : (
+                        <div className="flex flex-col items-center gap-1">
+                          <Camera className="h-4 w-4 text-white" />
+                          <span className="text-[8px] text-white font-medium uppercase tracking-wider">
+                            Update
+                          </span>
+                        </div>
+                      )}
+                    </button>
+
+                    <input
+                      type="file"
+                      ref={photoInputRef}
+                      className="hidden"
+                      accept="image/jpeg,image/jpg,image/png,image/webp"
+                      onChange={handlePhotoFileChange}
+                    />
+                  </div>
+
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <p className="text-sm font-semibold text-[#111827] truncate">
+                        {formData.firstName || player.firstName}{" "}
+                        {formData.lastName || player.lastName}
+                      </p>
+                      {player.avatarUrl && (
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <button
+                              onClick={handleDeletePhoto}
+                              disabled={isPhotoUploading}
+                              className="p-1 rounded-md text-gray-400 hover:text-red-500 hover:bg-red-50 transition-colors"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                            </button>
+                          </TooltipTrigger>
+                          <TooltipContent>Remove profile photo</TooltipContent>
+                        </Tooltip>
+                      )}
+                    </div>
                     <p className="text-[11px] text-[#9CA3AF] font-mono">
                       {player.id}
                     </p>
                   </div>
                 </div>
+
                 <Separator />
+
                 <div className="space-y-3 text-sm">
                   <div className="flex items-center justify-between">
                     <span className="text-[#6B7280] flex items-center gap-1.5">
@@ -1190,10 +1727,15 @@ export function PlayerDetailPage() {
                     <Tooltip>
                       <TooltipTrigger asChild>
                         <button
-                          onClick={() => copyToClipboard(player.email, "email")}
+                          onClick={() =>
+                            copyToClipboard(
+                              formData.email || player.email,
+                              "email",
+                            )
+                          }
                           className="text-[#111827] hover:text-[#003B95] flex items-center gap-1 text-xs"
                         >
-                          {player.email}
+                          {formData.email || player.email || "—"}
                           {copied === "email" ? (
                             <Check className="h-3 w-3 text-emerald-500" />
                           ) : (
@@ -1206,20 +1748,33 @@ export function PlayerDetailPage() {
                       </TooltipContent>
                     </Tooltip>
                   </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-[#6B7280] flex items-center gap-1.5">
                       <Phone className="h-3.5 w-3.5" /> Phone
                     </span>
-                    {player.phone ? (
+                    {formData.phoneE164 ||
+                    buildPhoneE164(player.countryCode, player.phone) ? (
                       <Tooltip>
                         <TooltipTrigger asChild>
                           <button
                             onClick={() =>
-                              copyToClipboard(player.phone, "phone")
+                              copyToClipboard(
+                                formData.phoneE164 ||
+                                  buildPhoneE164(
+                                    player.countryCode,
+                                    player.phone,
+                                  ),
+                                "phone",
+                              )
                             }
                             className="text-[#111827] hover:text-[#003B95] flex items-center gap-1 text-xs"
                           >
-                            {player.phone}
+                            {formData.phoneE164 ||
+                              buildPhoneE164(
+                                player.countryCode,
+                                player.phone,
+                              )}
                             {copied === "phone" ? (
                               <Check className="h-3 w-3 text-emerald-500" />
                             ) : (
@@ -1235,21 +1790,23 @@ export function PlayerDetailPage() {
                       <span className="text-[#9CA3AF] text-xs italic">—</span>
                     )}
                   </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-[#6B7280] flex items-center gap-1.5">
                       <Shield className="h-3.5 w-3.5" /> Status
                     </span>
                     <StatusPill status={player.status} />
                   </div>
+
                   <div className="flex items-center justify-between">
                     <span className="text-[#6B7280] flex items-center gap-1.5">
                       <Calendar className="h-3.5 w-3.5" /> DOB
                     </span>
                     <span className="text-xs text-[#111827]">
-                      {player.dateOfBirth || "—"}
-                      {playerAge !== null && (
+                      {formData.dateOfBirth || "—"}
+                      {previewAge !== null && (
                         <span className="text-[#9CA3AF] ml-1">
-                          ({playerAge}y)
+                          ({previewAge}y)
                         </span>
                       )}
                     </span>
@@ -1268,25 +1825,30 @@ export function PlayerDetailPage() {
                       <Globe className="h-3.5 w-3.5" /> Nationality
                     </span>
                     <span className="text-xs text-[#111827] text-right">
-                      {player.nationality || "—"}
+                      {previewNationalityName}
                     </span>
                   </div>
+
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[#6B7280] flex items-center gap-1.5 shrink-0">
                       <Briefcase className="h-3.5 w-3.5" /> Occupation
                     </span>
                     <span className="text-xs text-[#111827] text-right">
-                      {player.occupation || "—"}
+                      {formData.occupation || player.occupation || "—"}
                     </span>
                   </div>
+
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[#6B7280] flex items-center gap-1.5 shrink-0">
                       <Languages className="h-3.5 w-3.5" /> Language
                     </span>
                     <span className="text-xs text-[#111827]">
-                      {player.preferredLanguage || "—"}
+                      {formData.preferredLanguage ||
+                        player.preferredLanguage ||
+                        "—"}
                     </span>
                   </div>
+
                   <div className="flex items-start justify-between gap-2">
                     <span className="text-[#6B7280] flex items-center gap-1.5 shrink-0">
                       <Calendar className="h-3.5 w-3.5" /> Registered
@@ -1295,16 +1857,19 @@ export function PlayerDetailPage() {
                       {format(player.createdAt, "dd MMM yyyy")}
                     </span>
                   </div>
-                  {player.bio && (
+
+                  {(previewBioPlain || player.bio) && (
                     <div className="pt-1 border-t border-gray-100">
                       <p className="text-[10px] text-[#9CA3AF] uppercase font-semibold mb-1">
                         Bio
                       </p>
                       <p className="text-xs text-[#374151] leading-relaxed">
-                        {player.bio}
+                        {previewBioPlain ||
+                          (player.bio || "").replace(/<[^>]*>/g, " ").trim()}
                       </p>
                     </div>
                   )}
+
                   {player.interestedSports &&
                     player.interestedSports.length > 0 && (
                       <div className="pt-1 border-t border-gray-100">
@@ -1326,7 +1891,7 @@ export function PlayerDetailPage() {
                 </div>
               </div>
 
-              {/* Notification & Privacy Settings */}
+              {/* Notification Settings — FIX 2: now inside lg:col-span-4 */}
               {player.notificationSettings && (
                 <div className="bg-white border rounded-xl p-5 space-y-3">
                   <h3 className="text-xs font-semibold text-[#374151] uppercase tracking-wide flex items-center gap-1.5">
@@ -1382,6 +1947,7 @@ export function PlayerDetailPage() {
                 </div>
               )}
 
+              {/* Privacy Settings — FIX 2: now inside lg:col-span-4 */}
               {player.privacySettings && (
                 <div className="bg-white border rounded-xl p-5 space-y-3">
                   <h3 className="text-xs font-semibold text-[#374151] uppercase tracking-wide flex items-center gap-1.5">
@@ -1429,6 +1995,7 @@ export function PlayerDetailPage() {
                 </div>
               )}
             </div>
+            {/* end lg:col-span-4 */}
           </div>
         </TabsContent>
 
@@ -1486,7 +2053,6 @@ export function PlayerDetailPage() {
             )}
           </div>
 
-          {/* Sports Interests Edit Dialog */}
           <Dialog open={sportsEditOpen} onOpenChange={setSportsEditOpen}>
             <DialogContent className="sm:max-w-md">
               <DialogHeader>
@@ -1537,9 +2103,12 @@ export function PlayerDetailPage() {
             ════════════════════════════════════════════════════ */}
         <TabsContent value="addresses" className="mt-4">
           <AddressesTab
+            playerId={id}
             addresses={addresses}
             setAddresses={setAddresses}
             playerName={`${player.firstName} ${player.lastName}`}
+            countries={countries}
+            isLoading={isLoadingApi}
           />
         </TabsContent>
 
@@ -1548,9 +2117,11 @@ export function PlayerDetailPage() {
             ════════════════════════════════════════════════════ */}
         <TabsContent value="dependants" className="mt-4">
           <DependentsTab
+            playerId={id}
             dependents={dependents}
             setDependents={setDependents}
             playerName={`${player.firstName} ${player.lastName}`}
+            isLoading={isLoadingApi}
           />
         </TabsContent>
 
@@ -1558,63 +2129,12 @@ export function PlayerDetailPage() {
             TAB: SAVED CARDS
             ════════════════════════════════════════════════════ */}
         <TabsContent value="saved-cards" className="mt-4">
-          <div className="bg-white border rounded-xl overflow-hidden">
-            <div className="p-6 pb-4">
-              <h2 className="text-[#111827]">Saved Cards</h2>
-            </div>
-            {savedCards.length > 0 ? (
-              <div className="overflow-x-auto">
-                <Table>
-                  <TableHeader>
-                    <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
-                      <TableHead className="px-4">Card Brand</TableHead>
-                      <TableHead className="px-4">Last 4 Digits</TableHead>
-                      <TableHead className="px-4">Expiry</TableHead>
-                      <TableHead className="px-4">Default</TableHead>
-                    </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                    {savedCards.map((card) => (
-                      <TableRow key={card.id}>
-                        <TableCell className="px-4">
-                          <div className="flex items-center gap-2">
-                            <CreditCard className="h-4 w-4 text-[#6B7280]" />
-                            <span className="text-sm text-[#111827] font-medium">
-                              {card.brand}
-                            </span>
-                          </div>
-                        </TableCell>
-                        <TableCell className="px-4">
-                          <span className="text-sm text-[#374151] font-mono">
-                            •••• {card.last4}
-                          </span>
-                        </TableCell>
-                        <TableCell className="px-4">
-                          <span className="text-sm text-[#374151]">
-                            {card.expiry}
-                          </span>
-                        </TableCell>
-                        <TableCell className="px-4">
-                          {card.isDefault ? (
-                            <Badge className="bg-emerald-50 text-emerald-700 border-emerald-200 hover:bg-emerald-50">
-                              Default
-                            </Badge>
-                          ) : (
-                            <span className="text-xs text-[#9CA3AF]">—</span>
-                          )}
-                        </TableCell>
-                      </TableRow>
-                    ))}
-                  </TableBody>
-                </Table>
-              </div>
-            ) : (
-              <div className="text-center py-16 space-y-3">
-                <CreditCard className="h-10 w-10 text-gray-200 mx-auto" />
-                <p className="text-sm text-[#374151]">No saved cards.</p>
-              </div>
-            )}
-          </div>
+          <SavedCardsTab
+            playerId={id}
+            cards={savedCards}
+            onRefresh={loadData}
+            isLoading={isLoadingApi}
+          />
         </TabsContent>
 
         {/* ════════════════════════════════════════════════════
@@ -1732,7 +2252,6 @@ export function PlayerDetailPage() {
                     </TableBody>
                   </Table>
                 </div>
-                {/* Pagination */}
                 <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50/50">
                   <span className="text-xs text-[#6B7280]">
                     Showing{" "}
@@ -1802,7 +2321,6 @@ export function PlayerDetailPage() {
             TAB: WALLET
             ════════════════════════════════════════════════════ */}
         <TabsContent value="wallet" className="mt-4 space-y-4">
-          {/* Balance Card */}
           <div className="bg-white border rounded-xl p-6">
             <div className="flex items-center gap-3">
               <div className="h-10 w-10 rounded-lg bg-[#003B95]/10 flex items-center justify-center">
@@ -1822,7 +2340,6 @@ export function PlayerDetailPage() {
             </div>
           </div>
 
-          {/* Transactions Table */}
           <div className="bg-white border rounded-xl overflow-hidden">
             <div className="p-6 pb-4">
               <h2 className="text-[#111827]">Transactions</h2>
@@ -2012,8 +2529,12 @@ export function PlayerDetailPage() {
                     </TableRow>
                   </TableHeader>
                   <TableBody>
+                    {/* FIX 4: key changed from friend.id (doesn't exist) to friend.playerId */}
                     {friends.map((friend) => (
-                      <TableRow key={friend.id} className="hover:bg-gray-50/50">
+                      <TableRow
+                        key={friend.playerId}
+                        className="hover:bg-gray-50/50"
+                      >
                         <TableCell className="px-4">
                           <Link
                             to={`/players/${friend.playerId}`}
@@ -2064,10 +2585,16 @@ export function PlayerDetailPage() {
         </TabsContent>
 
         {/* ════════════════════════════════════════════════════
+            TAB: SETTINGS (Preferences)
+            ════════════════════════════════════════════════════ */}
+        <TabsContent value="settings" className="mt-4">
+          <PreferencesTab playerId={id} />
+        </TabsContent>
+
+        {/* ════════════════════════════════════════════════════
             TAB: AUDIT TRAIL
             ════════════════════════════════════════════════════ */}
         <TabsContent value="audit" className="mt-4 space-y-4">
-          {/* Filters */}
           <div className="bg-white border rounded-xl p-4 space-y-3">
             <div className="flex flex-col sm:flex-row gap-3">
               <div className="relative flex-1">
@@ -2166,7 +2693,6 @@ export function PlayerDetailPage() {
             </div>
           </div>
 
-          {/* Audit Table */}
           <div className="bg-white border rounded-xl overflow-hidden">
             {filteredAudit.length > 0 ? (
               <>
@@ -2273,7 +2799,6 @@ export function PlayerDetailPage() {
                     </TableBody>
                   </Table>
                 </div>
-                {/* Pagination */}
                 <div className="flex items-center justify-between px-4 py-3 border-t bg-gray-50/50">
                   <span className="text-xs text-[#6B7280]">
                     Showing{" "}
@@ -2327,7 +2852,6 @@ export function PlayerDetailPage() {
               <div className="text-center py-16 space-y-3">
                 <Search className="h-10 w-10 text-gray-200 mx-auto" />
                 <p className="text-sm text-[#374151]">
-                  {/* AC-PM-032 */}
                   {hasAuditFilters
                     ? "No events match your filters."
                     : "No audit history available."}
@@ -2356,7 +2880,6 @@ export function PlayerDetailPage() {
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
             <DialogTitle>
-              {/* AC-PM-016/017/018: Context-specific title */}
               {statusDraft === "Active" && player.status === "Locked"
                 ? "Are you sure you want to unlock this player's account?"
                 : statusDraft === "Active"
@@ -2372,13 +2895,14 @@ export function PlayerDetailPage() {
                   ? `${player.firstName} ${player.lastName} will be reactivated and can access Playzoon.`
                   : statusDraft === "Inactive"
                     ? `${player.firstName} ${player.lastName} will be deactivated and cannot access Playzoon.`
-                    : `Update the status for ${player.firstName} ${player.lastName} (#{player.id}).`}
+                    : // FIX 3: #{player.id} → #${player.id} (template literal expression)
+                      `Update the status for ${player.firstName} ${player.lastName} (#${player.id}).`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label>
-                New Status <span className="text-red-500">*</span>
+                New Status
               </Label>
               <RadioGroup
                 value={statusDraft}
@@ -2402,7 +2926,7 @@ export function PlayerDetailPage() {
             {(statusDraft === "Inactive" || statusDraft === "Locked") && (
               <div className="space-y-1.5">
                 <Label htmlFor="st-reason">
-                  Reason <span className="text-red-500">*</span>
+                  Reason
                   <span className="text-[11px] text-gray-400 ml-2">
                     {statusReason.length}/500
                   </span>
@@ -2423,7 +2947,7 @@ export function PlayerDetailPage() {
             {statusDraft === "Locked" && (
               <div className="space-y-1.5">
                 <Label>
-                  Lock Until <span className="text-red-500">*</span>
+                  Lock Until
                 </Label>
                 <Popover>
                   <PopoverTrigger asChild>
