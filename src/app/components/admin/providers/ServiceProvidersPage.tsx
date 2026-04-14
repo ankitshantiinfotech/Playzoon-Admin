@@ -9,7 +9,6 @@ import {
   ArrowUp,
   ArrowDown,
   MessageCircle,
-  Eye,
   Pencil,
   Trash2,
   Lock,
@@ -1600,33 +1599,6 @@ export function ServiceProvidersPage() {
                                     ? "Open Chat"
                                     : "Chat is disabled"}
                                 </TooltipContent>
-                              </Tooltip>
-
-                              {/* View */}
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    className="h-7 w-7"
-                                    onClick={() => {
-                                      if (
-                                        provider.providerType ===
-                                        "Training Provider"
-                                      ) {
-                                        navigate(`/providers/${provider.id}`);
-                                      } else {
-                                        navigate(
-                                          `/provider-portal/${provider.id}`,
-                                        );
-                                      }
-                                    }}
-                                    aria-label={`View ${provider.name}`}
-                                  >
-                                    <Eye className="h-3.5 w-3.5" />
-                                  </Button>
-                                </TooltipTrigger>
-                                <TooltipContent>View</TooltipContent>
                               </Tooltip>
 
                               {/* Edit */}
