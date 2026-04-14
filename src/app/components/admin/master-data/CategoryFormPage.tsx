@@ -792,7 +792,7 @@ export function CategoryFormPage() {
         onOpenChange={setCropOpen}
         imageSrc={cropRawSrc}
         onCropComplete={handleIconCropComplete}
-        {...CROP_PRESETS.profilePhoto}
+        {...CROP_PRESETS.sportIcon}
       />
 
       {/* Delete Confirmation Modal */}
