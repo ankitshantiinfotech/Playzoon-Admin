@@ -1,18 +1,18 @@
-import { useState, useCallback, useMemo, useEffect } from "react";
+import React, { useState, useCallback, useMemo, useEffect } from "react";
 import { CreditCard, Loader2, Plus, Trash2, Star } from "lucide-react";
 import { toast } from "sonner";
-import { adminService } from "@/services/admin.service";
+import { adminService } from "../../../../services/admin.service";
 import {
   formatCardNumberInput,
   getCvvMaxLength,
   inferBrandFromPan,
-} from "@/lib/payment-card";
+} from "../../../../lib/payment-card";
 import {
   computePaymentCardErrors,
   brandLabelToProvider,
   type CardFormState,
   type PaymentMethodForValidation,
-} from "@/lib/payment-card-errors";
+} from "../../../../lib/payment-card-errors";
 import { cn } from "../../ui/utils";
 import { Button } from "../../ui/button";
 import { Input } from "../../ui/input";

@@ -167,6 +167,21 @@ function mapSportApiRowToEntity(row: Record<string, unknown>): MasterDataEntity 
   };
 }
 
+function sortSportsRows(rows: Record<string, unknown>[]): Record<string, unknown>[] {
+  return [...rows].sort((a, b) => {
+    const aCreated = String(a.created_at ?? "");
+    const bCreated = String(b.created_at ?? "");
+    const aTs = aCreated ? Date.parse(aCreated) : NaN;
+    const bTs = bCreated ? Date.parse(bCreated) : NaN;
+    const aHasDate = !Number.isNaN(aTs);
+    const bHasDate = !Number.isNaN(bTs);
+    if (aHasDate && bHasDate && aTs !== bTs) return bTs - aTs;
+    if (aHasDate && !bHasDate) return -1;
+    if (!aHasDate && bHasDate) return 1;
+    return String(b.id ?? "").localeCompare(String(a.id ?? ""));
+  });
+}
+
 export function MasterDataPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<MasterDataCategory>("Sports");
@@ -198,7 +213,7 @@ export function MasterDataPage() {
       });
       const payload = (res as { data?: { items?: unknown[] } })?.data ?? res;
       const items = Array.isArray(payload?.items)
-        ? (payload.items as Record<string, unknown>[]).map(mapSportApiRowToEntity)
+        ? sortSportsRows(payload.items as Record<string, unknown>[]).map(mapSportApiRowToEntity)
         : [];
       setData((prev) => ({ ...prev, Sports: items }));
     } catch {
@@ -281,6 +296,19 @@ export function MasterDataPage() {
     } else {
       updateItemStatus(item.id, "active");
       toast.success(`${item.nameEn} activated successfully`);
+    }
+  };
+
+  const handleDelete = async (item: MasterDataEntity) => {
+    if (activeTab !== "Sports") return;
+    const confirmed = window.confirm(`Delete ${item.nameEn}? This action cannot be undone.`);
+    if (!confirmed) return;
+    try {
+      await adminService.deleteMasterDataItem("sports", item.id);
+      await fetchSportsList();
+      toast.success(`${item.nameEn} deleted successfully`);
+    } catch {
+      toast.error("Failed to delete sport.");
     }
   };
 
@@ -473,6 +501,7 @@ export function MasterDataPage() {
         data={filteredByStatus}
         onEdit={handleEdit}
         onToggleStatus={handleToggleStatus}
+        onDelete={handleDelete}
         loading={activeTab === "Sports" && sportsLoading}
       />
 

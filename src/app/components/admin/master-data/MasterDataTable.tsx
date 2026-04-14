@@ -21,6 +21,7 @@ interface MasterDataTableProps {
   category: MasterDataCategory;
   onEdit: (item: MasterDataEntity) => void;
   onToggleStatus: (item: MasterDataEntity) => void;
+  onDelete?: (item: MasterDataEntity) => void;
   loading?: boolean;
 }
 
@@ -29,6 +30,7 @@ export function MasterDataTable({
   category,
   onEdit, 
   onToggleStatus,
+  onDelete,
   loading = false,
 }: MasterDataTableProps) {
   const [searchTerm, setSearchTerm] = useState("");
@@ -85,6 +87,7 @@ export function MasterDataTable({
       : ["id", "nameEn", "nameAr", "status", "createdAt", "updatedAt"];
 
   const headerLabel = (header: keyof MasterDataEntity) => {
+    if (header === "id" && category === "Sports") return "S.No";
     if (header === "nameEn") return "Name (EN)";
     if (header === "nameAr") return "Name (AR)";
     if (header === "icon") return "Icon";
@@ -159,7 +162,7 @@ export function MasterDataTable({
                 </td>
               </tr>
             ) : currentData.length > 0 ? (
-              currentData.map((item) => (
+              currentData.map((item, rowIndex) => (
                 <tr 
                   key={item.id} 
                   className="hover:bg-[#F9FAFB] transition-colors group"
@@ -181,9 +184,10 @@ export function MasterDataTable({
                       );
                     }
                     if (header === "id") {
+                      const serialNumber = (currentPage - 1) * itemsPerPage + rowIndex + 1;
                       return (
                         <td key={header} className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">
-                          {item.id}
+                          {category === "Sports" ? serialNumber : item.id}
                         </td>
                       );
                     }
@@ -235,6 +239,16 @@ export function MasterDataTable({
                       >
                         <Pencil size={16} />
                       </button>
+
+                      {category === "Sports" && onDelete && (
+                        <button
+                          onClick={() => onDelete(item)}
+                          className="text-red-600 hover:text-red-700 p-1 rounded hover:bg-red-50 transition-colors"
+                          title="Delete"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
                       
                       <button
                         onClick={() => onToggleStatus(item)}
