@@ -1811,19 +1811,6 @@ export function AdminProviderCompleteProfilePage({
             : "max-w-[720px] mx-auto px-4 sm:px-6 py-10 pb-32"
         }
       >
-        <div className="mb-8">
-          <h1 className="text-2xl font-bold text-neutral-900 tracking-tight mb-3">
-            {isPostApproval
-              ? t("providerCompleteProfile.postApprovalTitle")
-              : t("providerCompleteProfile.completeBusinessProfile")}
-          </h1>
-          <p className="text-base text-neutral-500 leading-relaxed">
-            {isPostApproval
-              ? t("providerCompleteProfile.postApprovalSubtitle")
-              : t("providerCompleteProfile.fillBusinessDetails")}
-          </p>
-        </div>
-
         {/* Rejection banner */}
         {profileStatus === "rejected" && rejectionReason && (
           <div
@@ -1840,15 +1827,6 @@ export function AdminProviderCompleteProfilePage({
             </div>
           </div>
         )}
-
-        {/* Progress indicator */}
-        <div className="mb-10 p-5 bg-white rounded-2xl border border-neutral-100 shadow-sm">
-          <div className="flex items-center justify-between mb-3">
-            <span className="text-sm font-semibold text-neutral-700">{t("providerCompleteProfile.profileCompletion")}</span>
-            <span className="text-sm font-bold text-[#003B95]">{progress}%</span>
-          </div>
-          <ProgressBar value={progress} className="h-1.5" />
-        </div>
 
         {/* Form */}
         <form
