@@ -230,6 +230,7 @@ export function SavedCardsTab({
             <Table>
               <TableHeader>
                 <TableRow className="bg-gray-50/80 hover:bg-gray-50/80">
+                  <TableHead className="px-4 w-[72px]">S.No</TableHead>
                   <TableHead className="px-4">Card Brand</TableHead>
                   <TableHead className="px-4">Last 4 Digits</TableHead>
                   <TableHead className="px-4">Expiry</TableHead>
@@ -240,8 +241,11 @@ export function SavedCardsTab({
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {cards.map((card) => (
+                {cards.map((card, index) => (
                   <TableRow key={card.id}>
+                    <TableCell className="px-4 text-xs text-[#6B7280] font-mono">
+                      {index + 1}
+                    </TableCell>
                     <TableCell className="px-4">
                       <div className="flex items-center gap-2">
                         <CreditCard className="h-4 w-4 text-[#6B7280]" />
@@ -350,6 +354,7 @@ export function SavedCardsTab({
           </DialogHeader>
           <form
             className="space-y-4"
+            autoComplete="off"
             onSubmit={(e) => {
               e.preventDefault();
               void handleAddCard();
@@ -359,8 +364,8 @@ export function SavedCardsTab({
               <Label htmlFor="admin-cardNumber">Card Number</Label>
               <Input
                 id="admin-cardNumber"
-                name="cc-number"
-                autoComplete="cc-number"
+                name="admin-card-number"
+                autoComplete="off"
                 inputMode="numeric"
                 placeholder="4242 4242 4242 4242"
                 value={cardForm.cardNumber}
@@ -381,8 +386,8 @@ export function SavedCardsTab({
               <Label htmlFor="admin-cardholderName">Cardholder Name</Label>
               <Input
                 id="admin-cardholderName"
-                name="cc-name"
-                autoComplete="cc-name"
+                name="admin-cardholder-name"
+                autoComplete="off"
                 placeholder="John Doe"
                 value={cardForm.cardholderName}
                 onChange={(e) =>
@@ -447,8 +452,8 @@ export function SavedCardsTab({
               <Label htmlFor="admin-cvv">CVV</Label>
               <Input
                 id="admin-cvv"
-                name="cc-csc"
-                autoComplete="cc-csc"
+                name="admin-card-cvv"
+                autoComplete="off"
                 inputMode="numeric"
                 placeholder={
                   getCvvMaxLength(

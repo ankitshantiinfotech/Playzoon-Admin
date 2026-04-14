@@ -1,4 +1,4 @@
-import {
+import React, {
   useState,
   useMemo,
   useCallback,
@@ -141,6 +141,14 @@ function getAge(dob: string): number | null {
   const d = new Date(dob);
   if (isNaN(d.getTime())) return null;
   return differenceInYears(new Date(), d);
+}
+
+function formatDobDisplay(dob: string): string {
+  if (!dob) return "—";
+  const parsed = parseISO(dob);
+  if (isValid(parsed)) return format(parsed, "dd MMM yyyy");
+  const fallback = new Date(dob);
+  return isNaN(fallback.getTime()) ? "—" : format(fallback, "dd MMM yyyy");
 }
 
 function truncate(text: string, max: number): string {
@@ -653,8 +661,9 @@ export function DependentsTab({
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {pagedDependents.map((dep) => {
+                  {pagedDependents.map((dep, index) => {
                     const age = getAge(dep.dateOfBirth);
+                    const serialNumber = (page - 1) * pageSize + index + 1;
                     return (
                       <TableRow
                         key={dep.id}
@@ -668,6 +677,9 @@ export function DependentsTab({
                             </div>
                             <span className="text-sm font-medium text-gray-900">
                               {dep.firstName} {dep.lastName}
+                            </span>
+                            <span className="text-[10px] text-[#9CA3AF] font-mono">
+                              #{serialNumber}
                             </span>
                           </div>
                         </TableCell>
@@ -685,7 +697,7 @@ export function DependentsTab({
                               {age !== null ? `${age} yrs` : "—"}
                             </span>
                             <span className="text-[11px] text-gray-400">
-                              {dep.dateOfBirth}
+                              {formatDobDisplay(dep.dateOfBirth)}
                             </span>
                           </div>
                         </TableCell>
@@ -731,8 +743,9 @@ export function DependentsTab({
 
             {/* ── Mobile Card View ───────────────────── */}
             <div className="md:hidden divide-y divide-gray-50">
-              {pagedDependents.map((dep) => {
+              {pagedDependents.map((dep, index) => {
                 const age = getAge(dep.dateOfBirth);
+                const serialNumber = (page - 1) * pageSize + index + 1;
                 return (
                   <div key={dep.id} className="p-4 space-y-3 active:bg-gray-50">
                     <div className="flex items-center justify-between">
@@ -744,6 +757,9 @@ export function DependentsTab({
                         <div className="flex flex-col">
                           <span className="text-sm font-semibold text-gray-900">
                             {dep.firstName} {dep.lastName}
+                          </span>
+                          <span className="text-[10px] text-[#9CA3AF] font-mono">
+                            #{serialNumber}
                           </span>
                           <Badge
                             variant="outline"
@@ -781,7 +797,7 @@ export function DependentsTab({
                       <div className="text-gray-500">
                         DOB:{" "}
                         <span className="text-gray-900 font-medium">
-                          {dep.dateOfBirth}
+                          {formatDobDisplay(dep.dateOfBirth)}
                         </span>
                       </div>
                       <div className="text-gray-500">
