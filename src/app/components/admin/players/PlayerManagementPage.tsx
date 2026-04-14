@@ -201,10 +201,16 @@ export function PlayerManagementPage() {
   // Map API response to PlayerRow (status / lock aligned with PlayerDetailPage: use `status` + `locked_until`, not a separate is_locked flag)
   const mapApiPlayer = (p: any): PlayerRow => {
     if (!p.status) throw new Error("Status missing from API response.");
+    const lockUntil = p.locked_until || p.lockedUntil;
+    const hasActiveLockWindow =
+      !!lockUntil && !Number.isNaN(new Date(lockUntil).getTime())
+        ? new Date(lockUntil) > new Date()
+        : false;
+    const isLocked = p.is_locked === true || hasActiveLockWindow;
     const norm = typeof p.status === "string" ? p.status.toLowerCase() : "";
     let status: PlayerStatus;
-    if (norm === "active") status = "Active";
-    else if (norm === "locked") status = "Locked";
+    if (isLocked) status = "Locked";
+    else if (norm === "active" || norm === "locked") status = "Active";
     else if (norm === "inactive") status = "Inactive";
     else throw new Error(`Invalid player status received: ${p.status}`);
 
@@ -235,7 +241,7 @@ export function PlayerManagementPage() {
           ? new Date(p.last_active_at)
           : new Date(p.created_at),
       avatarUrl: p.profile_photo_url || undefined,
-      lockedUntil: p.locked_until || undefined,
+      lockedUntil: lockUntil || undefined,
       walletBalance: parseFloat(p.wallet_balance || "0"),
       isSSOUser: !!p.is_sso_user,
       nationality: p.nationality || "",

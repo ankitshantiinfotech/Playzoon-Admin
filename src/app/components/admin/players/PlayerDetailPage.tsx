@@ -52,7 +52,6 @@ import {
   Heart,
   Languages,
   Lock as LockIcon,
-  Unlock,
   Wallet,
   Trophy,
   Users,
@@ -335,10 +334,17 @@ export function PlayerDetailPage() {
         status: (() => {
           if (!data.status)
             throw new Error("Status missing from API response.");
+          const lockUntil = data.locked_until || data.lockedUntil;
+          const hasActiveLockWindow =
+            !!lockUntil && !Number.isNaN(new Date(lockUntil).getTime())
+              ? new Date(lockUntil) > new Date()
+              : false;
+          const isLocked = data.is_locked === true || hasActiveLockWindow;
+          if (isLocked) return "Locked";
           const norm =
             typeof data.status === "string" ? data.status.toLowerCase() : "";
           if (norm === "active") return "Active";
-          if (norm === "locked") return "Locked";
+          if (norm === "locked") return "Active";
           if (norm === "inactive") return "Inactive";
           throw new Error(`Invalid player status received: ${data.status}`);
         })(),
@@ -1077,20 +1083,12 @@ export function PlayerDetailPage() {
   const [statusModalOpen, setStatusModalOpen] = useState(false);
   const [statusDraft, setStatusDraft] = useState<PlayerStatus>(player.status);
   const [statusReason, setStatusReason] = useState("");
-  const [statusLockUntil, setStatusLockUntil] = useState<Date | undefined>(
-    player.lockedUntil ? new Date(player.lockedUntil) : undefined,
-  );
   const [statusNotify, setStatusNotify] = useState(true);
   const [statusErrors, setStatusErrors] = useState<Record<string, string>>({});
 
   const openStatusModal = (newStatus: PlayerStatus) => {
     setStatusDraft(newStatus);
     setStatusReason("");
-    setStatusLockUntil(
-      newStatus === "Locked" && player.lockedUntil
-        ? new Date(player.lockedUntil)
-        : undefined,
-    );
     setStatusNotify(true);
     setStatusErrors({});
     setStatusModalOpen(true);
@@ -1098,17 +1096,10 @@ export function PlayerDetailPage() {
 
   const validateStatusChange = () => {
     const e: Record<string, string> = {};
-    if (
-      (statusDraft === "Inactive" || statusDraft === "Locked") &&
-      !statusReason.trim()
-    ) {
+    if (statusDraft === "Inactive" && !statusReason.trim()) {
       e.reason = "Reason is required.";
     }
     if (statusReason.length > 500) e.reason = "Max 500 characters.";
-    if (statusDraft === "Locked" && statusLockUntil) {
-      if (isBefore(statusLockUntil, startOfToday()))
-        e.lockUntil = "Must be a future date.";
-    }
     setStatusErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -1119,25 +1110,13 @@ export function PlayerDetailPage() {
       const payload: Record<string, unknown> = {
         status: statusDraft.toLowerCase(),
       };
-      if (statusDraft === "Locked") {
-        payload.is_locked = true;
+      if (statusDraft === "Inactive") {
         payload.lock_reason = statusReason;
-        if (statusLockUntil) {
-          const end = new Date(statusLockUntil);
-          end.setHours(23, 59, 59, 999);
-          payload.locked_until = end.toISOString();
-        }
-      } else if (statusDraft === "Active" && player.status === "Locked") {
-        payload.is_locked = false;
       }
       await adminService.updatePlayer(id, payload);
       setPlayer((prev) => ({
         ...prev,
         status: statusDraft,
-        lockedUntil:
-          statusDraft === "Locked" && statusLockUntil
-            ? format(statusLockUntil, "yyyy-MM-dd")
-            : undefined,
       }));
       setStatusModalOpen(false);
       showBanner("success", `Status changed to ${statusDraft}.`);
@@ -1368,21 +1347,11 @@ export function PlayerDetailPage() {
                 <span className="text-xs text-[#6B7280]">Account Status:</span>
               </TooltipTrigger>
               <TooltipContent>
-                Change account status. Locked prevents sign-in until the
-                specified date.
+                Change account status between Active and Inactive.
               </TooltipContent>
             </Tooltip>
             <div className="flex gap-1 flex-wrap">
-              {player.status === "Locked" && (
-                <button
-                  onClick={() => openStatusModal("Active")}
-                  className="px-3 py-1.5 rounded-lg text-xs border transition-colors bg-blue-50 border-blue-300 text-blue-700 hover:bg-blue-100 flex items-center gap-1"
-                >
-                  <Unlock className="h-3 w-3" />
-                  Unlock
-                </button>
-              )}
-              {(["Active", "Inactive", "Locked"] as PlayerStatus[]).map((s) => (
+              {(["Active", "Inactive"] as PlayerStatus[]).map((s) => (
                 <button
                   key={s}
                   onClick={() => {
@@ -1393,9 +1362,7 @@ export function PlayerDetailPage() {
                     player.status === s
                       ? s === "Active"
                         ? "bg-emerald-100 border-emerald-300 text-emerald-800"
-                        : s === "Locked"
-                          ? "bg-red-100 border-red-300 text-red-800"
-                          : "bg-gray-200 border-gray-300 text-gray-800"
+                        : "bg-gray-200 border-gray-300 text-gray-800"
                       : "bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50",
                   )}
                 >
@@ -1403,6 +1370,18 @@ export function PlayerDetailPage() {
                 </button>
               ))}
             </div>
+            <span
+              className={cn(
+                "px-2.5 py-1 rounded-md text-[11px] border",
+                player.status === "Locked"
+                  ? "bg-red-50 border-red-200 text-red-700"
+                  : "bg-emerald-50 border-emerald-200 text-emerald-700",
+              )}
+            >
+              {player.status === "Locked"
+                ? "Lock Status: User is Locked"
+                : "Lock Status: User is Active"}
+            </span>
           </div>
         </div>
       </div>
@@ -2976,23 +2955,18 @@ export function PlayerDetailPage() {
         <DialogContent className="sm:max-w-[440px]">
           <DialogHeader>
             <DialogTitle>
-              {statusDraft === "Active" && player.status === "Locked"
-                ? "Are you sure you want to unlock this player's account?"
-                : statusDraft === "Active"
-                  ? "Are you sure you want to activate this player?"
-                  : statusDraft === "Inactive"
-                    ? "Are you sure you want to deactivate this player?"
-                    : "Change Account Status"}
+              {statusDraft === "Active"
+                ? "Are you sure you want to activate this player?"
+                : statusDraft === "Inactive"
+                  ? "Are you sure you want to deactivate this player?"
+                  : "Change Account Status"}
             </DialogTitle>
             <DialogDescription>
-              {statusDraft === "Active" && player.status === "Locked"
-                ? `${player.firstName} ${player.lastName}'s account will be unlocked and they will regain access.`
-                : statusDraft === "Active"
-                  ? `${player.firstName} ${player.lastName} will be reactivated and can access Playzoon.`
-                  : statusDraft === "Inactive"
-                    ? `${player.firstName} ${player.lastName} will be deactivated and cannot access Playzoon.`
-                    : // FIX 3: #{player.id} → #${player.id} (template literal expression)
-                      `Update the status for ${player.firstName} ${player.lastName} (#${player.id}).`}
+              {statusDraft === "Active"
+                ? `${player.firstName} ${player.lastName} will be reactivated and can access Playzoon.`
+                : statusDraft === "Inactive"
+                  ? `${player.firstName} ${player.lastName} will be deactivated and cannot access Playzoon.`
+                  : `Update the status for ${player.firstName} ${player.lastName} (#${player.id}).`}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
@@ -3004,7 +2978,7 @@ export function PlayerDetailPage() {
                 value={statusDraft}
                 onValueChange={(v) => setStatusDraft(v as PlayerStatus)}
               >
-                {(["Active", "Inactive", "Locked"] as PlayerStatus[]).map(
+                {(["Active", "Inactive"] as PlayerStatus[]).map(
                   (s) => (
                     <div key={s} className="flex items-center gap-2">
                       <RadioGroupItem value={s} id={`st-${s}`} />
@@ -3019,7 +2993,7 @@ export function PlayerDetailPage() {
                 )}
               </RadioGroup>
             </div>
-            {(statusDraft === "Inactive" || statusDraft === "Locked") && (
+            {statusDraft === "Inactive" && (
               <div className="space-y-1.5">
                 <Label htmlFor="st-reason">
                   Reason
@@ -3037,44 +3011,6 @@ export function PlayerDetailPage() {
                 />
                 {statusErrors.reason && (
                   <p className="text-xs text-red-500">{statusErrors.reason}</p>
-                )}
-              </div>
-            )}
-            {statusDraft === "Locked" && (
-              <div className="space-y-1.5">
-                <Label>
-                  Lock Until
-                </Label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      className={cn(
-                        "w-full justify-start gap-2 text-sm",
-                        !statusLockUntil && "text-muted-foreground",
-                        statusErrors.lockUntil && "border-red-400",
-                      )}
-                    >
-                      <Calendar className="h-3.5 w-3.5" />
-                      {statusLockUntil
-                        ? format(statusLockUntil, "MMM d, yyyy")
-                        : "Select date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <CalendarPicker
-                      mode="single"
-                      selected={statusLockUntil}
-                      onSelect={setStatusLockUntil}
-                      initialFocus
-                      disabled={(d) => isBefore(d, startOfToday())}
-                    />
-                  </PopoverContent>
-                </Popover>
-                {statusErrors.lockUntil && (
-                  <p className="text-xs text-red-500">
-                    {statusErrors.lockUntil}
-                  </p>
                 )}
               </div>
             )}
@@ -3096,9 +3032,7 @@ export function PlayerDetailPage() {
             <Button
               onClick={handleConfirmStatusChange}
               className={cn(
-                statusDraft === "Locked"
-                  ? "bg-red-600 hover:bg-red-700"
-                  : statusDraft === "Inactive"
+                statusDraft === "Inactive"
                     ? "bg-gray-700 hover:bg-gray-800"
                     : "bg-[#003B95] hover:bg-[#002a6b]",
               )}
