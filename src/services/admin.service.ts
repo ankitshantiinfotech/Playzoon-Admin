@@ -78,6 +78,72 @@ export const adminService = {
   createProvider: (data: P) =>
     api.post('/admin/providers', data).then(r => r.data),
 
+  /**
+   * Same multipart contract as web PUT /profile/provider — applies to provider record directly.
+   * Use draft=true for incomplete saves (relaxed validation).
+   */
+  putProviderProfile: (
+    id: string,
+    payload: P,
+    profilePhotoLogo?: File | Blob | null,
+    options?: {
+      draft?: boolean;
+      onUploadProgress?: (percent: number) => void;
+      officialDocuments?: { file: File; documentType: string }[];
+    },
+  ) => {
+    const draft = options?.draft === true;
+    const url = `/admin/providers/${id}/profile${draft ? '?draft=true' : ''}`;
+    const officialDocs = options?.officialDocuments && options.officialDocuments.length > 0;
+    if (profilePhotoLogo || officialDocs) {
+      const formData = new FormData();
+      if (profilePhotoLogo) {
+        formData.append('profile_photo_logo', profilePhotoLogo, 'provider-logo.jpg');
+      }
+      if (officialDocs) {
+        const meta = options!.officialDocuments!.map((d) => ({
+          document_type: d.documentType,
+        }));
+        formData.append('provider_documents', JSON.stringify(meta));
+        for (const d of options!.officialDocuments!) {
+          formData.append('official_documents', d.file, d.file.name);
+        }
+      }
+      for (const [key, value] of Object.entries(payload)) {
+        if (value === undefined || value === null) continue;
+        if (key === 'provider_documents') continue;
+        if (Array.isArray(value)) {
+          if (key === 'remove_document_ids') {
+            formData.append(key, JSON.stringify(value));
+          } else {
+            (value as unknown[]).forEach((v: unknown) =>
+              formData.append(`${key}[]`, String(v)),
+            );
+          }
+        } else if (typeof value === 'object') {
+          formData.append(key, JSON.stringify(value));
+        } else {
+          formData.append(key, String(value));
+        }
+      }
+      return api
+        .put(url, formData, {
+          headers: { 'Content-Type': undefined as unknown as string },
+          ...(options?.onUploadProgress
+            ? {
+                onUploadProgress: (e: { loaded: number; total?: number }) => {
+                  if (!e.total || e.total <= 0) return;
+                  const percent = Math.round((e.loaded * 100) / e.total);
+                  options.onUploadProgress?.(Math.max(0, Math.min(100, percent)));
+                },
+              }
+            : {}),
+        })
+        .then(r => r.data);
+    }
+    return api.put(url, payload).then(r => r.data);
+  },
+
   // ── Country Modules (1) ──────────────────────────────────────────────
   getCountryModules: (params: P) =>
     api.get('/admin/country-modules', { params }).then(r => r.data),

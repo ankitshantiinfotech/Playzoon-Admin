@@ -38,6 +38,7 @@ import { ProviderPortalPage } from "./components/admin/providers/portal/Provider
 import { CommunicationSettingsPage } from "./components/admin/communication/CommunicationSettingsPage";
 import { TrainingProviderDetailPage } from "./components/admin/providers/detail/TrainingProviderDetailPage";
 import { TrainingProviderFormPage } from "./components/admin/providers/form/TrainingProviderFormPage";
+import { AddTrainingProviderPage } from "./components/admin/providers/AddTrainingProviderPage";
 import { FacilityProviderFormPage } from "./components/admin/providers/form/FacilityProviderFormPage";
 import { FreelancerCoachFormPage } from "./components/admin/providers/form/FreelancerCoachFormPage";
 import { CommissionsPage } from "./components/admin/commissions/CommissionsPage";
@@ -94,7 +95,7 @@ export const router = createBrowserRouter([
       { path: "players/new", Component: CreatePlayerPage },
       { path: "players/:id", Component: PlayerDetailPage },
       { path: "providers", Component: ServiceProvidersPage },
-      { path: "providers/new", Component: TrainingProviderFormPage },
+      { path: "providers/new", Component: AddTrainingProviderPage },
       { path: "providers/:id", Component: TrainingProviderDetailPage },
       { path: "providers/:id/edit", Component: TrainingProviderFormPage },
       { path: "providers/facility/new", Component: FacilityProviderFormPage },
