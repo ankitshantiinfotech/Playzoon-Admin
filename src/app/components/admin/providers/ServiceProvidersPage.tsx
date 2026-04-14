@@ -405,7 +405,18 @@ export function ServiceProvidersPage() {
     try {
       const res = await adminService.listProviders({ page: 1, limit: 100 });
       const list = res?.providers || res?.data?.providers || [];
-      setProviders(Array.isArray(list) ? list.map(mapProvider) : []);
+      const filtered = Array.isArray(list)
+        ? list.filter((p: Record<string, unknown>) => {
+            const approval = String(
+              p.admin_approval_status || p.profile_status || "",
+            ).toLowerCase();
+            const profileCompleted = p.profile_completed === true;
+            if (approval === "approved") return true;
+            if (approval === "pending") return profileCompleted;
+            return false;
+          })
+        : [];
+      setProviders(filtered.map(mapProvider));
     } catch (err) {
       console.error("Failed to load providers:", err);
       showBanner("error", "Failed to load providers. Please try again.");

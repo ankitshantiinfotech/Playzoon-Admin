@@ -221,6 +221,25 @@ export function CreatePlayerPage() {
   const phoneWrapRef = useRef<HTMLDivElement>(null);
 
   const trimmedValue = (s: string) => s.trim().replace(/\s+/g, " ");
+  const parsePhoneForPayload = (
+    rawValue: string,
+  ): { country_code: string; mobile: string } | null => {
+    const raw = String(rawValue || "").trim();
+    if (!raw) return null;
+
+    const parsed = parsePhoneNumber(raw);
+    if (parsed) {
+      return {
+        country_code: `+${parsed.countryCallingCode}`,
+        mobile: String(parsed.nationalNumber || ""),
+      };
+    }
+
+    const compact = raw.replace(/[\s\-()]/g, "");
+    const match = compact.match(/^(\+\d{1,4})(\d{6,15})$/);
+    if (!match) return null;
+    return { country_code: match[1], mobile: match[2] };
+  };
 
   const updateField = (
     field: keyof FormData,
@@ -300,7 +319,7 @@ export function CreatePlayerPage() {
       case "phone": {
         const v = form.phoneE164.trim();
         if (!v) error = "Mobile number is required.";
-        else if (!isValidPhoneNumber(v))
+        else if (!parsePhoneForPayload(v))
           error = "Please enter a valid mobile number.";
         break;
       }
@@ -364,7 +383,7 @@ export function CreatePlayerPage() {
     setIsSubmitting(true);
     setBanner((b) => ({ ...b, visible: false }));
     try {
-      const parsedPhone = parsePhoneNumber(form.phoneE164.trim());
+      const parsedPhone = parsePhoneForPayload(form.phoneE164.trim());
       if (!parsedPhone) {
         setErrors((prev) => ({ ...prev, phone: "Invalid phone number." }));
         phoneWrapRef.current
@@ -377,8 +396,8 @@ export function CreatePlayerPage() {
         first_name: form.firstName,
         last_name: form.lastName,
         email: form.email,
-        country_code: `+${parsedPhone.countryCallingCode}`,
-        mobile: parsedPhone.nationalNumber,
+        country_code: parsedPhone.country_code,
+        mobile: parsedPhone.mobile,
         gender: form.gender || undefined,
         status: form.initialStatus.toLowerCase(),
         date_of_birth: form.dateOfBirth
