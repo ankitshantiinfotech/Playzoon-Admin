@@ -42,6 +42,7 @@ import {
   AlertDialogTitle,
 } from "../../../ui/alert-dialog";
 import { getTrainingProviderDetail } from "../detail/training-provider-detail-data";
+import { AdminProviderCompleteProfilePage } from "../AdminProviderCompleteProfilePage";
 import {
   COUNTRY_CODES,
   ACCEPTED_DOC_TYPES,
@@ -673,6 +674,10 @@ export function TrainingProviderFormPage() {
         </Button>
       </div>
     );
+  }
+
+  if (isEditMode) {
+    return <AdminProviderCompleteProfilePage variant="onboarding" />;
   }
 
   // ═══════════════════════════════════════════════════════════
