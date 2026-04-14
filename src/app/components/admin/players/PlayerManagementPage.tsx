@@ -15,7 +15,6 @@ import {
   CalendarIcon,
   Download,
   MoreHorizontal,
-  Eye,
   Pencil,
   MapPin,
   Users,
@@ -1427,12 +1426,6 @@ export function PlayerManagementPage() {
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuItem
-                              onClick={() => navigate(`/players/${player.id}`)}
-                            >
-                              <Eye className="h-3.5 w-3.5 mr-2" />
-                              View Player
-                            </DropdownMenuItem>
                             <DropdownMenuItem
                               onClick={() => navigate(`/players/${player.id}`)}
                             >
