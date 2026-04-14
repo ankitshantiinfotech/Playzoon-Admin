@@ -184,11 +184,16 @@ const BANNER_STYLES: Record<
 };
 
 function buildPhoneE164(countryCode: string, nationalDigits: string): string {
-  const nat = (nationalDigits || "").replace(/\D/g, "");
+  const raw = String(nationalDigits || "").trim();
+  if (!raw) return "";
+  if (raw.startsWith("+")) return raw.replace(/[^\d+]/g, "");
+  const nat = raw.replace(/\D/g, "");
   if (!nat) return "";
   const cc = (countryCode || "+966").trim();
   const prefix = cc.startsWith("+") ? cc : `+${cc}`;
-  return `${prefix}${nat}`;
+  const ccDigits = prefix.replace(/\D/g, "");
+  const normalizedNat = nat.startsWith(ccDigits) ? nat.slice(ccDigits.length) : nat;
+  return `${prefix}${normalizedNat}`;
 }
 
 /** Same response shape as web GET /config/countries (api envelope + nested data). */
@@ -759,9 +764,14 @@ export function PlayerDetailPage() {
     if (emailTrim && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(emailTrim)) {
       e.email = "Invalid email format.";
     }
-    if (!formData.phoneE164?.trim()) {
+    const currentPhoneE164 = formData.phoneE164?.trim() || "";
+    const baselinePhoneE164 = buildPhoneE164(player.countryCode, player.phone).trim();
+    if (!currentPhoneE164) {
       e.phone = "Mobile number is required.";
-    } else if (!isValidPhoneNumber(formData.phoneE164)) {
+    } else if (
+      currentPhoneE164 !== baselinePhoneE164
+      && !isValidPhoneNumber(currentPhoneE164)
+    ) {
       e.phone = "Invalid phone number.";
     }
     if (bioPlainTextLength(formData.bio) > BIO_MAX_PLAIN_CHARS) {

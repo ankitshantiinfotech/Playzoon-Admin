@@ -1247,6 +1247,18 @@ export function AdminProviderCompleteProfilePage({
 
   const handleProviderProfileApiError = useCallback((error: unknown) => {
     const result = handleApiErrorWithDetails(error);
+    if (result.code === "EMAIL_TAKEN" || result.code === "EMAIL_ALREADY_EXISTS") {
+      const mapped: FieldErrors = { contactEmail: result.message || "Email is already registered." };
+      setErrors((prev) => ({ ...prev, ...mapped }));
+      scrollFormErrorIntoView(mapped);
+      return result.message;
+    }
+    if (result.code === "MOBILE_TAKEN" || result.code === "MOBILE_ALREADY_EXISTS") {
+      const mapped: FieldErrors = { contactMobile: result.message || "Mobile is already registered." };
+      setErrors((prev) => ({ ...prev, ...mapped }));
+      scrollFormErrorIntoView(mapped);
+      return result.message;
+    }
     if (result.fieldErrors && Object.keys(result.fieldErrors).length > 0) {
       const mapped = mapProviderApiFieldErrorsToForm(result.fieldErrors);
       if (Object.keys(mapped).length > 0) {
@@ -1529,41 +1541,6 @@ export function AdminProviderCompleteProfilePage({
                 </Badge>
               ) : (
                 <div className="contents">
-                  <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-xs">
-                    {t("settingsProfile.unverified")}
-                  </Badge>
-                  {!showEmailVerify && isEmailActuallyChanged && (
-                    <button
-                      type="button"
-                      onClick={async () => {
-                        if (
-                          !form.contactEmail.trim() ||
-                          !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.contactEmail.trim())
-                        ) {
-                          setErrors((p) => ({
-                            ...p,
-                            contactEmail: t("validation.invalidEmailFormat"),
-                          }));
-                          return;
-                        }
-                        if (!isEmailActuallyChanged) return;
-                        try {
-                          const emailToVerify = form.contactEmail.trim();
-                          setOtpPreviousEmail(emailBaseline);
-                          setPendingVerifyEmail(emailToVerify);
-                          await updateProviderProfile({ email: emailToVerify });
-                          updateField("contactEmail", emailToVerify);
-                          setShowEmailVerify(true);
-                        } catch (error) {
-                          handleProviderProfileApiError(error);
-                        }
-                      }}
-                      className="text-xs hover:underline cursor-pointer"
-                      style={{ color: PROFILE_EMAIL_BRAND, fontWeight: 600 }}
-                    >
-                      {t("settingsProfile.verifyNow")}
-                    </button>
-                  )}
                 </div>
               )
             ) : null}

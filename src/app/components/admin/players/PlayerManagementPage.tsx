@@ -1312,7 +1312,8 @@ export function PlayerManagementPage() {
                   <SkeletonRow />
                 </>
               ) : paged.length > 0 ? (
-                paged.map((player) => {
+                paged.map((player, rowIndex) => {
+                  const serialNumber = (page - 1) * pageSize + rowIndex + 1;
                   const isSelected = selectedIds.has(player.id);
                   return (
                     <TableRow
@@ -1351,7 +1352,7 @@ export function PlayerManagementPage() {
                               {player.firstName} {player.lastName}
                             </button>
                             <p className="text-[10px] text-[#9CA3AF] font-mono">
-                              {player.id}
+                              #{serialNumber}
                             </p>
                           </div>
                         </div>
