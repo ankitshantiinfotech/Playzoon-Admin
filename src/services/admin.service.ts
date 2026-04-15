@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { Params } from 'react-router';
 
 type P = Record<string, unknown>;
 
@@ -154,9 +155,54 @@ export const adminService = {
   manageBanner: (data: P) =>
     api.post('/admin/banners', data).then(r => r.data),
 
-  // ── CMS (1) ──────────────────────────────────────────────────────────
-  listCmsPages: (params: P) =>
+  // ── CMS (14) ─────────────────────────────────────────────────────────
+  // Pages
+  getPages: (params?: P) =>
     api.get('/admin/cms/pages', { params }).then(r => r.data),
+  getPageById: (id: string) =>
+    api.get(`/admin/cms/pages/${id}`).then(r => r.data),
+  updatePage: (id: string, payload: P) =>
+    api.patch(`/admin/cms/pages/${id}`, payload).then(r => r.data),
+
+  // Aliases used by CMS UI layer
+  listCmsPages: (params?: P) =>
+    api.get('/admin/cms/pages', { params }).then(r => r.data),
+  updateCmsPage: (id: string, payload: P) =>
+    api.patch(`/admin/cms/pages/${id}`, payload).then(r => r.data),
+  publishCmsPage: (id: string) =>
+    api.post(`/admin/cms/pages/${id}/publish`).then(r => r.data),
+  getCmsVersions: (id: string) =>
+    api.get(`/admin/cms/pages/${id}/versions`).then(r => r.data),
+  restoreCmsVersion: (id: string, versionId: string) =>
+    api.post(`/admin/cms/pages/${id}/restore`, { versionId }).then(r => r.data),
+
+  // FAQ
+  createFAQ: (payload: P) =>
+    api.post('/admin/cms/faq', payload).then(r => r.data),
+  updateFAQ: (id: string, payload: P) =>
+    api.patch(`/admin/cms/faq/${id}`, payload).then(r => r.data),
+  deleteFAQ: (id: string) =>
+    api.delete(`/admin/cms/faq/${id}`).then(r => r.data),
+
+  // Contact Fields
+  createContactField: (payload: P) =>
+    api.post('/admin/cms/contact-fields', payload).then(r => r.data),
+  updateContactField: (id: string, payload: P) =>
+    api.patch(`/admin/cms/contact-fields/${id}`, payload).then(r => r.data),
+  deleteContactField: (id: string) =>
+    api.delete(`/admin/cms/contact-fields/${id}`).then(r => r.data),
+
+  // Social Links
+  getSocialLinks: () =>
+    api.get('/admin/cms/social-links').then(r => r.data),
+  updateSocialLinks: (payload: P) =>
+    api.put('/admin/cms/social-links', payload).then(r => r.data),
+  createSocialLink: (payload: P) =>
+    api.post('/admin/cms/social-links', payload).then(r => r.data),
+  updateSocialLink: (id: string, payload: P) =>
+    api.patch(`/admin/cms/social-links/${id}`, payload).then(r => r.data),
+  deleteSocialLink: (id: string) =>
+    api.delete(`/admin/cms/social-links/${id}`).then(r => r.data),
 
   // ── Master Data (4) ──────────────────────────────────────────────────
   listSports: (params: P) =>

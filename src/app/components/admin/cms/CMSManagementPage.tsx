@@ -1,11 +1,26 @@
+import { useEffect, useState } from "react";
 import { Image as ImageIcon, HelpCircle, FileText, Dumbbell, ChevronRight } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "../../ui/tabs";
 import { BannersTab } from "./BannersTab";
-import { FAQsTab } from "./FAQsTab";
 import { StaticPagesTab } from "./StaticPagesTab";
 import { SportsTab } from "./SportsTab";
+import { FAQsTab } from "./FAQsTab";
+
+const CMS_TAB_STORAGE_KEY = "playzoon-admin-cms-active-tab";
 
 export function CMSManagementPage() {
+  const [activeTab, setActiveTab] = useState("static-pages");
+
+  useEffect(() => {
+    const savedTab = localStorage.getItem(CMS_TAB_STORAGE_KEY);
+    if (savedTab) setActiveTab(savedTab);
+  }, []);
+
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+    localStorage.setItem(CMS_TAB_STORAGE_KEY, tab);
+  };
+
   return (
     <div className="p-6 lg:p-8 space-y-6 bg-[#F9FAFB] min-h-screen">
       {/* Header */}
@@ -25,7 +40,7 @@ export function CMSManagementPage() {
       </div>
 
       {/* Tabs */}
-      <Tabs defaultValue="static-pages" className="space-y-5">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-5">
         <TabsList className="bg-white border shadow-sm h-10 p-1 rounded-xl">
           <TabsTrigger
             value="static-pages"

@@ -1,4 +1,4 @@
-import { useState, useRef, useCallback, useEffect, useMemo } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import { toast } from "sonner";
 import {
   FileText,
@@ -35,6 +35,7 @@ import {
   Linkedin,
   Youtube,
   ExternalLink,
+  Loader2,
 } from "lucide-react";
 import { cn } from "../../../lib/utils";
 import { Button } from "../../ui/button";
@@ -52,7 +53,7 @@ import {
   AlertDialogTitle,
 } from "../../ui/alert-dialog";
 import { ScrollArea } from "../../ui/scroll-area";
-
+import { adminService } from "@/services/admin.service";
 // ─── Types ──────────────────────────────────────────────────
 
 interface PageVersion {
@@ -69,15 +70,13 @@ interface PageVersion {
 interface StaticPage {
   id: string;
   title: string;
-  status: "published" | "draft";
+  status: "active" | "inactive";
   lastUpdated: string;
   lastUpdatedBy: string;
   lastPublished: string | null;
   contentEn: string;
   contentAr: string;
   versions: PageVersion[];
-  hasPendingTranslation?: boolean;
-  pendingTranslationContent?: string;
 }
 
 interface SocialMediaLinks {
@@ -90,155 +89,11 @@ interface SocialMediaLinks {
 }
 
 type PageTab = "terms" | "privacy" | "about" | "help" | "social";
-
-// ─── Mock Data ──────────────────────────────────────────────
-
-const INITIAL_PAGES: Record<string, StaticPage> = {
-  terms: {
-    id: "terms",
-    title: "Terms & Conditions",
-    status: "published",
-    lastUpdated: "2025-11-20T14:00:00Z",
-    lastUpdatedBy: "Ahmed Al-Rashid",
-    lastPublished: "2025-11-20T14:00:00Z",
-    contentEn: `<h1>Terms & Conditions</h1>
-<p><em>Effective: November 20, 2025</em></p>
-<p>By using the Playzoon platform, you agree to these Terms & Conditions. Please read them carefully before accessing our services.</p>
-<h2>1. Registration</h2>
-<p>Users must provide accurate personal information during registration. You are responsible for maintaining the confidentiality of your account credentials.</p>
-<h2>2. Booking Policy</h2>
-<p>All bookings made through the platform are subject to the provider's availability and cancellation terms. Playzoon acts as an intermediary between users and facility providers.</p>
-<h2>3. Payment Terms</h2>
-<p>Payments are processed securely through our payment gateway. All prices are displayed in <b>SAR (Saudi Riyal)</b> unless otherwise stated.</p>
-<ul>
-<li>Credit and debit cards are accepted</li>
-<li>Wallet balance can be used for payments</li>
-<li>Refunds follow provider-specific policies</li>
-</ul>`,
-    contentAr: `<h1>الشروط والأحكام</h1>
-<p><em>ساري المفعول: 20 نوفمبر 2025</em></p>
-<p>باستخدام منصة بلايزون، فإنك توافق على هذه الشروط والأحكام. يرجى قراءتها بعناية قبل الوصول إلى خدماتنا.</p>
-<h2>1. التسجيل</h2>
-<p>يجب على المستخدمين تقديم معلومات شخصية دقيقة أثناء التسجيل.</p>`,
-    versions: [
-      {
-        id: "v3",
-        versionNumber: 3,
-        timestamp: "2025-11-20T14:00:00Z",
-        status: "published",
-        contentEn: "<h1>Terms & Conditions</h1><p>Current version content.</p>",
-        contentAr: "<h1>الشروط والأحكام</h1><p>محتوى النسخة الحالية.</p>",
-        author: "Ahmed Al-Rashid",
-        charCount: 1245,
-      },
-      {
-        id: "v2",
-        versionNumber: 2,
-        timestamp: "2025-10-15T09:30:00Z",
-        status: "published",
-        contentEn:
-          "<h1>Terms & Conditions</h1><p>Updated booking policy section.</p>",
-        contentAr: "<h1>الشروط والأحكام</h1><p>تم تحديث قسم سياسة الحجز.</p>",
-        author: "Fatima Hassan",
-        charCount: 980,
-      },
-      {
-        id: "v1",
-        versionNumber: 1,
-        timestamp: "2025-06-01T10:00:00Z",
-        status: "published",
-        contentEn: "<h1>Terms & Conditions</h1><p>Initial version.</p>",
-        contentAr: "<h1>الشروط والأحكام</h1><p>النسخة الأولى.</p>",
-        author: "Admin",
-        charCount: 450,
-      },
-    ],
-    hasPendingTranslation: false,
-  },
-  privacy: {
-    id: "privacy",
-    title: "Privacy Policy",
-    status: "published",
-    lastUpdated: "2025-12-01T08:00:00Z",
-    lastUpdatedBy: "Fatima Hassan",
-    lastPublished: "2025-12-01T08:00:00Z",
-    contentEn: `<h1>Privacy Policy</h1>
-<p>At Playzoon, we take your privacy seriously. This policy explains how we collect, use, and protect your personal information.</p>
-<h2>1. Information We Collect</h2>
-<p>We collect information you provide directly, such as name, email, phone number, and payment details.</p>
-<h2>2. How We Use Your Information</h2>
-<p>Your information is used to facilitate bookings, process payments, and improve our services.</p>
-<h2>3. Data Protection</h2>
-<p>We implement industry-standard security measures to protect your data. Your information is encrypted in transit and at rest.</p>`,
-    contentAr: `<h1>سياسة الخصوصية</h1>
-<p>في بلايزون، نأخذ خصوصيتك على محمل الجد. توضح هذه السياسة كيفية جمع معلوماتك الشخصية واستخدامها وحمايتها.</p>`,
-    versions: [
-      {
-        id: "pv1",
-        versionNumber: 1,
-        timestamp: "2025-12-01T08:00:00Z",
-        status: "published",
-        contentEn: "<h1>Privacy Policy</h1><p>Initial published version.</p>",
-        contentAr: "<h1>سياسة الخصوصية</h1><p>النسخة الأولى.</p>",
-        author: "Fatima Hassan",
-        charCount: 890,
-      },
-    ],
-  },
-  about: {
-    id: "about",
-    title: "About Us",
-    status: "published",
-    lastUpdated: "2026-01-15T10:30:00Z",
-    lastUpdatedBy: "Ahmed Al-Rashid",
-    lastPublished: "2026-01-15T10:30:00Z",
-    contentEn: `<h1>About Playzoon</h1>
-<p>Playzoon is the region's leading sports booking platform, connecting players with top-tier sports facilities, coaches, and training programs.</p>
-<h2>Our Mission</h2>
-<p>To make sports accessible and easy to book for everyone in the region.</p>
-<h2>Our Story</h2>
-<p>Founded in 2024, Playzoon has grown to serve thousands of players and hundreds of providers across the Kingdom of Saudi Arabia and beyond.</p>
-<h2>Our Values</h2>
-<ul>
-<li><b>Accessibility:</b> Making sports available to everyone</li>
-<li><b>Quality:</b> Partnering with the best facilities</li>
-<li><b>Innovation:</b> Using technology to enhance sports experiences</li>
-</ul>`,
-    contentAr: `<h1>عن بلايزون</h1>
-<p>بلايزون هي المنصة الرائدة لحجز الرياضات في المنطقة، تربط اللاعبين بأفضل المنشآت الرياضية والمدربين وبرامج التدريب.</p>`,
-    versions: [],
-  },
-  help: {
-    id: "help",
-    title: "Help Center",
-    status: "draft",
-    lastUpdated: "2026-02-10T09:00:00Z",
-    lastUpdatedBy: "Sara Mohammed",
-    lastPublished: null,
-    contentEn: `<h1>Help Center</h1>
-<p>Welcome to the Playzoon Help Center. Find answers to common questions and learn how to make the most of our platform.</p>
-<h2>Getting Started</h2>
-<p>Download the Playzoon app from the App Store or Google Play. Create an account using your email or phone number.</p>
-<h2>Contact Support</h2>
-<p>Need help? Reach out to our support team:</p>
-<ul>
-<li>Email: support@playzoon.com</li>
-<li>Phone: +966 XX XXX XXXX</li>
-<li>In-app chat: Available 9 AM - 9 PM</li>
-</ul>`,
-    contentAr: `<h1>مركز المساعدة</h1>
-<p>مرحباً بك في مركز مساعدة بلايزون. اعثر على إجابات للأسئلة الشائعة.</p>`,
-    versions: [],
-  },
-};
-
-const INITIAL_SOCIAL_LINKS: SocialMediaLinks = {
-  facebook: "https://facebook.com/playzoon",
-  twitter: "https://x.com/playzoon",
-  instagram: "https://instagram.com/playzoon",
-  linkedin: "https://linkedin.com/company/playzoon",
-  youtube: "https://youtube.com/@playzoon",
-  tiktok: "https://tiktok.com/@playzoon",
+type ApiEnvelope = {
+  data?: unknown;
+  pages?: unknown[];
+  versions?: unknown[];
+  [key: string]: unknown;
 };
 
 // ─── Helpers ────────────────────────────────────────────────
@@ -259,12 +114,96 @@ function stripHtml(html: string) {
   return div.textContent || "";
 }
 
+/** Map an API page_type string → our local tab key */
+function resolveTabKey(raw: string): string {
+  const v = raw.toLowerCase();
+  if (v.includes("term")) return "terms";
+  if (v.includes("priv")) return "privacy";
+  if (v.includes("about")) return "about";
+  if (v.includes("help")) return "help";
+  return v;
+}
+
+/** Normalise a raw API page object into our StaticPage shape */
+function normaliseApiPage(p: Record<string, unknown>): StaticPage {
+  const rawStatus = String(p.status ?? "inactive").toLowerCase();
+  return {
+    id: String(p.id ?? ""),
+    title: String(p.title_en ?? p.title ?? ""),
+    status: (rawStatus === "active" ? "active" : "inactive"),
+    lastUpdated: String(p.updated_at ?? p.last_updated_at ?? new Date().toISOString()),
+    lastUpdatedBy: String(p.updated_by ?? p.last_updated_by ?? "Admin"),
+    lastPublished: p.published_at ? String(p.published_at) : null,
+    contentEn: String(p.content_en ?? ""),
+    contentAr: String(p.content_ar ?? ""),
+    versions: [],
+  };
+}
+
+/** Normalise a raw API version object into our PageVersion shape */
+function normaliseApiVersion(v: Record<string, unknown>): PageVersion {
+  return {
+    id: String(v.id ?? ""),
+    versionNumber: Number(v.version_number ?? v.versionNumber ?? 0),
+    timestamp: String(v.created_at ?? v.timestamp ?? new Date().toISOString()),
+    status: (String(v.status ?? "draft") as PageVersion["status"]),
+    contentEn: String(v.content_en ?? ""),
+    contentAr: String(v.content_ar ?? ""),
+    author: String(v.created_by ?? v.author ?? "Admin"),
+    charCount: Number(v.char_count ?? v.charCount ?? 0),
+  };
+}
+
+function extractList(payload: unknown, keys: string[]): Record<string, unknown>[] {
+  if (Array.isArray(payload)) {
+    return payload.filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+  }
+  if (!payload || typeof payload !== "object") return [];
+  const obj = payload as ApiEnvelope;
+
+  for (const key of keys) {
+    const direct = obj[key];
+    if (Array.isArray(direct)) {
+      return direct.filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+    }
+  }
+  if (Array.isArray(obj.data)) {
+    return obj.data.filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+  }
+  if (obj.data && typeof obj.data === "object") {
+    const nested = obj.data as ApiEnvelope;
+    for (const key of keys) {
+      const nestedValue = nested[key];
+      if (Array.isArray(nestedValue)) {
+        return nestedValue.filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+      }
+    }
+    if (Array.isArray(nested.data)) {
+      return nested.data.filter((item): item is Record<string, unknown> => !!item && typeof item === "object");
+    }
+  }
+  return [];
+}
+
+function extractObject(payload: unknown): Record<string, unknown> {
+  if (!payload || typeof payload !== "object") return {};
+  const obj = payload as ApiEnvelope;
+  if (obj.data && typeof obj.data === "object" && !Array.isArray(obj.data)) {
+    const nested = obj.data as ApiEnvelope;
+    if (nested.data && typeof nested.data === "object" && !Array.isArray(nested.data)) {
+      return nested.data as Record<string, unknown>;
+    }
+    return nested as Record<string, unknown>;
+  }
+  return obj as Record<string, unknown>;
+}
+
 const PAGE_TABS: { id: PageTab; label: string; icon: React.ElementType }[] = [
-  { id: "terms", label: "Terms & Conditions", icon: FileText },
-  { id: "privacy", label: "Privacy Policy", icon: Shield },
-  { id: "about", label: "About Us", icon: Info },
-  { id: "help", label: "Help Center", icon: HelpCircle },
-  { id: "social", label: "Social Media", icon: Share2 },
+  { id: "terms",   label: "Terms & Conditions", icon: FileText },
+  { id: "privacy", label: "Privacy Policy",      icon: Shield   },
+  { id: "about",   label: "About Us",            icon: Info     },
+  { id: "help",    label: "Help Center",         icon: HelpCircle },
+  { id: "social",  label: "Social Media",        icon: Share2   },
 ];
 
 // ─── Rich Text Toolbar Button ───────────────────────────────
@@ -304,10 +243,16 @@ function RteBtn({
 // ─── Social Media Form ──────────────────────────────────────
 
 function SocialMediaForm() {
-  const [links, setLinks] = useState<SocialMediaLinks>(INITIAL_SOCIAL_LINKS);
-  const [errors, setErrors] = useState<
-    Partial<Record<keyof SocialMediaLinks, string>>
-  >({});
+  const [links, setLinks] = useState<SocialMediaLinks>({
+    facebook: "",
+    twitter: "",
+    instagram: "",
+    linkedin: "",
+    youtube: "",
+    tiktok: "",
+  });
+  const [errors, setErrors] = useState<Partial<Record<keyof SocialMediaLinks, string>>>({});
+  const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
 
   const socialFields: {
@@ -316,84 +261,82 @@ function SocialMediaForm() {
     icon: React.ElementType;
     placeholder: string;
   }[] = [
-    {
-      key: "facebook",
-      label: "Facebook URL",
-      icon: Facebook,
-      placeholder: "https://facebook.com/...",
-    },
-    {
-      key: "twitter",
-      label: "Twitter / X URL",
-      icon: Twitter,
-      placeholder: "https://x.com/...",
-    },
-    {
-      key: "instagram",
-      label: "Instagram URL",
-      icon: Instagram,
-      placeholder: "https://instagram.com/...",
-    },
-    {
-      key: "linkedin",
-      label: "LinkedIn URL",
-      icon: Linkedin,
-      placeholder: "https://linkedin.com/...",
-    },
-    {
-      key: "youtube",
-      label: "YouTube URL",
-      icon: Youtube,
-      placeholder: "https://youtube.com/...",
-    },
-    {
-      key: "tiktok",
-      label: "TikTok URL",
-      icon: ExternalLink,
-      placeholder: "https://tiktok.com/...",
-    },
+    { key: "facebook",  label: "Facebook URL",  icon: Facebook,    placeholder: "https://facebook.com/..."  },
+    { key: "twitter",   label: "Twitter / X URL",icon: Twitter,     placeholder: "https://x.com/..."         },
+    { key: "instagram", label: "Instagram URL",  icon: Instagram,   placeholder: "https://instagram.com/..." },
+    { key: "linkedin",  label: "LinkedIn URL",   icon: Linkedin,    placeholder: "https://linkedin.com/..."  },
+    { key: "youtube",   label: "YouTube URL",    icon: Youtube,     placeholder: "https://youtube.com/..."   },
+    { key: "tiktok",    label: "TikTok URL",     icon: ExternalLink,placeholder: "https://tiktok.com/..."    },
   ];
+
+  // Load links from API
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await adminService.getSocialLinks();
+        const data = extractObject(res);
+        setLinks({
+          facebook:  String(data.facebook  ?? ""),
+          twitter:   String(data.twitter   ?? ""),
+          instagram: String(data.instagram ?? ""),
+          linkedin:  String(data.linkedin  ?? ""),
+          youtube:   String(data.youtube   ?? ""),
+          tiktok:    String(data.tiktok    ?? ""),
+        });
+      } catch {
+        toast.error("Failed to load social media links.");
+      } finally {
+        setLoading(false);
+      }
+    })();
+  }, []);
 
   const validateUrl = (url: string): string | null => {
     if (!url.trim()) return null;
-    if (!url.startsWith("https://"))
-      return "Please enter a valid URL (starting with https://).";
+    if (!url.startsWith("https://")) return "URL must start with https://";
     if (url.length > 500) return "URL cannot exceed 500 characters.";
     return null;
   };
 
-  const handleSave = () => {
+  const handleSave = async () => {
     const newErrors: Partial<Record<keyof SocialMediaLinks, string>> = {};
     let hasError = false;
     for (const field of socialFields) {
       const err = validateUrl(links[field.key]);
-      if (err) {
-        newErrors[field.key] = err;
-        hasError = true;
-      }
+      if (err) { newErrors[field.key] = err; hasError = true; }
     }
     setErrors(newErrors);
     if (hasError) return;
 
     setSaving(true);
-    setTimeout(() => {
-      setSaving(false);
+    try {
+      await adminService.updateSocialLinks({ ...links });
       toast.success("Social media links updated successfully.");
-    }, 600);
+    } catch {
+      toast.error("Failed to save social media links.");
+    } finally {
+      setSaving(false);
+    }
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center py-20">
+        <Loader2 className="h-6 w-6 animate-spin text-[#003B95]" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen">
       <div className="bg-white border rounded-lg p-6 space-y-5">
         <div>
-          <h3 className="text-sm font-semibold text-[#111827]">
-            Social Media Links
-          </h3>
+          <h3 className="text-sm font-semibold text-[#111827]">Social Media Links</h3>
           <p className="text-xs text-[#6B7280] mt-1">
-            Manage your platform's social media presence. These links appear in
-            the app footer and about pages.
+            Manage your platform's social media presence. These links appear in the app footer and about pages.
           </p>
         </div>
+
         <div className="space-y-4">
           {socialFields.map((field) => {
             const Icon = field.icon;
@@ -410,11 +353,7 @@ function SocialMediaForm() {
                     setErrors({ ...errors, [field.key]: undefined });
                   }}
                   placeholder={field.placeholder}
-                  className={cn(
-                    "text-sm",
-                    errors[field.key] &&
-                      "border-red-400 focus-visible:ring-red-400",
-                  )}
+                  className={cn("text-sm", errors[field.key] && "border-red-400 focus-visible:ring-red-400")}
                 />
                 {errors[field.key] && (
                   <p className="text-xs text-red-500 flex items-center gap-1">
@@ -426,17 +365,10 @@ function SocialMediaForm() {
             );
           })}
         </div>
+
         <div className="pt-2">
-          <Button
-            onClick={handleSave}
-            disabled={saving}
-            className="bg-[#003B95] hover:bg-[#002a6b] gap-2"
-          >
-            {saving ? (
-              <div className="h-4 w-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            ) : (
-              <Save className="h-4 w-4" />
-            )}
+          <Button onClick={handleSave} disabled={saving} className="bg-[#003B95] hover:bg-[#002a6b] gap-2">
+            {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
             {saving ? "Saving..." : "Save Links"}
           </Button>
         </div>
@@ -445,79 +377,90 @@ function SocialMediaForm() {
   );
 }
 
-// ─── Component ──────────────────────────────────────────────
+// ─── Main Component ─────────────────────────────────────────
 
 export function StaticPagesTab() {
-  const [pages, setPages] = useState<Record<string, StaticPage>>(INITIAL_PAGES);
+  const [pages, setPages] = useState<Record<string, StaticPage>>({});
+  const [pagesLoading, setPagesLoading] = useState(true);
+  const [versionsLoading, setVersionsLoading] = useState(false);
   const [activePageTab, setActivePageTab] = useState<PageTab>("terms");
   const [lang, setLang] = useState<"en" | "ar">("en");
   const [publishConfirmOpen, setPublishConfirmOpen] = useState(false);
-  const [restoreConfirmOpen, setRestoreConfirmOpen] =
-    useState<PageVersion | null>(null);
+  const [restoreConfirmOpen, setRestoreConfirmOpen] = useState<PageVersion | null>(null);
   const [contentError, setContentError] = useState<string | null>(null);
   const [isVersionPreview, setIsVersionPreview] = useState(false);
-  const [previewVersion, setPreviewVersion] = useState<PageVersion | null>(
-    null,
-  );
+  const [previewVersion, setPreviewVersion] = useState<PageVersion | null>(null);
   const [hasChanges, setHasChanges] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isPublishing, setIsPublishing] = useState(false);
   const editorRef = useRef<HTMLDivElement>(null);
 
-  // ── Fetch CMS pages from API (override mock data when available) ──
+  const isContentPage = activePageTab !== "social";
+  const currentPage = pages[activePageTab] ?? null;
+
+  // ── Load all CMS pages from API ───────────────────────────
+
   useEffect(() => {
     (async () => {
+      setPagesLoading(true);
       try {
-        const { adminService } = await import("@/services/admin.service");
-        const res = await adminService.listCmsPages({});
-        const list = res?.pages || res?.data?.pages || [];
+        const res = await adminService.getPages();
+        const list = extractList(res, ["pages"]);
+
         if (Array.isArray(list) && list.length > 0) {
-          const apiPages: Record<string, StaticPage> = {};
-          list.forEach((p: Record<string, unknown>) => {
-            const pageType = String(p.page_type || p.id || "").toLowerCase();
-            const key = pageType.includes("term")
-              ? "terms"
-              : pageType.includes("priv")
-                ? "privacy"
-                : pageType.includes("about")
-                  ? "about"
-                  : pageType.includes("help")
-                    ? "help"
-                    : pageType;
-            apiPages[key] = {
-              id: String(p.id || key),
-              title: String(p.title_en || p.title || key),
-              status: String(p.status || "published") as StaticPage["status"],
-              lastUpdated: String(
-                p.last_updated_at || new Date().toISOString(),
-              ),
-              lastUpdatedBy: "Admin",
-              lastPublished: String(p.last_updated_at || null),
-              contentEn: String(p.content_en || ""),
-              contentAr: String(p.content_ar || ""),
-              versions: [],
-            };
+          const mapped: Record<string, StaticPage> = {};
+          list.forEach((p) => {
+            const raw = p as Record<string, unknown>;
+            const key = resolveTabKey(String(raw.page_type ?? raw.id ?? ""));
+            mapped[key] = normaliseApiPage(raw);
           });
-          // Merge: API pages override mock, keep mock for pages not in API
-          setPages((prev) => ({ ...prev, ...apiPages }));
+          setPages(mapped);
         }
-      } catch (err) {
-        console.error("CMS API fetch failed, using fallback data:", err);
+      } catch {
+        toast.error("Failed to load CMS pages.");
+      } finally {
+        setPagesLoading(false);
       }
     })();
   }, []);
 
-  const currentPage = pages[activePageTab] || null;
-  const isContentPage = activePageTab !== "social";
+  // ── Load versions whenever the active page changes ─────────
 
-  // ─── Sync editor content back to state ─────────────────
+  useEffect(() => {
+    if (!isContentPage || !currentPage?.id) return;
 
-  const syncEditorContent = useCallback(() => {
+    (async () => {
+      setVersionsLoading(true);
+      try {
+        const res = await adminService.getCmsVersions(currentPage.id);
+        const list = extractList(res, ["versions"]);
+
+        setPages((prev) => ({
+          ...prev,
+          [activePageTab]: {
+            ...prev[activePageTab],
+            versions: Array.isArray(list) ? list.map(normaliseApiVersion) : [],
+          },
+        }));
+      } catch {
+        // Silently fail — versions panel just stays empty
+      } finally {
+        setVersionsLoading(false);
+      }
+    })();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activePageTab, currentPage?.id]);
+
+  // ── Sync editor → state ────────────────────────────────────
+
+  const syncEditor = useCallback(() => {
     if (!editorRef.current || !currentPage || isVersionPreview) return;
     const html = editorRef.current.innerHTML;
-    setPages((curr) => {
-      const page = curr[activePageTab];
-      if (!page) return curr;
+    setPages((prev) => {
+      const page = prev[activePageTab];
+      if (!page) return prev;
       return {
-        ...curr,
+        ...prev,
         [activePageTab]: {
           ...page,
           contentEn: lang === "en" ? html : page.contentEn,
@@ -528,18 +471,15 @@ export function StaticPagesTab() {
     setHasChanges(true);
   }, [lang, activePageTab, currentPage, isVersionPreview]);
 
-  // ─── Update editor innerHTML when lang/page changes ────
+  // ── Populate editor when lang/page changes ─────────────────
 
   useEffect(() => {
     if (!editorRef.current || !currentPage || !isContentPage) return;
-    if (isVersionPreview && previewVersion) {
-      const content =
-        lang === "en" ? previewVersion.contentEn : previewVersion.contentAr;
-      editorRef.current.innerHTML = content;
-      return;
-    }
-    const content =
-      lang === "en" ? currentPage.contentEn : currentPage.contentAr;
+
+    const content = isVersionPreview && previewVersion
+      ? (lang === "en" ? previewVersion.contentEn : previewVersion.contentAr)
+      : (lang === "en" ? currentPage.contentEn : currentPage.contentAr);
+
     if (editorRef.current.innerHTML !== content) {
       editorRef.current.innerHTML = content;
     }
@@ -553,7 +493,7 @@ export function StaticPagesTab() {
     isContentPage,
   ]);
 
-  // ─── Exec command helper ───────────────────────────────
+  // ── RTE exec helper ────────────────────────────────────────
 
   const exec = (command: string, value?: string) => {
     if (isVersionPreview) return;
@@ -561,12 +501,11 @@ export function StaticPagesTab() {
     editorRef.current?.focus();
   };
 
-  // ─── Validate content ─────────────────────────────────
+  // ── Validate ───────────────────────────────────────────────
 
   const validateContent = (): boolean => {
-    syncEditorContent();
-    const html = editorRef.current?.innerHTML || "";
-    const text = stripHtml(html).trim();
+    syncEditor();
+    const text = stripHtml(editorRef.current?.innerHTML || "").trim();
     if (!text) {
       setContentError(
         lang === "en"
@@ -579,60 +518,37 @@ export function StaticPagesTab() {
     return true;
   };
 
-  // ─── Save Logic ────────────────────────────────────────
+  // ── Save Draft ─────────────────────────────────────────────
 
-  const saveVersion = (status: "published" | "draft") => {
-    if (!currentPage) return;
+  const handleSaveDraft = async () => {
+    if (!currentPage?.id) return;
+    syncEditor();
 
     const html = editorRef.current?.innerHTML || "";
-    const updatedContentEn = lang === "en" ? html : currentPage.contentEn;
-    const updatedContentAr = lang === "ar" ? html : currentPage.contentAr;
+    const contentEn = lang === "en" ? html : currentPage.contentEn;
+    const contentAr = lang === "ar" ? html : currentPage.contentAr;
 
-    const now = new Date().toISOString();
-    const maxVersion = Math.max(
-      0,
-      ...currentPage.versions.map((v) => v.versionNumber),
-    );
+    setIsSaving(true);
+    try {
+      await adminService.updateCmsPage(currentPage.id, {
+        content_en: contentEn,
+        content_ar: contentAr,
+        content_en_status: "draft",
+        content_ar_status: "draft",
+      });
 
-    const newVersion: PageVersion = {
-      id: `v${Date.now()}`,
-      versionNumber: maxVersion + 1,
-      timestamp: now,
-      status,
-      contentEn: updatedContentEn,
-      contentAr: updatedContentAr,
-      author: "Admin",
-      charCount:
-        stripHtml(updatedContentEn).length + stripHtml(updatedContentAr).length,
-    };
-
-    setPages((curr) => ({
-      ...curr,
-      [activePageTab]: {
-        ...currentPage,
-        contentEn: updatedContentEn,
-        contentAr: updatedContentAr,
-        status,
-        lastUpdated: now,
-        lastUpdatedBy: "Admin",
-        lastPublished: status === "published" ? now : currentPage.lastPublished,
-        versions: [newVersion, ...currentPage.versions].slice(0, 20),
-      },
-    }));
-
-    setHasChanges(false);
-
-    if (status === "published") {
-      setPublishConfirmOpen(false);
-      toast.success("Content published successfully.");
-    } else {
+      const now = new Date().toISOString();
+      setPages((prev) => ({
+        ...prev,
+        [activePageTab]: { ...prev[activePageTab], contentEn, contentAr, lastUpdated: now },
+      }));
+      setHasChanges(false);
       toast.success("Draft saved successfully.");
+    } catch {
+      toast.error("Failed to save draft.");
+    } finally {
+      setIsSaving(false);
     }
-  };
-
-  const handleSaveDraft = () => {
-    syncEditorContent();
-    saveVersion("draft");
   };
 
   const handlePublish = () => {
@@ -640,10 +556,51 @@ export function StaticPagesTab() {
     setPublishConfirmOpen(true);
   };
 
-  // ─── Version Preview / Restore ─────────────────────────
+  const confirmPublish = async () => {
+    if (!currentPage?.id) return;
+    syncEditor();
+
+    const html = editorRef.current?.innerHTML || "";
+    const contentEn = lang === "en" ? html : currentPage.contentEn;
+    const contentAr = lang === "ar" ? html : currentPage.contentAr;
+
+    setIsPublishing(true);
+    try {
+      // Backend route is PATCH /admin/cms/pages/:id (no /publish endpoint)
+      await adminService.updateCmsPage(currentPage.id, {
+        content_en: contentEn,
+        content_ar: contentAr,
+        status: "active",
+        content_en_status: "published",
+        content_ar_status: "published",
+      });
+
+      const now = new Date().toISOString();
+      setPages((prev) => ({
+        ...prev,
+        [activePageTab]: {
+          ...prev[activePageTab],
+          contentEn,
+          contentAr,
+          status: "active",
+          lastUpdated: now,
+          lastPublished: now,
+        },
+      }));
+      setHasChanges(false);
+      setPublishConfirmOpen(false);
+      toast.success("Content published successfully.");
+    } catch {
+      toast.error("Failed to publish content.");
+    } finally {
+      setIsPublishing(false);
+    }
+  };
+
+  // ── Version Preview / Restore ──────────────────────────────
 
   const handleVersionPreview = (version: PageVersion) => {
-    syncEditorContent();
+    syncEditor();
     setIsVersionPreview(true);
     setPreviewVersion(version);
   };
@@ -653,80 +610,50 @@ export function StaticPagesTab() {
     setPreviewVersion(null);
   };
 
-  const handleRestore = (version: PageVersion) => {
-    if (!currentPage) return;
-    setPages((curr) => ({
-      ...curr,
-      [activePageTab]: {
-        ...currentPage,
-        contentEn: version.contentEn,
-        contentAr: version.contentAr,
-      },
-    }));
-    setIsVersionPreview(false);
-    setPreviewVersion(null);
-    setRestoreConfirmOpen(null);
-    setHasChanges(true);
-    toast.success("Version restored as draft. Review and publish when ready.");
+  const handleRestore = async (version: PageVersion) => {
+    if (!currentPage?.id || !version?.id) return;
+    try {
+      await adminService.restoreCmsVersion(currentPage.id, version.id);
+
+      setPages((prev) => ({
+        ...prev,
+        [activePageTab]: {
+          ...prev[activePageTab],
+          contentEn: version.contentEn,
+          contentAr: version.contentAr,
+        },
+      }));
+      setIsVersionPreview(false);
+      setPreviewVersion(null);
+      setRestoreConfirmOpen(null);
+      setHasChanges(true);
+      toast.success("Version restored as draft. Review and publish when ready.");
+    } catch {
+      toast.error("Failed to restore version.");
+    }
   };
 
-  // ─── Auto-Translate (T&C only, mock) ─────────────────
-
-  const handleAutoTranslate = () => {
-    if (activePageTab !== "terms" || !currentPage) return;
-    toast.success(
-      "Translation auto-generated. Pending admin review before publishing.",
-    );
-    setPages((curr) => ({
-      ...curr,
-      terms: {
-        ...curr.terms,
-        hasPendingTranslation: true,
-        pendingTranslationContent:
-          "<h1>الشروط والأحكام (ترجمة آلية)</h1><p>تم إنشاء هذه الترجمة تلقائياً بواسطة Google Translate. يرجى المراجعة قبل النشر.</p>",
-      },
-    }));
-  };
-
-  const handleApproveTranslation = () => {
-    if (!currentPage) return;
-    setPages((curr) => ({
-      ...curr,
-      terms: {
-        ...curr.terms,
-        contentAr: curr.terms.pendingTranslationContent || curr.terms.contentAr,
-        hasPendingTranslation: false,
-        pendingTranslationContent: undefined,
-      },
-    }));
-    toast.success("Translation approved and published.");
-  };
-
-  const handleRejectTranslation = () => {
-    setPages((curr) => ({
-      ...curr,
-      terms: {
-        ...curr.terms,
-        hasPendingTranslation: false,
-        pendingTranslationContent: undefined,
-      },
-    }));
-    toast.success("Pending translation discarded.");
-  };
-
-  // ─── Page tab switch ──────────────────────────────────
+  // ── Tab switch ─────────────────────────────────────────────
 
   const switchPageTab = (tab: PageTab) => {
-    if (isVersionPreview) {
-      handleBackToCurrent();
-    }
+    if (isVersionPreview) handleBackToCurrent();
     setActivePageTab(tab);
     setLang("en");
     setContentError(null);
     setHasChanges(false);
   };
 
-  // ─── Render ───────────────────────────────────────────
+  // ── Loading screen ─────────────────────────────────────────
+
+  if (pagesLoading) {
+    return (
+      <div className="flex items-center justify-center py-24">
+        <Loader2 className="h-8 w-8 animate-spin text-[#003B95]" />
+      </div>
+    );
+  }
+
+  // ─── Render ────────────────────────────────────────────────
 
   return (
     <div className="space-y-0">
@@ -765,487 +692,308 @@ export function StaticPagesTab() {
       )}
 
       {/* Content Pages */}
-      {isContentPage && currentPage && (
+      {isContentPage && (
         <div className="bg-white border border-t-0 rounded-b-lg">
-          {/* Page Header Row */}
-          <div className="flex items-center justify-between px-6 py-4 border-b">
-            <div className="flex items-center gap-3">
-              <h2 className="text-lg font-semibold text-[#111827]">
-                {currentPage.title}
-              </h2>
-              <Badge
-                variant="secondary"
-                className={cn(
-                  "text-xs gap-1",
-                  currentPage.status === "published"
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "bg-amber-50 text-amber-700 border-amber-200",
-                )}
-              >
-                {currentPage.status === "published" ? (
-                  <>
-                    <CheckCircle2 className="h-3 w-3" />
-                    Published
-                  </>
-                ) : (
-                  <>
-                    <Pencil className="h-3 w-3" />
-                    Draft
-                  </>
-                )}
-              </Badge>
+          {!currentPage ? (
+            <div className="flex flex-col items-center justify-center py-20 text-[#6B7280]">
+              <AlertCircle className="h-8 w-8 mb-3 opacity-40" />
+              <p className="text-sm">No content found for this page.</p>
             </div>
-            <div className="flex items-center gap-3">
-              <span className="text-xs text-[#6B7280] flex items-center gap-1.5">
-                <Clock className="h-3 w-3" />
-                Last updated by {currentPage.lastUpdatedBy} on{" "}
-                {formatDate(currentPage.lastUpdated)}
-              </span>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={handleSaveDraft}
-                disabled={isVersionPreview}
-                className="gap-1.5 h-8"
-              >
-                <Save className="h-3.5 w-3.5" />
-                Save Draft
-              </Button>
-              <Button
-                size="sm"
-                onClick={handlePublish}
-                disabled={isVersionPreview}
-                className="bg-[#003B95] hover:bg-[#002a6b] h-8 gap-1.5"
-              >
-                <CheckCircle2 className="h-3.5 w-3.5" />
-                Publish
-              </Button>
-            </div>
-          </div>
-
-          <div className="flex">
-            {/* Editor Area */}
-            <div className="flex-1 min-w-0">
-              {/* Language Tab Bar */}
-              <div className="flex items-center justify-between px-6 py-3 border-b bg-gray-50/50">
-                <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
-                  <button
-                    onClick={() => {
-                      syncEditorContent();
-                      setLang("en");
-                    }}
-                    role="tab"
-                    aria-selected={lang === "en"}
+          ) : (
+            <>
+              {/* Page Header Row */}
+              <div className="flex items-center justify-between px-6 py-4 border-b">
+                <div className="flex items-center gap-3">
+                  <h2 className="text-lg font-semibold text-[#111827]">{currentPage.title}</h2>
+                  <Badge
+                    variant="secondary"
                     className={cn(
-                      "px-3 py-1.5 rounded-md text-xs transition-all flex items-center gap-1.5",
-                      lang === "en"
-                        ? "bg-white text-[#003B95] shadow-sm font-medium"
-                        : "text-[#6B7280] hover:text-[#111827]",
+                      "text-xs gap-1",
+                      currentPage.status === "active"
+                        ? "bg-emerald-50 text-emerald-700 border-emerald-200"
+                        : "bg-amber-50 text-amber-700 border-amber-200",
                     )}
                   >
-                    <Globe className="h-3 w-3" />
-                    English (EN)
-                  </button>
-                  <button
-                    onClick={() => {
-                      syncEditorContent();
-                      setLang("ar");
-                    }}
-                    role="tab"
-                    aria-selected={lang === "ar"}
-                    className={cn(
-                      "px-3 py-1.5 rounded-md text-xs transition-all flex items-center gap-1.5",
-                      lang === "ar"
-                        ? "bg-white text-[#003B95] shadow-sm font-medium"
-                        : "text-[#6B7280] hover:text-[#111827]",
+                    {currentPage.status === "active" ? (
+                      <><CheckCircle2 className="h-3 w-3" />Published</>
+                    ) : (
+                      <><Pencil className="h-3 w-3" />Draft</>
                     )}
-                  >
-                    <Globe className="h-3 w-3" />
-                    Arabic (AR)
-                    {activePageTab === "terms" &&
-                      pages.terms?.hasPendingTranslation && (
-                        <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[9px] px-1.5 h-4">
-                          Pending Review
-                        </Badge>
-                      )}
-                  </button>
+                  </Badge>
                 </div>
-                <div className="flex items-center gap-2">
-                  {activePageTab === "terms" && (
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleAutoTranslate}
-                      disabled={isVersionPreview}
-                      className="gap-1.5 h-7 text-xs"
-                    >
-                      <Languages className="h-3.5 w-3.5" />
-                      Auto-Translate
-                    </Button>
-                  )}
-                </div>
-              </div>
 
-              {/* Version Preview Banner */}
-              {isVersionPreview && previewVersion && (
-                <div className="px-6 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
-                  <span className="text-xs text-blue-700 font-medium">
-                    Previewing version v{previewVersion.versionNumber} from{" "}
-                    {formatDate(previewVersion.timestamp)} by{" "}
-                    {previewVersion.author}
+                <div className="flex items-center gap-3">
+                  <span className="text-xs text-[#6B7280] flex items-center gap-1.5">
+                    <Clock className="h-3 w-3" />
+                    Last updated by {currentPage.lastUpdatedBy} on {formatDate(currentPage.lastUpdated)}
                   </span>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handleBackToCurrent}
-                      className="h-7 text-xs"
-                    >
-                      Back to Current
-                    </Button>
-                    <Button
-                      size="sm"
-                      onClick={() => setRestoreConfirmOpen(previewVersion)}
-                      className="h-7 text-xs bg-[#003B95] hover:bg-[#002a6b]"
-                    >
-                      <RotateCcw className="h-3 w-3 mr-1" />
-                      Restore This Version
-                    </Button>
-                  </div>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={handleSaveDraft}
+                    disabled={isVersionPreview || isSaving}
+                    className="gap-1.5 h-8"
+                  >
+                    {isSaving ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Save className="h-3.5 w-3.5" />}
+                    {isSaving ? "Saving..." : "Save Draft"}
+                  </Button>
+                  <Button
+                    size="sm"
+                    onClick={handlePublish}
+                    disabled={isVersionPreview || isPublishing}
+                    className="bg-[#003B95] hover:bg-[#002a6b] h-8 gap-1.5"
+                  >
+                    {isPublishing ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <CheckCircle2 className="h-3.5 w-3.5" />}
+                    Publish
+                  </Button>
                 </div>
-              )}
-
-              {/* Rich Text Editor */}
-              <div
-                className={cn(
-                  "border-b",
-                  contentError && "ring-1 ring-red-400",
-                )}
-              >
-                {/* Toolbar */}
-                <div className="flex items-center gap-0.5 px-4 py-1.5 bg-gray-50 border-b flex-wrap">
-                  <RteBtn
-                    icon={Undo}
-                    label="Undo"
-                    onClick={() => exec("undo")}
-                    disabled={isVersionPreview}
-                  />
-                  <RteBtn
-                    icon={Redo}
-                    label="Redo"
-                    onClick={() => exec("redo")}
-                    disabled={isVersionPreview}
-                  />
-                  <span className="w-px h-5 bg-gray-200 mx-1" />
-                  <RteBtn
-                    icon={Heading1}
-                    label="Heading 1"
-                    onClick={() => exec("formatBlock", "h1")}
-                    disabled={isVersionPreview}
-                  />
-                  <RteBtn
-                    icon={Heading2}
-                    label="Heading 2"
-                    onClick={() => exec("formatBlock", "h2")}
-                    disabled={isVersionPreview}
-                  />
-                  <span className="w-px h-5 bg-gray-200 mx-1" />
-                  <RteBtn
-                    icon={Bold}
-                    label="Bold"
-                    onClick={() => exec("bold")}
-                    disabled={isVersionPreview}
-                  />
-                  <RteBtn
-                    icon={Italic}
-                    label="Italic"
-                    onClick={() => exec("italic")}
-                    disabled={isVersionPreview}
-                  />
-                  <RteBtn
-                    icon={Underline}
-                    label="Underline"
-                    onClick={() => exec("underline")}
-                    disabled={isVersionPreview}
-                  />
-                  <span className="w-px h-5 bg-gray-200 mx-1" />
-                  <RteBtn
-                    icon={List}
-                    label="Bullet List"
-                    onClick={() => exec("insertUnorderedList")}
-                    disabled={isVersionPreview}
-                  />
-                  <RteBtn
-                    icon={ListOrdered}
-                    label="Numbered List"
-                    onClick={() => exec("insertOrderedList")}
-                    disabled={isVersionPreview}
-                  />
-                  <span className="w-px h-5 bg-gray-200 mx-1" />
-                  <RteBtn
-                    icon={Indent}
-                    label="Indent"
-                    onClick={() => exec("indent")}
-                    disabled={isVersionPreview}
-                  />
-                  <RteBtn
-                    icon={Outdent}
-                    label="Outdent"
-                    onClick={() => exec("outdent")}
-                    disabled={isVersionPreview}
-                  />
-                  <span className="w-px h-5 bg-gray-200 mx-1" />
-                  <RteBtn
-                    icon={AlignLeft}
-                    label="Align Left"
-                    onClick={() => exec("justifyLeft")}
-                    disabled={isVersionPreview}
-                  />
-                  <RteBtn
-                    icon={AlignCenter}
-                    label="Align Center"
-                    onClick={() => exec("justifyCenter")}
-                    disabled={isVersionPreview}
-                  />
-                  <RteBtn
-                    icon={AlignRight}
-                    label="Align Right"
-                    onClick={() => exec("justifyRight")}
-                    disabled={isVersionPreview}
-                  />
-                </div>
-
-                {/* Editable Area */}
-                <div
-                  ref={editorRef}
-                  contentEditable={!isVersionPreview}
-                  suppressContentEditableWarning
-                  dir={lang === "ar" ? "rtl" : "ltr"}
-                  role="textbox"
-                  aria-multiline="true"
-                  aria-label={`${currentPage.title} content in ${lang === "en" ? "English" : "Arabic"}`}
-                  className={cn(
-                    "min-h-[400px] p-5 outline-none prose prose-sm max-w-none",
-                    "focus:ring-0",
-                    "[&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3 [&_h1]:mt-4",
-                    "[&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:mt-3",
-                    "[&_p]:mb-2 [&_p]:leading-relaxed",
-                    "[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-3",
-                    "[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-3",
-                    "[&_li]:mb-1",
-                    "[&_a]:text-[#003B95] [&_a]:underline",
-                    "[&_strong]:font-semibold",
-                    "[&_em]:italic",
-                    lang === "ar" && "text-right font-[system-ui]",
-                    isVersionPreview && "bg-gray-50 cursor-default",
-                  )}
-                  onInput={() => setHasChanges(true)}
-                  onBlur={syncEditorContent}
-                />
               </div>
-              {contentError && (
-                <div className="px-6 py-2">
-                  <p className="text-xs text-red-500 flex items-center gap-1">
-                    <AlertCircle className="h-3 w-3" />
-                    {contentError}
-                  </p>
-                </div>
-              )}
 
-              {/* Translation Review Section (T&C only) */}
-              {activePageTab === "terms" &&
-                pages.terms?.hasPendingTranslation && (
-                  <div className="px-6 py-4 bg-amber-50/50 border-t border-amber-200">
-                    <div className="flex items-center justify-between mb-3">
-                      <div className="flex items-center gap-2">
-                        <Languages className="h-4 w-4 text-amber-600" />
-                        <h3 className="text-sm font-medium text-amber-800">
-                          Pending Translation Review
-                        </h3>
-                      </div>
-                      <Badge className="bg-amber-100 text-amber-700 border-amber-200 text-[10px]">
-                        Auto-translated
-                      </Badge>
-                    </div>
-                    <div
-                      className="border border-amber-200 rounded-lg bg-white p-4 prose prose-sm max-w-none mb-3 text-sm text-gray-700"
-                      dir="rtl"
-                      dangerouslySetInnerHTML={{
-                        __html: pages.terms.pendingTranslationContent || "",
-                      }}
-                    />
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        onClick={handleApproveTranslation}
-                        className="bg-[#003B95] hover:bg-[#002a6b] h-8 gap-1.5 text-xs"
-                      >
-                        <CheckCircle2 className="h-3 w-3" />
-                        Approve & Publish Translation
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => {
-                          setLang("ar");
-                          if (pages.terms.pendingTranslationContent) {
-                            setPages((curr) => ({
-                              ...curr,
-                              terms: {
-                                ...curr.terms,
-                                contentAr:
-                                  curr.terms.pendingTranslationContent ||
-                                  curr.terms.contentAr,
-                                hasPendingTranslation: false,
-                                pendingTranslationContent: undefined,
-                              },
-                            }));
-                          }
-                          toast.success(
-                            "Content loaded into editor for manual editing.",
-                          );
-                        }}
-                        className="h-8 gap-1.5 text-xs"
-                      >
-                        <Pencil className="h-3 w-3" />
-                        Edit Before Publishing
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={handleRejectTranslation}
-                        className="h-8 gap-1.5 text-xs text-red-600 hover:text-red-700 hover:bg-red-50"
-                      >
-                        Reject Translation
-                      </Button>
-                    </div>
-                  </div>
-                )}
-            </div>
-
-            {/* Version History Panel */}
-            <div className="w-[280px] border-l bg-gray-50/50 shrink-0">
-              <div className="p-4 border-b">
-                <h3 className="text-sm font-semibold text-[#111827] flex items-center gap-2">
-                  <History className="h-4 w-4" />
-                  Version History
-                </h3>
-              </div>
-              <ScrollArea className="h-[calc(100%-52px)]">
-                <div className="p-3 space-y-2">
-                  {currentPage.versions.length === 0 ? (
-                    <p className="text-xs text-[#6B7280] text-center py-8">
-                      No published versions yet.
-                    </p>
-                  ) : (
-                    currentPage.versions.map((version) => (
-                      <div
-                        key={version.id}
-                        onClick={() => handleVersionPreview(version)}
+              <div className="flex">
+                {/* Editor Area */}
+                <div className="flex-1 min-w-0">
+                  {/* Language Tab Bar */}
+                  <div className="flex items-center justify-between px-6 py-3 border-b bg-gray-50/50">
+                    <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-0.5">
+                      <button
+                        onClick={() => { syncEditor(); setLang("en"); }}
+                        role="tab"
+                        aria-selected={lang === "en"}
                         className={cn(
-                          "border rounded-lg p-3 space-y-2 cursor-pointer transition-colors",
-                          isVersionPreview && previewVersion?.id === version.id
-                            ? "border-[#003B95] bg-blue-50/50"
-                            : "border-gray-200 bg-white hover:border-gray-300",
+                          "px-3 py-1.5 rounded-md text-xs transition-all flex items-center gap-1.5",
+                          lang === "en"
+                            ? "bg-white text-[#003B95] shadow-sm font-medium"
+                            : "text-[#6B7280] hover:text-[#111827]",
                         )}
                       >
-                        <div className="flex items-center justify-between">
-                          <Badge
-                            variant="outline"
-                            className="text-[10px] h-5 font-mono"
-                          >
-                            v{version.versionNumber}
-                          </Badge>
-                          <Badge
-                            variant="secondary"
-                            className={cn(
-                              "text-[9px] h-4",
-                              version.status === "published"
-                                ? "bg-emerald-50 text-emerald-700"
-                                : "bg-amber-50 text-amber-700",
-                            )}
-                          >
-                            {version.status}
-                          </Badge>
-                        </div>
-                        <div className="text-xs text-[#6B7280]">
-                          {formatDate(version.timestamp)}
-                        </div>
-                        <div className="flex items-center justify-between">
-                          <span className="text-[10px] text-[#6B7280]">
-                            by {version.author}
-                          </span>
-                          <span className="text-[10px] text-[#6B7280]">
-                            {version.charCount.toLocaleString()} chars
-                          </span>
-                        </div>
+                        <Globe className="h-3 w-3" />
+                        English (EN)
+                      </button>
+                      <button
+                        onClick={() => { syncEditor(); setLang("ar"); }}
+                        role="tab"
+                        aria-selected={lang === "ar"}
+                        className={cn(
+                          "px-3 py-1.5 rounded-md text-xs transition-all flex items-center gap-1.5",
+                          lang === "ar"
+                            ? "bg-white text-[#003B95] shadow-sm font-medium"
+                            : "text-[#6B7280] hover:text-[#111827]",
+                        )}
+                      >
+                        <Globe className="h-3 w-3" />
+                        Arabic (AR)
+                      </button>
+                    </div>
+                    {hasChanges && (
+                      <p className="text-xs text-amber-600 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        Unsaved changes
+                      </p>
+                    )}
+                  </div>
+
+                  {/* Version Preview Banner */}
+                  {isVersionPreview && previewVersion && (
+                    <div className="px-6 py-3 bg-blue-50 border-b border-blue-200 flex items-center justify-between">
+                      <span className="text-xs text-blue-700 font-medium">
+                        Previewing v{previewVersion.versionNumber} — {formatDate(previewVersion.timestamp)} by {previewVersion.author}
+                      </span>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={handleBackToCurrent} className="h-7 text-xs">
+                          Back to Current
+                        </Button>
                         <Button
-                          variant="secondary"
                           size="sm"
-                          className="w-full h-7 text-xs gap-1.5 mt-1"
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setRestoreConfirmOpen(version);
-                          }}
+                          onClick={() => setRestoreConfirmOpen(previewVersion)}
+                          className="h-7 text-xs bg-[#003B95] hover:bg-[#002a6b]"
                         >
-                          <RotateCcw className="h-3 w-3" />
-                          Restore
+                          <RotateCcw className="h-3 w-3 mr-1" />
+                          Restore This Version
                         </Button>
                       </div>
-                    ))
+                    </div>
+                  )}
+
+                  {/* Rich Text Editor */}
+                  <div className={cn("border-b", contentError && "ring-1 ring-red-400")}>
+                    {/* Toolbar */}
+                    <div className="flex items-center gap-0.5 px-4 py-1.5 bg-gray-50 border-b flex-wrap">
+                      <RteBtn icon={Undo}         label="Undo"          onClick={() => exec("undo")}                 disabled={isVersionPreview} />
+                      <RteBtn icon={Redo}         label="Redo"          onClick={() => exec("redo")}                 disabled={isVersionPreview} />
+                      <span className="w-px h-5 bg-gray-200 mx-1" />
+                      <RteBtn icon={Heading1}     label="Heading 1"     onClick={() => exec("formatBlock", "h1")}    disabled={isVersionPreview} />
+                      <RteBtn icon={Heading2}     label="Heading 2"     onClick={() => exec("formatBlock", "h2")}    disabled={isVersionPreview} />
+                      <span className="w-px h-5 bg-gray-200 mx-1" />
+                      <RteBtn icon={Bold}         label="Bold"          onClick={() => exec("bold")}                 disabled={isVersionPreview} />
+                      <RteBtn icon={Italic}       label="Italic"        onClick={() => exec("italic")}               disabled={isVersionPreview} />
+                      <RteBtn icon={Underline}    label="Underline"     onClick={() => exec("underline")}            disabled={isVersionPreview} />
+                      <span className="w-px h-5 bg-gray-200 mx-1" />
+                      <RteBtn icon={List}         label="Bullet List"   onClick={() => exec("insertUnorderedList")}  disabled={isVersionPreview} />
+                      <RteBtn icon={ListOrdered}  label="Numbered List" onClick={() => exec("insertOrderedList")}   disabled={isVersionPreview} />
+                      <span className="w-px h-5 bg-gray-200 mx-1" />
+                      <RteBtn icon={Indent}       label="Indent"        onClick={() => exec("indent")}               disabled={isVersionPreview} />
+                      <RteBtn icon={Outdent}      label="Outdent"       onClick={() => exec("outdent")}              disabled={isVersionPreview} />
+                      <span className="w-px h-5 bg-gray-200 mx-1" />
+                      <RteBtn icon={AlignLeft}    label="Align Left"    onClick={() => exec("justifyLeft")}          disabled={isVersionPreview} />
+                      <RteBtn icon={AlignCenter}  label="Align Center"  onClick={() => exec("justifyCenter")}        disabled={isVersionPreview} />
+                      <RteBtn icon={AlignRight}   label="Align Right"   onClick={() => exec("justifyRight")}         disabled={isVersionPreview} />
+                    </div>
+
+                    {/* Editable Area */}
+                    <div
+                      ref={editorRef}
+                      contentEditable={!isVersionPreview}
+                      suppressContentEditableWarning
+                      dir={lang === "ar" ? "rtl" : "ltr"}
+                      role="textbox"
+                      aria-multiline="true"
+                      aria-label={`${currentPage.title} content in ${lang === "en" ? "English" : "Arabic"}`}
+                      className={cn(
+                        "min-h-[420px] p-5 outline-none prose prose-sm max-w-none",
+                        "focus:ring-0",
+                        "[&_h1]:text-2xl [&_h1]:font-bold [&_h1]:mb-3 [&_h1]:mt-4",
+                        "[&_h2]:text-xl [&_h2]:font-semibold [&_h2]:mb-2 [&_h2]:mt-3",
+                        "[&_p]:mb-2 [&_p]:leading-relaxed",
+                        "[&_ul]:list-disc [&_ul]:pl-6 [&_ul]:mb-3",
+                        "[&_ol]:list-decimal [&_ol]:pl-6 [&_ol]:mb-3",
+                        "[&_li]:mb-1",
+                        "[&_a]:text-[#003B95] [&_a]:underline",
+                        "[&_strong]:font-semibold",
+                        "[&_em]:italic",
+                        lang === "ar" && "text-right font-[system-ui]",
+                        isVersionPreview && "bg-gray-50 cursor-default",
+                      )}
+                      onInput={() => setHasChanges(true)}
+                      onBlur={syncEditor}
+                    />
+                  </div>
+
+                  {contentError && (
+                    <div className="px-6 py-2">
+                      <p className="text-xs text-red-500 flex items-center gap-1">
+                        <AlertCircle className="h-3 w-3" />
+                        {contentError}
+                      </p>
+                    </div>
                   )}
                 </div>
-              </ScrollArea>
-            </div>
-          </div>
+
+                {/* Version History Panel */}
+                <div className="w-[280px] border-l bg-gray-50/50 shrink-0">
+                  <div className="p-4 border-b">
+                    <h3 className="text-sm font-semibold text-[#111827] flex items-center gap-2">
+                      <History className="h-4 w-4" />
+                      Version History
+                    </h3>
+                  </div>
+                  <ScrollArea className="h-[calc(100%-52px)]">
+                    <div className="p-3 space-y-2">
+                      {versionsLoading ? (
+                        <div className="flex justify-center py-8">
+                          <Loader2 className="h-5 w-5 animate-spin text-[#003B95]" />
+                        </div>
+                      ) : currentPage.versions.length === 0 ? (
+                        <p className="text-xs text-[#6B7280] text-center py-8">No versions yet.</p>
+                      ) : (
+                        currentPage.versions.map((version) => (
+                          <div
+                            key={version.id}
+                            onClick={() => handleVersionPreview(version)}
+                            className={cn(
+                              "border rounded-lg p-3 space-y-2 cursor-pointer transition-colors",
+                              isVersionPreview && previewVersion?.id === version.id
+                                ? "border-[#003B95] bg-blue-50/50"
+                                : "border-gray-200 bg-white hover:border-gray-300",
+                            )}
+                          >
+                            <div className="flex items-center justify-between">
+                              <Badge variant="outline" className="text-[10px] h-5 font-mono">
+                                v{version.versionNumber}
+                              </Badge>
+                              <Badge
+                                variant="secondary"
+                                className={cn(
+                                  "text-[9px] h-4",
+                                  version.status === "published"
+                                    ? "bg-emerald-50 text-emerald-700"
+                                    : "bg-amber-50 text-amber-700",
+                                )}
+                              >
+                                {version.status}
+                              </Badge>
+                            </div>
+                            <div className="text-xs text-[#6B7280]">{formatDate(version.timestamp)}</div>
+                            <div className="flex items-center justify-between">
+                              <span className="text-[10px] text-[#6B7280]">by {version.author}</span>
+                              <span className="text-[10px] text-[#6B7280]">
+                                {version.charCount.toLocaleString()} chars
+                              </span>
+                            </div>
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              className="w-full h-7 text-xs gap-1.5 mt-1"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setRestoreConfirmOpen(version);
+                              }}
+                            >
+                              <RotateCcw className="h-3 w-3" />
+                              Restore
+                            </Button>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </div>
+            </>
+          )}
         </div>
       )}
 
       {/* ─── Publish Confirmation ───────────────────────── */}
-      <AlertDialog
-        open={publishConfirmOpen}
-        onOpenChange={setPublishConfirmOpen}
-      >
+      <AlertDialog open={publishConfirmOpen} onOpenChange={setPublishConfirmOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Publish {currentPage?.title}</AlertDialogTitle>
             <AlertDialogDescription>
-              This will immediately replace the current live content. Are you
-              sure?
+              This will immediately replace the current live content. Are you sure?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel disabled={isPublishing}>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => saveVersion("published")}
+              onClick={confirmPublish}
+              disabled={isPublishing}
               className="bg-[#003B95] hover:bg-[#002a6b]"
             >
-              Publish Now
+              {isPublishing ? (
+                <><Loader2 className="h-4 w-4 animate-spin mr-2" />Publishing...</>
+              ) : (
+                "Publish Now"
+              )}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
 
       {/* ─── Restore Confirmation ───────────────────────── */}
-      <AlertDialog
-        open={!!restoreConfirmOpen}
-        onOpenChange={(open) => !open && setRestoreConfirmOpen(null)}
-      >
+      <AlertDialog open={!!restoreConfirmOpen} onOpenChange={(open) => !open && setRestoreConfirmOpen(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Restore Version</AlertDialogTitle>
             <AlertDialogDescription>
               Restore version v{restoreConfirmOpen?.versionNumber} from{" "}
               {restoreConfirmOpen && formatDate(restoreConfirmOpen.timestamp)}?
-              The current draft will be replaced with this version's content.
+              The current draft will be replaced.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() =>
-                restoreConfirmOpen && handleRestore(restoreConfirmOpen)
-              }
+              onClick={() => restoreConfirmOpen && handleRestore(restoreConfirmOpen)}
               className="bg-[#003B95] hover:bg-[#002a6b]"
             >
               Restore
