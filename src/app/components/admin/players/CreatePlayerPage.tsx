@@ -4,6 +4,7 @@ import { differenceInYears, isAfter, format } from "date-fns";
 import { parsePhoneNumber, isValidPhoneNumber } from "libphonenumber-js";
 import { toast } from "sonner";
 import { adminService } from "@/services/admin.service";
+import { normalizeCountriesFromConfig } from "@/lib/countries";
 import {
   ArrowLeft,
   Loader2,
@@ -172,9 +173,12 @@ export function CreatePlayerPage() {
 
   useEffect(() => {
     adminService
-      .listMasterData("countries", { limit: 100, status: "active" })
-      .then((res: any) => {
-        if (res?.data?.items) setCountries(res.data.items);
+      .getPublicCountries()
+      .then((res: unknown) => {
+        setCountries(normalizeCountriesFromConfig(res));
+      })
+      .catch((err: unknown) => {
+        console.error("Failed to load countries:", err);
       });
   }, []);
 

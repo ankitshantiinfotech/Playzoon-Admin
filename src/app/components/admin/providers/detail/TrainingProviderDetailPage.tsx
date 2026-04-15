@@ -43,6 +43,7 @@ import { FacilityAssignment } from "./FacilityAssignment";
 import { FacilityRequests } from "./FacilityRequests";
 import { CoachManagement } from "./CoachManagement";
 import { AccountLockStatusCard } from "../components/AccountLockStatusCard";
+import { adminService } from "@/services/admin.service";
 import { BankDetailsCard } from "../components/BankDetailsCard";
 import { ProviderAuditTrailTable } from "../components/ProviderAuditTrailTable";
 
@@ -359,7 +360,9 @@ export function TrainingProviderDetailPage() {
   };
 
   // ── Unlock handler ───────────────────────────
-  const handleUnlock = () => {
+  const handleUnlock = async () => {
+    if (!provider) return;
+    await adminService.updateProvider(provider.id, { is_locked: false });
     setProvider((prev) => {
       if (!prev) return prev;
       return {
@@ -369,7 +372,6 @@ export function TrainingProviderDetailPage() {
         lockedBy: undefined,
       };
     });
-    // Toast is handled by AccountLockStatusCard
   };
 
   // ── Loading / Not found ──────────────────────

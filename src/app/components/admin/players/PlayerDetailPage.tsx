@@ -24,6 +24,7 @@ import {
   bioPlainTextLength,
   sanitizePlayerBioHtml,
 } from "../../../../lib/bio-html";
+import { normalizeCountriesFromConfig } from "../../../../lib/countries";
 import MobileNumber from "../../ui/MobileNumber";
 import { AdminPlayerBioEditor } from "./AdminPlayerBioEditor";
 import {
@@ -31,6 +32,7 @@ import {
   Copy,
   Check,
   Lock,
+  Unlock,
   Mail,
   Phone,
   Calendar,
@@ -195,21 +197,6 @@ function buildPhoneE164(countryCode: string, nationalDigits: string): string {
   return `${prefix}${normalizedNat}`;
 }
 
-/** Same response shape as web GET /config/countries (api envelope + nested data). */
-function normalizeCountriesFromConfig(body: unknown): { id: string; name_en: string }[] {
-  const root = body as Record<string, unknown> | null | undefined;
-  if (!root) return [];
-  const inner = (root.data as Record<string, unknown>) ?? root;
-  const list = inner.countries;
-  if (!Array.isArray(list)) return [];
-  return list
-    .map((c: Record<string, unknown>) => ({
-      id: String(c.id ?? ""),
-      name_en: String(c.name_en ?? c.name ?? ""),
-    }))
-    .filter((c) => c.id);
-}
-
 function ProfileFormField({
   id,
   label,
@@ -299,6 +286,10 @@ export function PlayerDetailPage() {
     [],
   );
   const [isLoadingApi, setIsLoadingApi] = useState(true);
+  const [playerActions, setPlayerActions] = useState<{
+    can_lock_unlock: boolean;
+  }>({ can_lock_unlock: true });
+  const [unlockSubmitting, setUnlockSubmitting] = useState(false);
 
   const loadData = async () => {
     setIsLoadingApi(true);
@@ -306,6 +297,11 @@ export function PlayerDetailPage() {
       const res = await adminService.getPlayer(id);
       const data = res?.data || res;
       if (!data || !data.id) throw new Error("Player not found");
+
+      const actions = data.actions as { can_lock_unlock?: boolean } | undefined;
+      setPlayerActions({
+        can_lock_unlock: actions?.can_lock_unlock !== false,
+      });
 
       // Same source as web player profile: GET /config/countries
       adminService
@@ -678,6 +674,27 @@ export function PlayerDetailPage() {
     if (type !== "error")
       setTimeout(() => setBanner((b) => ({ ...b, visible: false })), 5000);
   }, []);
+
+  const handleManualUnlock = async () => {
+    try {
+      setUnlockSubmitting(true);
+      await adminService.updatePlayer(id, { is_locked: false });
+      await loadData();
+      toast.success("User has been unlocked successfully.");
+    } catch (err: unknown) {
+      let msg = "Failed to unlock user.";
+      if (err && typeof err === "object" && "response" in err) {
+        const m = (err as { response?: { data?: { message?: unknown } } })
+          .response?.data?.message;
+        if (typeof m === "string") msg = m;
+        else if (m != null) msg = String(m);
+      }
+      toast.error(msg);
+      showBanner("error", msg);
+    } finally {
+      setUnlockSubmitting(false);
+    }
+  };
 
   useEffect(() => {
     if (player.status === "Locked") {
@@ -1350,13 +1367,14 @@ export function PlayerDetailPage() {
                 Change account status between Active and Inactive.
               </TooltipContent>
             </Tooltip>
-            <div className="flex gap-1 flex-wrap">
+            <div className="flex gap-1 flex-wrap items-center">
               {(["Active", "Inactive"] as PlayerStatus[]).map((s) => (
                 <button
                   key={s}
                   onClick={() => {
                     if (s !== player.status) openStatusModal(s);
                   }}
+                  disabled={player.status === "Locked"}
                   className={cn(
                     "px-3 py-1.5 rounded-lg text-xs border transition-colors",
                     player.status === s
@@ -1364,11 +1382,29 @@ export function PlayerDetailPage() {
                         ? "bg-emerald-100 border-emerald-300 text-emerald-800"
                         : "bg-gray-200 border-gray-300 text-gray-800"
                       : "bg-white border-gray-200 text-gray-500 hover:border-gray-300 hover:bg-gray-50",
+                    player.status === "Locked" && "opacity-50 cursor-not-allowed",
                   )}
                 >
                   {s}
                 </button>
               ))}
+              {player.status === "Locked" && playerActions.can_lock_unlock && (
+                <Button
+                  type="button"
+                  variant="outline"
+                  size="sm"
+                  className="h-8 text-xs border-red-200 text-red-700 hover:bg-red-50"
+                  disabled={unlockSubmitting}
+                  onClick={handleManualUnlock}
+                >
+                  {unlockSubmitting ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                  ) : (
+                    <Unlock className="h-3.5 w-3.5 mr-1" />
+                  )}
+                  Unlock account
+                </Button>
+              )}
             </div>
             <span
               className={cn(

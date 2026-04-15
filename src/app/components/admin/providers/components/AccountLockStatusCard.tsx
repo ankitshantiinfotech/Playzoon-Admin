@@ -32,8 +32,8 @@ interface AccountLockStatusCardProps {
   providerName: string;
   /** Current lock info */
   lockInfo: AccountLockInfo;
-  /** Called after unlock is confirmed — parent should update state */
-  onUnlock: () => void;
+  /** Called after unlock is confirmed — parent should update state (may be async / API) */
+  onUnlock: () => void | Promise<void>;
   /** Optional: show as a compact inline badge (for list views) */
   compact?: boolean;
 }
@@ -93,12 +93,15 @@ export function AccountLockStatusCard({
   // ── Handle unlock with optimistic UI ──────────────────
   const handleConfirmUnlock = async () => {
     setIsUnlocking(true);
-    // Simulate API call
-    await new Promise(r => setTimeout(r, 800));
-    setIsUnlocking(false);
-    setShowConfirm(false);
-    onUnlock();
-    toast.success("Account unlocked successfully.", { duration: 5000 });
+    try {
+      await Promise.resolve(onUnlock());
+      setShowConfirm(false);
+      toast.success("User has been unlocked successfully.", { duration: 5000 });
+    } catch {
+      toast.error("Could not unlock account. Please try again.");
+    } finally {
+      setIsUnlocking(false);
+    }
   };
 
   // ── Compact mode (just the badge) ─────────────────────
