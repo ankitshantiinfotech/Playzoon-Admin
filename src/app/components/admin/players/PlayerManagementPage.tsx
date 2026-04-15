@@ -1,11 +1,17 @@
-import React, { useState, useMemo, useRef, useEffect, type ElementType } from "react";
+import React, {
+  useState,
+  useMemo,
+  useRef,
+  useEffect,
+  useCallback,
+  type ElementType,
+} from "react";
 import { useNavigate } from "react-router";
 import { format, isBefore, isAfter, startOfDay, endOfDay } from "date-fns";
 import { toast } from "sonner";
 import {
   Search,
   Filter,
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
   ArrowUpDown,
@@ -90,7 +96,8 @@ import {
   BulkActionsModal,
   type BulkActionResult,
 } from "./components/BulkActionsModal";
-import { ExportModal } from "./components/ExportModal";
+import { SimpleExportModal } from "../common/SimpleExportModal";
+import { exportTable, type ExportFormat } from "@/lib/exportDownload";
 import { PlayerAuditDrawer } from "./components/PlayerAuditDrawer";
 
 // ─── Constants ───────────────────────────────────────────────
@@ -319,6 +326,29 @@ export function PlayerManagementPage() {
   const [page, setPage] = useState(1);
   const [pageSize, setPageSize] = useState(10);
 
+  const buildPlayerQuery = useCallback(
+    (pageNum: number, limitNum: number) => ({
+      page: pageNum,
+      limit: limitNum,
+      search: filters.search || undefined,
+      status: filters.statuses[0]?.toLowerCase() || undefined,
+      sort_by:
+        sortField === "createdAt"
+          ? "created_at"
+          : sortField === "name"
+            ? "name"
+            : sortField === "email"
+              ? "email"
+              : "status",
+      sort_order: sortDir,
+      registered_from: filters.createdFrom?.toISOString() || undefined,
+      registered_to: filters.createdTo?.toISOString() || undefined,
+      nationality: filters.nationalities[0] || undefined,
+      lock_status: filters.lockStatuses[0]?.toLowerCase() || undefined,
+    }),
+    [filters, sortField, sortDir],
+  );
+
   // ── Selection ─────────────────────────────────────────
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectAllPages, setSelectAllPages] = useState(false);
@@ -329,8 +359,9 @@ export function PlayerManagementPage() {
     "change_status" | "send_notification" | "delete"
   >("change_status");
   const [exportModalOpen, setExportModalOpen] = useState(false);
-  const [exportScope, setExportScope] = useState<"current_view" | "selected">(
-    "current_view",
+  /** filtered = current list API filters + search; selected = only checked rows (still within same filters) */
+  const [exportSource, setExportSource] = useState<"filtered" | "selected">(
+    "filtered",
   );
 
   // ── Simple bulk confirmations (AC-PM-019 / AC-PM-020) ─
@@ -530,26 +561,8 @@ export function PlayerManagementPage() {
 
   // ── Sync Server Data ──────────────────────────────────
   useEffect(() => {
-    fetchPlayers({
-      page,
-      limit: pageSize,
-      search: filters.search || undefined,
-      status: filters.statuses[0]?.toLowerCase() || undefined,
-      sort_by:
-        sortField === "createdAt"
-          ? "created_at"
-          : sortField === "name"
-            ? "name"
-            : sortField === "email"
-              ? "email"
-              : "status",
-      sort_order: sortDir,
-      registered_from: filters.createdFrom?.toISOString() || undefined,
-      registered_to: filters.createdTo?.toISOString() || undefined,
-      nationality: filters.nationalities[0] || undefined,
-      lock_status: filters.lockStatuses[0]?.toLowerCase() || undefined,
-    });
-  }, [page, pageSize, sortField, sortDir, filters]); // eslint-disable-line
+    fetchPlayers(buildPlayerQuery(page, pageSize));
+  }, [page, pageSize, buildPlayerQuery]); // eslint-disable-line
 
   // ── Sort handler ──────────────────────────────────────
   const handleSort = (field: SortField) => {
@@ -645,7 +658,7 @@ export function PlayerManagementPage() {
 
       if (successful > 0) {
         showBanner("success", `Successfully processed ${successful} players.`);
-        fetchPlayers({ page, limit: pageSize });
+        fetchPlayers(buildPlayerQuery(page, pageSize));
         clearSelection();
       }
       if (failed > 0) {
@@ -689,6 +702,73 @@ export function PlayerManagementPage() {
       `${count} player${count !== 1 ? "s have" : " has"} been deleted.`,
     );
   };
+
+  const handlePlayerExportDownload = useCallback(
+    async (fmt: ExportFormat) => {
+      const perPage = 500;
+      const total = totalRecords;
+      if (total === 0) {
+        toast.error("No rows to export.");
+        throw new Error("empty");
+      }
+      const pages = Math.max(1, Math.ceil(total / perPage));
+      const acc: PlayerRow[] = [];
+      for (let p = 1; p <= pages; p++) {
+        const res = await adminService.listPlayers(buildPlayerQuery(p, perPage));
+        const payload = res?.data || res;
+        const list = payload?.players || payload?.items || payload || [];
+        const mapped = Array.isArray(list) ? list.map(mapApiPlayer) : [];
+        acc.push(...mapped);
+      }
+      let data = acc;
+      if (exportSource === "selected" && selectedIds.size > 0) {
+        data = acc.filter((r) => selectedIds.has(r.id));
+      }
+      if (data.length === 0) {
+        toast.error("No rows to export.");
+        throw new Error("empty");
+      }
+      const headers = [
+        "ID",
+        "First name",
+        "Last name",
+        "Email",
+        "Phone",
+        "Gender",
+        "Nationality",
+        "Status",
+        "Dependents",
+        "Created",
+        "Last active",
+        "Wallet",
+        "Default country",
+      ];
+      const rows = data.map((p) => [
+        p.id,
+        p.firstName,
+        p.lastName,
+        p.email,
+        p.phone,
+        p.gender,
+        p.nationality,
+        p.status,
+        String(p.dependents),
+        format(p.createdAt, "yyyy-MM-dd HH:mm"),
+        format(p.lastActiveAt, "yyyy-MM-dd HH:mm"),
+        String(p.walletBalance),
+        p.defaultCountry,
+      ]);
+      await exportTable({
+        format: fmt,
+        filenamePrefix: "players",
+        sqlTableName: "players",
+        pdfTitle: "Player export",
+        headers,
+        rows,
+      });
+    },
+    [totalRecords, buildPlayerQuery, exportSource, selectedIds],
+  );
 
   // ── Pagination size/page numbers ──────────────────────
   const getPageNumbers = () => {
@@ -756,39 +836,18 @@ export function PlayerManagementPage() {
             <Plus className="h-4 w-4" />
             Create New Player
           </Button>
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Button
-                variant="outline"
-                className="gap-2 shrink-0"
-                disabled={isLoading}
-              >
-                <Download className="h-4 w-4" />
-                Export
-                <ChevronDown className="h-3 w-3" />
-              </Button>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end">
-              <DropdownMenuItem
-                onClick={() => {
-                  setExportScope("current_view");
-                  setExportModalOpen(true);
-                }}
-              >
-                Export current view
-              </DropdownMenuItem>
-              {selectedIds.size > 0 && (
-                <DropdownMenuItem
-                  onClick={() => {
-                    setExportScope("selected");
-                    setExportModalOpen(true);
-                  }}
-                >
-                  Export selected ({selectedIds.size})
-                </DropdownMenuItem>
-              )}
-            </DropdownMenuContent>
-          </DropdownMenu>
+          <Button
+            variant="outline"
+            className="gap-2 shrink-0"
+            disabled={isLoading}
+            onClick={() => {
+              setExportSource("filtered");
+              setExportModalOpen(true);
+            }}
+          >
+            <Download className="h-4 w-4" />
+            Export
+          </Button>
         </div>
       </div>
 
@@ -1218,7 +1277,7 @@ export function PlayerManagementPage() {
               variant="secondary"
               className="h-7 text-xs gap-1.5 bg-white/20 text-white hover:bg-white/30 border-0"
               onClick={() => {
-                setExportScope("selected");
+                setExportSource("selected");
                 setExportModalOpen(true);
               }}
             >
@@ -1612,12 +1671,16 @@ export function PlayerManagementPage() {
         onConfirm={handleBulkConfirm}
       />
 
-      <ExportModal
+      <SimpleExportModal
         open={exportModalOpen}
         onOpenChange={setExportModalOpen}
-        selectedCount={selectedIds.size}
-        totalFiltered={totalRecords}
-        defaultScope={exportScope as any}
+        title="Export players"
+        description={
+          exportSource === "selected" && selectedIds.size > 0
+            ? `Export ${selectedIds.size} selected row(s) using the same filters as the list.`
+            : "Export all rows matching the current search and filters."
+        }
+        onDownload={handlePlayerExportDownload}
       />
 
       {auditPlayer && (

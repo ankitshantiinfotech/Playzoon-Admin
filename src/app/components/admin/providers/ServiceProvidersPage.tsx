@@ -27,6 +27,7 @@ import {
   Ban,
   Plus,
   Filter,
+  Download,
 } from "lucide-react";
 import { cn } from "../../ui/utils";
 import { Button } from "../../ui/button";
@@ -85,6 +86,8 @@ import {
   type BulkActionResult,
 } from "./components/BulkActionBar";
 import { Checkbox } from "../../ui/checkbox";
+import { SimpleExportModal } from "../common/SimpleExportModal";
+import { exportTable, type ExportFormat } from "@/lib/exportDownload";
 
 // ─── Banner ──────────────────────────────────────────────────
 type BannerType = "success" | "error" | "info" | "warning";
@@ -531,6 +534,8 @@ export function ServiceProvidersPage() {
   // Track which row is currently processing (spinner on inline button)
   const [processingRowId, setProcessingRowId] = useState<string | null>(null);
 
+  const [trainingExportOpen, setTrainingExportOpen] = useState(false);
+
   // ── Selection state (US-5.5.2) ────────────────────────
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [bulkProcessing, setBulkProcessing] = useState(false);
@@ -711,6 +716,49 @@ export function ServiceProvidersPage() {
     facilitySortDir,
     statusFilter,
   ]);
+
+  const handleTrainingExportDownload = useCallback(
+    async (fmt: ExportFormat) => {
+      if (activeTab !== "Training Provider") {
+        toast.error("Open the Training Provider tab to export.");
+        throw new Error("wrong-tab");
+      }
+      const rows = filtered.filter((p) => p.providerType === "Training Provider");
+      if (rows.length === 0) {
+        toast.error("No rows to export.");
+        throw new Error("empty");
+      }
+      const headers = [
+        "ID",
+        "Name",
+        "Email",
+        "Mobile",
+        "Verification",
+        "Account",
+        "Platform",
+        "Created",
+      ];
+      const data = rows.map((p) => [
+        p.id,
+        p.name,
+        p.email,
+        p.mobile,
+        p.verificationStatus,
+        p.accountStatus,
+        p.platformStatus,
+        format(p.createdAt, "yyyy-MM-dd HH:mm"),
+      ]);
+      await exportTable({
+        format: fmt,
+        filenamePrefix: "training-providers",
+        sqlTableName: "training_providers",
+        pdfTitle: "Training providers export",
+        headers,
+        rows: data,
+      });
+    },
+    [activeTab, filtered],
+  );
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const pagedProviders = filtered.slice((page - 1) * pageSize, page * pageSize);
@@ -1066,13 +1114,24 @@ export function ServiceProvidersPage() {
           </p>
         </div>
         {activeTab === "Training Provider" && (
-          <Button
-            className="bg-[#003B95] hover:bg-[#002d73] text-white text-sm h-10 shrink-0"
-            onClick={() => navigate("/providers/new")}
-          >
-            <Plus className="h-4 w-4 mr-1.5" />
-            Create Training Provider
-          </Button>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              variant="outline"
+              className="h-10 gap-2"
+              disabled={isLoading}
+              onClick={() => setTrainingExportOpen(true)}
+            >
+              <Download className="h-4 w-4" />
+              Export
+            </Button>
+            <Button
+              className="bg-[#003B95] hover:bg-[#002d73] text-white text-sm h-10"
+              onClick={() => navigate("/providers/new")}
+            >
+              <Plus className="h-4 w-4 mr-1.5" />
+              Create Training Provider
+            </Button>
+          </div>
         )}
         {activeTab === "Facility Provider" && (
           <Button
@@ -1808,6 +1867,14 @@ export function ServiceProvidersPage() {
         onCancel={() => {
           if (!isRejecting) setRejectTarget(null);
         }}
+      />
+
+      <SimpleExportModal
+        open={trainingExportOpen}
+        onOpenChange={setTrainingExportOpen}
+        title="Export training providers"
+        description="Uses the current list: search, status filters, and sub-tabs (All / Onboarding) all apply."
+        onDownload={handleTrainingExportDownload}
       />
     </div>
   );
