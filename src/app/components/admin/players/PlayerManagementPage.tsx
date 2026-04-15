@@ -84,6 +84,7 @@ import {
 import type { PlayerRow, PlayerStatus, AppliedFilters } from "./player-data";
 import { EMPTY_FILTERS } from "./player-data";
 import { adminService } from "../../../../services/admin.service";
+import { normalizeCountriesFromConfig } from "../../../../lib/countries";
 import { StatusPill } from "./components/StatusPill";
 import {
   BulkActionsModal,
@@ -253,12 +254,9 @@ export function PlayerManagementPage() {
 
   const fetchCountries = async () => {
     try {
-      const res = await adminService.listMasterData("countries", {
-        limit: 100,
-      });
-      if (res?.data?.items) {
-        setDynamicCountries(res.data.items);
-      }
+      const res = await adminService.getPublicCountries();
+      const list = normalizeCountriesFromConfig(res);
+      if (list.length > 0) setDynamicCountries(list);
     } catch (err) {
       console.error("Failed to fetch countries:", err);
     }
@@ -801,7 +799,7 @@ export function PlayerManagementPage() {
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-[#9CA3AF]" />
             <Input
               ref={searchRef}
-              placeholder="Search by name, email, phone, or ID"
+              placeholder="Search by name, email, or phone"
               value={searchInput}
               onChange={(e) => setSearchInput(e.target.value)}
               onKeyDown={(e) => {

@@ -57,6 +57,8 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "../../../ui/alert-dialog";
+import { adminService } from "@/services/admin.service";
+import { normalizeCountriesFromConfig } from "@/lib/countries";
 import {
   COUNTRY_CODES,
   GENDERS,
@@ -770,6 +772,23 @@ export function FreelancerCoachFormPage() {
   const [professionalErrors, setProfessionalErrors] =
     useState<ProfessionalErrors>({});
 
+  const [nationalityOptions, setNationalityOptions] = useState<string[]>(() => [
+    ...NATIONALITIES,
+  ]);
+
+  useEffect(() => {
+    adminService
+      .getPublicCountries()
+      .then((res: unknown) => {
+        const list = normalizeCountriesFromConfig(res);
+        const names = list.map((c) => c.name_en).filter(Boolean);
+        if (names.length > 0) setNationalityOptions(names);
+      })
+      .catch(() => {
+        /* keep static list */
+      });
+  }, []);
+
   // ── Load edit data (wired to real API) ────────────────
   useEffect(() => {
     if (!isEditMode || !id) return;
@@ -1468,7 +1487,7 @@ export function FreelancerCoachFormPage() {
           <SearchableDropdown
             label="Nationality"
             value={form.nationality}
-            options={NATIONALITIES}
+            options={nationalityOptions}
             placeholder="Select nationality"
             required
             error={touched.nationality ? errors.nationality : undefined}
