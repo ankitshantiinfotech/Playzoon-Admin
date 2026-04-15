@@ -677,7 +677,7 @@ export function TrainingProviderFormPage() {
   }
 
   if (isEditMode) {
-    return <AdminProviderCompleteProfilePage variant="onboarding" />;
+    return <AdminProviderCompleteProfilePage variant="postApproval" />;
   }
 
   // ═══════════════════════════════════════════════════════════

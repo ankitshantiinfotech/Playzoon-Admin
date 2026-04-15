@@ -2,6 +2,7 @@ import { useState, useRef, useEffect, useCallback } from "react";
 import "react-phone-number-input/style.css";
 import { format, isAfter, startOfDay } from "date-fns";
 import { useNavigate, useParams } from "react-router";
+import { parsePhoneNumberFromString } from "libphonenumber-js";
 import { useTranslation } from "react-i18next";
 import {
   Upload,
@@ -56,6 +57,7 @@ interface UploadedFile {
   status: "uploading" | "complete" | "error";
   progress: number;
   errorMessage?: string;
+  rawFile?: File | Blob;
 }
 
 interface FormState {
@@ -362,6 +364,7 @@ function FileUploader({
         type: file.type,
         status: "uploading",
         progress: 10,
+        rawFile: file,
       };
 
       if (file.type.startsWith("image/")) {
@@ -836,8 +839,10 @@ export type ProviderCompleteProfileVariant = "onboarding" | "postApproval";
 // ── Main Component ────────────────────────────────────────
 export function AdminProviderCompleteProfilePage({
   variant = "onboarding",
+  createMode = false,
 }: {
   variant?: ProviderCompleteProfileVariant;
+  createMode?: boolean;
 } = {}) {
   const isPostApproval = variant === "postApproval";
   const { t: rawT, i18n } = useTranslation();
@@ -845,12 +850,13 @@ export function AdminProviderCompleteProfilePage({
   const lang = i18n.language === "ar" ? "ar" : "en";
   const navigate = useNavigate();
   const { id: providerId } = useParams<{ id: string }>();
+  const hasProviderId = !!providerId;
 
   const [profile, setProfile] = useState<Record<string, unknown> | null>(null);
-  const [storeLoading, setStoreLoading] = useState(true);
+  const [storeLoading, setStoreLoading] = useState(hasProviderId);
 
   const fetchProfile = useCallback(async () => {
-    if (!providerId) return;
+    if (!hasProviderId || !providerId) return;
     setStoreLoading(true);
     try {
       const res = await adminService.getProvider(providerId);
@@ -877,7 +883,7 @@ export function AdminProviderCompleteProfilePage({
     } finally {
       setStoreLoading(false);
     }
-  }, [providerId, navigate]);
+  }, [hasProviderId, providerId, navigate]);
 
   const updateProviderProfile = useCallback(
     async (
@@ -947,8 +953,12 @@ export function AdminProviderCompleteProfilePage({
   const [emailBaseline, setEmailBaseline] = useState("");
 
   useEffect(() => {
+    if (!hasProviderId) {
+      setStoreLoading(false);
+      return;
+    }
     void fetchProfile();
-  }, [fetchProfile]);
+  }, [fetchProfile, hasProviderId]);
 
   useEffect(() => {
     if (!profile) return;
@@ -1044,7 +1054,12 @@ export function AdminProviderCompleteProfilePage({
   const [designations, setDesignations] = useState<{ id: string; name_en: string; name_ar: string }[]>([]);
   useEffect(() => {
     api.get("/config/designations").then((res) => {
-      const list = res?.data?.designations || res?.designations || [];
+      // Admin API client keeps envelope shape: { success, data: {...} }
+      const list =
+        res?.data?.designations ||
+        res?.data?.data?.designations ||
+        res?.designations ||
+        [];
       if (Array.isArray(list)) setDesignations(list);
     }).catch(() => {});
   }, []);
@@ -1089,6 +1104,8 @@ export function AdminProviderCompleteProfilePage({
   // Validation
   const validateForm = (): boolean => {
     const newErrors: FieldErrors = {};
+    const hasRequiredFile = (files: UploadedFile[]) =>
+      createMode ? files.length > 0 : files.some((f) => f.status === "complete");
 
     if (!form.firstName.trim()) {
       newErrors.firstName = t("settingsProfile.validation.firstNameRequired");
@@ -1143,15 +1160,15 @@ export function AdminProviderCompleteProfilePage({
       }
     }
 
-    if (!form.governmentId.some((f) => f.status === "complete")) {
+    if (!hasRequiredFile(form.governmentId)) {
       newErrors.governmentId = t("providerCompleteProfile.governmentIdRequired");
     }
 
-    if (!form.legalDocuments.some((f) => f.status === "complete")) {
+    if (!hasRequiredFile(form.legalDocuments)) {
       newErrors.legalDocuments = t("providerCompleteProfile.legalDocumentRequired");
     }
 
-    if (!form.profilePhoto.some((f) => f.status === "complete")) {
+    if (!hasRequiredFile(form.profilePhoto)) {
       newErrors.profilePhoto = t("providerCompleteProfile.profilePhotoRequired");
     }
 
@@ -1216,6 +1233,55 @@ export function AdminProviderCompleteProfilePage({
     form.designation,
   ]);
 
+  const extractCreatedProviderId = (res: unknown): string | undefined => {
+    const created = res as {
+      data?: { id?: string };
+      id?: string;
+      provider?: { id?: string };
+    };
+    return created?.data?.id || created?.id || created?.provider?.id;
+  };
+
+  const createProviderWithCompleteProfile = useCallback(async () => {
+    const normalizedMobile = form.contactMobile.replace(/\s/g, "");
+    const parsedPhone = parsePhoneNumberFromString(normalizedMobile);
+    const created = await adminService.createProvider({
+      first_name: form.firstName.trim(),
+      last_name: form.lastName.trim(),
+      email: form.contactEmail.trim().toLowerCase(),
+      ...(parsedPhone
+        ? {
+            country_code: `+${parsedPhone.countryCallingCode}`,
+            mobile: parsedPhone.nationalNumber,
+          }
+        : {}),
+      provider_type: "training_provider",
+    });
+    const createdProviderId = extractCreatedProviderId(created);
+    if (!createdProviderId) throw new Error("Provider created but id is missing");
+
+    const officialDocuments: { file: File; documentType: string }[] = [];
+    (Object.keys(PROVIDER_DOC_TYPE) as ProviderDocFormField[]).forEach((field) => {
+      form[field].forEach((f) => {
+        if (f.rawFile instanceof File) {
+          officialDocuments.push({ file: f.rawFile, documentType: PROVIDER_DOC_TYPE[field] });
+        }
+      });
+    });
+    const logoBlob = form.profilePhoto[0]?.rawFile ?? null;
+
+    await adminService.putProviderProfile(
+      createdProviderId,
+      buildProviderDraftPayload(),
+      logoBlob,
+      {
+        officialDocuments,
+      },
+    );
+
+    return createdProviderId;
+  }, [form, buildProviderDraftPayload]);
+
   /** Logo multipart PUT: omit empty strings so Joi does not reject; never tied to validateForm(). */
   const buildProviderLogoUploadPayload = useCallback(() => {
     const mobileNorm = form.contactMobile.replace(/\s/g, "");
@@ -1273,6 +1339,9 @@ export function AdminProviderCompleteProfilePage({
     (field: ProviderDocFormField) => async (rawFile: File) => {
       setDocFieldBusy(field);
       try {
+        if (createMode) {
+          return;
+        }
         await updateProviderProfile(buildProviderLogoUploadPayload(), null, {
           officialDocuments: [{ file: rawFile, documentType: PROVIDER_DOC_TYPE[field] }],
         });
@@ -1280,12 +1349,16 @@ export function AdminProviderCompleteProfilePage({
         setDocFieldBusy(null);
       }
     },
-    [updateProviderProfile, buildProviderLogoUploadPayload],
+    [createMode, updateProviderProfile, buildProviderLogoUploadPayload],
   );
 
   const removeProviderOfficialFile = useCallback(
     async (field: ProviderDocFormField, file: UploadedFile) => {
       try {
+        if (createMode) {
+          updateFiles(field, (prev) => prev.filter((f) => f.id !== file.id));
+          return;
+        }
         if (file.serverId) {
           await updateProviderProfile({
             ...buildProviderLogoUploadPayload(),
@@ -1298,7 +1371,7 @@ export function AdminProviderCompleteProfilePage({
         handleProviderProfileApiError(e);
       }
     },
-    [updateProviderProfile, buildProviderLogoUploadPayload, updateFiles, handleProviderProfileApiError],
+    [createMode, updateProviderProfile, buildProviderLogoUploadPayload, updateFiles, handleProviderProfileApiError],
   );
 
   const handleBusinessLogoCropFinished = useCallback(
@@ -1315,9 +1388,25 @@ export function AdminProviderCompleteProfilePage({
           preview: previewUrl,
           status: "uploading",
           progress: 0,
+            rawFile: blob,
         },
       ]);
       try {
+        if (createMode) {
+          updateFiles("profilePhoto", [
+            {
+              id: localId,
+              name: "provider-logo.jpg",
+              size: blob.size,
+              type: "image/jpeg",
+              preview: previewUrl,
+              status: "complete",
+              progress: 100,
+              rawFile: blob,
+            },
+          ]);
+          return;
+        }
         const p = await updateProviderProfile(buildProviderLogoUploadPayload(), blob, {
           onUploadProgress: (p) => setLogoPersistProgress(p),
         });
@@ -1358,6 +1447,7 @@ export function AdminProviderCompleteProfilePage({
     },
     [
       buildProviderLogoUploadPayload,
+      createMode,
       updateFiles,
       updateProviderProfile,
       t,
@@ -1368,6 +1458,10 @@ export function AdminProviderCompleteProfilePage({
   const handleLogoRemove = useCallback(async () => {
     setIsPersistingLogo(true);
     try {
+      if (createMode) {
+        updateFiles("profilePhoto", []);
+        return;
+      }
       await updateProviderProfile({ remove_business_logo: true });
       updateFiles("profilePhoto", []);
       toast.success(t("providerCompleteProfile.logoRemoved"));
@@ -1376,7 +1470,7 @@ export function AdminProviderCompleteProfilePage({
     } finally {
       setIsPersistingLogo(false);
     }
-  }, [updateFiles, updateProviderProfile, handleProviderProfileApiError]);
+  }, [createMode, updateFiles, updateProviderProfile, handleProviderProfileApiError, t]);
 
   const handleSubmit = () => {
     if (!validateForm()) return;
@@ -1418,8 +1512,14 @@ export function AdminProviderCompleteProfilePage({
     if (!validateForm()) return;
     setIsSaving(true);
     try {
-      await updateProviderProfile(buildProviderDraftPayload());
-      toast.success(t("providerCompleteProfile.profileSaved"));
+      if (createMode) {
+        await createProviderWithCompleteProfile();
+        toast.success(t("providerCompleteProfile.profileSaved"));
+        navigate("/providers?tab=training");
+      } else {
+        await updateProviderProfile(buildProviderDraftPayload());
+        toast.success(t("providerCompleteProfile.profileSaved"));
+      }
     } catch (error) {
       handleProviderProfileApiError(error);
     } finally {
@@ -1865,7 +1965,9 @@ export function AdminProviderCompleteProfilePage({
                 className="flex-1 h-12 rounded-xl bg-[#003B95] hover:bg-[#002a6b] text-white shadow-sm disabled:opacity-50 font-semibold text-sm transition-colors flex items-center justify-center gap-2"
               >
                 {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {t("providerCompleteProfile.saveProfileChanges")}
+                {createMode
+                  ? "Create Provider"
+                  : t("providerCompleteProfile.saveProfileChanges")}
               </Button>
             ) : (
               <>
