@@ -79,24 +79,40 @@ function CountrySelect({
   onChange: (value: Country) => void;
   options: { value: Country; label: string }[];
   disabled?: boolean;
-  iconComponent: React.ComponentType<{ country: Country }>;
+  /** react-phone-number-input CountryIcon requires `label` (country name for a11y). */
+  iconComponent: React.ComponentType<{
+    country?: Country;
+    label: string;
+    aspectRatio?: number;
+    "aria-hidden"?: boolean;
+  }>;
   /** Matches PhoneInput `defaultCountry` when `value` is not yet set. */
   fallbackCountry?: Country;
 }) {
   const sortedOptions = useMemo(() => {
     return [...options]
       .filter((opt) => opt.value)
-      .sort((a, b) => a.label.localeCompare(b.label));
+      .sort((a, b) => String(a.label ?? "").localeCompare(String(b.label ?? "")));
   }, [options]);
 
   /** PhoneInput types allow `undefined`; flag component requires a CountryCode. */
   const countryForFlag: Country = value ?? fallbackCountry;
 
+  /** CountryIcon (react-phone-number-input) requires `label` for a11y / Flag countryName. */
+  const selectedOption = sortedOptions.find((o) => o.value === countryForFlag);
+  const selectedLabel =
+    (selectedOption?.label && String(selectedOption.label)) ||
+    String(countryForFlag ?? "");
+
   return (
     <Select value={countryForFlag} onValueChange={onChange} disabled={disabled}>
       <SelectTrigger className="flex-none transition-all">
         <SelectValue>
-          <Icon country={countryForFlag} />
+          <Icon
+            aria-hidden
+            country={countryForFlag}
+            label={selectedLabel}
+          />
         </SelectValue>
       </SelectTrigger>
       <SelectContent className="max-h-[300px] border-neutral-200 shadow-2xl rounded-xl">
@@ -107,7 +123,14 @@ function CountrySelect({
             className="py-2.5 rounded-lg focus:bg-primary-50"
           >
             <div className="flex items-center gap-2.5 w-full">
-              <Icon country={option.value} />
+              <Icon
+                aria-hidden
+                country={option.value}
+                label={
+                  (option.label && String(option.label)) ||
+                  String(option.value ?? "")
+                }
+              />
               <span className="country-name flex-1 text-sm text-neutral-700">
                 {option.label}
               </span>
