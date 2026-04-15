@@ -49,20 +49,6 @@ export const EMPTY_FILTERS: AppliedFilters = {
   hasDependents: false,
 };
 
-export const EXPORT_FIELDS = [
-  { value: "id", label: "Player ID" },
-  { value: "name", label: "Full Name" },
-  { value: "email", label: "Email" },
-  { value: "phone", label: "Phone" },
-  { value: "gender", label: "Gender" },
-  { value: "nationality", label: "Nationality" },
-  { value: "status", label: "Status" },
-  { value: "dependents", label: "Dependents Count" },
-  { value: "createdAt", label: "Created Date" },
-  { value: "lastActiveAt", label: "Last Active" },
-  { value: "walletBalance", label: "Wallet Balance" },
-];
-
 export interface PlayerAuditEvent {
   id: string;
   timestamp: Date;
