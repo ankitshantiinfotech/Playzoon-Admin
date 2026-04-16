@@ -32,8 +32,6 @@ export interface AppliedFilters {
   lockStatuses: LockStatus[];
   createdFrom: Date | undefined;
   createdTo: Date | undefined;
-  lastActiveFrom: Date | undefined;
-  lastActiveTo: Date | undefined;
   hasDependents: boolean;
 }
 
@@ -44,8 +42,6 @@ export const EMPTY_FILTERS: AppliedFilters = {
   lockStatuses: [],
   createdFrom: undefined,
   createdTo: undefined,
-  lastActiveFrom: undefined,
-  lastActiveTo: undefined,
   hasDependents: false,
 };
 
