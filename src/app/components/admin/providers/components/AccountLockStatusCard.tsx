@@ -96,7 +96,6 @@ export function AccountLockStatusCard({
     try {
       await Promise.resolve(onUnlock());
       setShowConfirm(false);
-      toast.success("User has been unlocked successfully.", { duration: 5000 });
     } catch {
       toast.error("Could not unlock account. Please try again.");
     } finally {

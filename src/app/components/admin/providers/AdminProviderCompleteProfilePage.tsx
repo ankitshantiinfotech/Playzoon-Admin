@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback, type ReactNode } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import "react-phone-number-input/style.css";
 import { format, isAfter, startOfDay } from "date-fns";
 import { useNavigate, useParams } from "react-router";
@@ -14,6 +14,8 @@ import {
   AlertTriangle,
   Check,
   ArrowLeft,
+  Lock,
+  Unlock,
   Trash2,
   Building2,
   CheckCircle2,
@@ -865,6 +867,22 @@ function ConfirmModal({
 
 export type ProviderCompleteProfileVariant = "onboarding" | "postApproval";
 
+/** Matches admin provider API / detail page: locked flag, status, or time-based lock */
+function providerProfileIsLocked(
+  p: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!p) return false;
+  if (p.is_locked === true) return true;
+  const st = String(p.status ?? "").toLowerCase();
+  if (st === "locked") return true;
+  const lu = p.locked_until;
+  if (lu) {
+    const t = new Date(String(lu)).getTime();
+    if (!Number.isNaN(t) && t > Date.now()) return true;
+  }
+  return false;
+}
+
 // ── Main Component ────────────────────────────────────────
 export function AdminProviderCompleteProfilePage({
   variant = "onboarding",
@@ -913,6 +931,27 @@ export function AdminProviderCompleteProfilePage({
       setStoreLoading(false);
     }
   }, [hasProviderId, providerId, navigate]);
+
+  const isAccountLocked = useMemo(
+    () => providerProfileIsLocked(profile as Record<string, unknown> | null),
+    [profile],
+  );
+
+  const [unlockSubmitting, setUnlockSubmitting] = useState(false);
+
+  const handleManualUnlock = useCallback(async () => {
+    if (!providerId || unlockSubmitting || !isAccountLocked) return;
+    setUnlockSubmitting(true);
+    try {
+      await adminService.updateProvider(providerId, { is_locked: false });
+      toast.success("User has been unlocked successfully.");
+      await fetchProfile();
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setUnlockSubmitting(false);
+    }
+  }, [providerId, unlockSubmitting, isAccountLocked, fetchProfile]);
 
   const updateProviderProfile = useCallback(
     async (
@@ -1941,30 +1980,73 @@ export function AdminProviderCompleteProfilePage({
   }
 
   return (
-    <div className= "p-6 space-y-5 bg-[#F9FAFB] min-h-screen pb-24">
-      
-        <div className="flex items-center gap-3">
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-10 w-9 shrink-0"
-          onClick={() => {
-            if (isPostApproval) navigate(-1);
-            else navigate("/providers");
-          }}
-          aria-label="Go back"
-        >
-          <ArrowLeft className="h-5 w-5" />
-        </Button>
-        <div>
-          <h1 className="text-xl text-[#111827] flex items-center gap-2">
-          {t("providerCompleteProfile.editTrainingProvider")}
-          </h1>
-          <p className="text-sm text-gray-500 mt-0.5">
-            {t("providerCompleteProfile.editTrainingProviderSubtitle")}
-          </p>
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen pb-24">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex items-start gap-3 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-9 shrink-0"
+            onClick={() => {
+              if (isPostApproval) navigate(-1);
+              else navigate("/providers");
+            }}
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl text-[#111827]">
+                {t("providerCompleteProfile.editTrainingProvider")}
+              </h1>
+              {hasProviderId && isAccountLocked && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-red-50 text-red-700 border-red-200 gap-1"
+                >
+                  <Lock className="h-3 w-3" />
+                  Locked
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {t("providerCompleteProfile.editTrainingProviderSubtitle")}
+            </p>
+          </div>
         </div>
-        </div>
+
+        {hasProviderId && isAccountLocked && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 lg:pt-0.5">
+            <span className="text-xs text-[#6B7280]">Account status</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-[11px] border",
+                  "bg-red-50 border-red-200 text-red-700",
+                )}
+              >
+                Lock status: user is locked
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs border-red-200 text-red-700 hover:bg-red-50"
+                disabled={unlockSubmitting}
+                onClick={() => void handleManualUnlock()}
+              >
+                {unlockSubmitting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                ) : (
+                  <Unlock className="h-3.5 w-3.5 mr-1" />
+                )}
+                Unlock account
+              </Button>
+            </div>
+          </div>
+        )}
+      </div>
 
         {/* Rejection banner */}
         {profileStatus === "rejected" && rejectionReason && (
