@@ -327,25 +327,29 @@ export function PlayerManagementPage() {
   const [pageSize, setPageSize] = useState(10);
 
   const buildPlayerQuery = useCallback(
-    (pageNum: number, limitNum: number) => ({
-      page: pageNum,
-      limit: limitNum,
-      search: filters.search || undefined,
-      status: filters.statuses[0]?.toLowerCase() || undefined,
-      sort_by:
-        sortField === "createdAt"
-          ? "created_at"
-          : sortField === "name"
-            ? "name"
-            : sortField === "email"
-              ? "email"
-              : "status",
-      sort_order: sortDir,
-      registered_from: filters.createdFrom?.toISOString() || undefined,
-      registered_to: filters.createdTo?.toISOString() || undefined,
-      nationality: filters.nationalities[0] || undefined,
-      lock_status: filters.lockStatuses[0]?.toLowerCase() || undefined,
-    }),
+    (pageNum: number, limitNum: number) => {
+      const selectedStatus = filters.statuses[0]?.toLowerCase();
+      const isLockChip = selectedStatus === "locked" || selectedStatus === "unlocked";
+      return {
+        page: pageNum,
+        limit: limitNum,
+        search: filters.search || undefined,
+        status: selectedStatus && !isLockChip ? selectedStatus : undefined,
+        sort_by:
+          sortField === "createdAt"
+            ? "created_at"
+            : sortField === "name"
+              ? "name"
+              : sortField === "email"
+                ? "email"
+                : "status",
+        sort_order: sortDir,
+        registered_from: filters.createdFrom ? format(filters.createdFrom, "yyyy-MM-dd") : undefined,
+        registered_to: filters.createdTo ? format(filters.createdTo, "yyyy-MM-dd") : undefined,
+        nationality: filters.nationalities[0] || undefined,
+        lock_status: isLockChip ? selectedStatus : (filters.lockStatuses[0]?.toLowerCase() || undefined),
+      };
+    },
     [filters, sortField, sortDir],
   );
 
@@ -430,11 +434,6 @@ export function PlayerManagementPage() {
         e.createdTo = "Start date cannot be after end date.";
       }
     }
-    if (filterDraft.lastActiveFrom && filterDraft.lastActiveTo) {
-      if (isBefore(filterDraft.lastActiveTo, filterDraft.lastActiveFrom)) {
-        e.lastActiveTo = "Start date cannot be after end date.";
-      }
-    }
     setFilterErrors(e);
     return Object.keys(e).length === 0;
   };
@@ -496,18 +495,6 @@ export function PlayerManagementPage() {
         label: "Created To",
         value: format(filters.createdTo, "MMM d, yyyy"),
       });
-    if (filters.lastActiveFrom)
-      c.push({
-        key: "lastActiveFrom",
-        label: "Active From",
-        value: format(filters.lastActiveFrom, "MMM d, yyyy"),
-      });
-    if (filters.lastActiveTo)
-      c.push({
-        key: "lastActiveTo",
-        label: "Active To",
-        value: format(filters.lastActiveTo, "MMM d, yyyy"),
-      });
     if (filters.hasDependents)
       c.push({ key: "hasDependents", label: "Has dependents", value: "" });
     return c;
@@ -525,8 +512,6 @@ export function PlayerManagementPage() {
       if (key === "lockStatuses") next.lockStatuses = [];
       if (key === "createdFrom") next.createdFrom = undefined;
       if (key === "createdTo") next.createdTo = undefined;
-      if (key === "lastActiveFrom") next.lastActiveFrom = undefined;
-      if (key === "lastActiveTo") next.lastActiveTo = undefined;
       if (key === "hasDependents") next.hasDependents = false;
       return next;
     });
@@ -537,8 +522,6 @@ export function PlayerManagementPage() {
       if (key === "lockStatuses") next.lockStatuses = [];
       if (key === "createdFrom") next.createdFrom = undefined;
       if (key === "createdTo") next.createdTo = undefined;
-      if (key === "lastActiveFrom") next.lastActiveFrom = undefined;
-      if (key === "lastActiveTo") next.lastActiveTo = undefined;
       if (key === "hasDependents") next.hasDependents = false;
       return next;
     });
@@ -689,18 +672,28 @@ export function PlayerManagementPage() {
   };
 
   // AC-PM-020: Simple bulk delete handler
-  const handleBulkDeleteSimpleConfirm = () => {
-    const count = selectedIds.size;
-    setPlayers((prev) => prev.filter((p) => !selectedIds.has(p.id)));
+  const handleBulkDeleteSimpleConfirm = async () => {
+    const ids = Array.from(selectedIds);
+    const count = ids.length;
     setBulkDeleteSimpleOpen(false);
+    try {
+      const res = await adminService.bulkPlayerAction({
+        player_ids: ids,
+        action: "delete",
+      });
+      const successful = res.data?.successful || 0;
+      const failed = res.data?.failed || 0;
+      if (successful > 0) {
+        showBanner("success", `${successful} player${successful !== 1 ? "s" : ""} permanently deleted.`);
+        fetchPlayers(buildPlayerQuery(page, pageSize));
+      }
+      if (failed > 0) {
+        toast.error(`Failed to delete ${failed} player${failed !== 1 ? "s" : ""}.`);
+      }
+    } catch (err: any) {
+      toast.error(err.response?.data?.message || "Bulk delete failed.");
+    }
     clearSelection();
-    showBanner(
-      "success",
-      `${count} player${count !== 1 ? "s" : ""} permanently deleted.`,
-    );
-    toast.success(
-      `${count} player${count !== 1 ? "s have" : " has"} been deleted.`,
-    );
   };
 
   const handlePlayerExportDownload = useCallback(
@@ -1085,79 +1078,6 @@ export function PlayerManagementPage() {
                   )}
                 </div>
 
-                {/* Last Active From / To */}
-                <div className="space-y-1.5">
-                  <Label>Last Active From</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start gap-2 text-sm",
-                          !filterDraft.lastActiveFrom &&
-                            "text-muted-foreground",
-                        )}
-                      >
-                        <CalendarIcon className="h-3.5 w-3.5" />
-                        {filterDraft.lastActiveFrom
-                          ? format(filterDraft.lastActiveFrom, "MMM d, yyyy")
-                          : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={filterDraft.lastActiveFrom}
-                        onSelect={(d) =>
-                          setFilterDraft((f) => ({ ...f, lastActiveFrom: d }))
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  <p className="text-[11px] text-gray-400">
-                    Must be a valid date.
-                  </p>
-                </div>
-                <div className="space-y-1.5">
-                  <Label>Last Active To</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button
-                        variant="outline"
-                        className={cn(
-                          "w-full justify-start gap-2 text-sm",
-                          !filterDraft.lastActiveTo && "text-muted-foreground",
-                          filterErrors.lastActiveTo && "border-red-400",
-                        )}
-                      >
-                        <CalendarIcon className="h-3.5 w-3.5" />
-                        {filterDraft.lastActiveTo
-                          ? format(filterDraft.lastActiveTo, "MMM d, yyyy")
-                          : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar
-                        mode="single"
-                        selected={filterDraft.lastActiveTo}
-                        onSelect={(d) =>
-                          setFilterDraft((f) => ({ ...f, lastActiveTo: d }))
-                        }
-                        initialFocus
-                      />
-                    </PopoverContent>
-                  </Popover>
-                  {filterErrors.lastActiveTo ? (
-                    <p className="text-[11px] text-red-500">
-                      {filterErrors.lastActiveTo}
-                    </p>
-                  ) : (
-                    <p className="text-[11px] text-gray-400">
-                      Must be on or after Last Active From.
-                    </p>
-                  )}
-                </div>
               </div>
 
               <div className="flex justify-end gap-2 pt-1">
