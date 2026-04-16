@@ -1,14 +1,10 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router";
 import {
   Plus,
   ChevronDown,
   ChevronRight,
   Download,
-  FileText,
-  FileSpreadsheet,
-  FileDown,
-  Database,
 } from "lucide-react";
 import { MasterDataTable } from "./MasterDataTable";
 import { AddEditModal, DeactivationModal } from "./MasterDataModals";
@@ -17,6 +13,8 @@ import { cn } from "../../../../lib/utils";
 import { toast } from "sonner";
 import { MasterDataEntity, MasterDataCategory, CATEGORIES } from "./types";
 import { adminService } from "../../../../services/admin.service";
+import { SimpleExportModal } from "../common/SimpleExportModal";
+import { exportTable, type ExportFormat } from "@/lib/exportDownload";
 
 // ─── Audit Trail Types & Mock Data ───────────────────────────────────────────
 
@@ -72,16 +70,6 @@ const MOCK_AUDIT_ENTRIES: AuditEntry[] = [
       "New court type created with name (EN): Synthetic Turf, name (AR): عشب صناعي",
   },
 ];
-
-// ─── Export Formats ──────────────────────────────────────────────────────────
-
-const EXPORT_FORMATS = [
-  { label: "TXT", icon: FileText },
-  { label: "XLS", icon: FileSpreadsheet },
-  { label: "CSV", icon: FileDown },
-  { label: "PDF", icon: FileText },
-  { label: "SQL", icon: Database },
-] as const;
 
 // Mock Data Generator
 const generateMockData = (category: MasterDataCategory): MasterDataEntity[] => {
@@ -222,8 +210,7 @@ export function MasterDataPage() {
       setSportsLoading(false);
     }
   }, [statusFilter]);
-  const [exportOpen, setExportOpen] = useState(false);
-  const exportRef = useRef<HTMLDivElement>(null);
+  const [exportModalOpen, setExportModalOpen] = useState(false);
   const [auditOpen, setAuditOpen] = useState(false);
 
   // Modal States
@@ -247,11 +234,100 @@ export function MasterDataPage() {
         ? data[activeTab]
         : data[activeTab].filter((item) => item.status === statusFilter);
 
-  // Export handler
-  const handleExport = (format: string) => {
-    toast.success(`Exported as ${format}`);
-    setExportOpen(false);
-  };
+  const handleMasterDataExport = useCallback(
+    async (fmt: ExportFormat) => {
+      if (activeTab === "Sports") {
+        const perPage = 500;
+        const baseParams: Record<string, unknown> = {
+          page: 1,
+          limit: perPage,
+          ...(statusFilter !== "all" ? { status: statusFilter } : {}),
+        };
+        const firstRes = await adminService.listSports(baseParams);
+        const firstPayload =
+          (firstRes as { data?: { items?: unknown[]; pagination?: { total_items?: number } } })
+            ?.data ?? firstRes;
+        const firstItems = Array.isArray(firstPayload?.items)
+          ? (firstPayload.items as Record<string, unknown>[])
+          : [];
+        const total =
+          typeof firstPayload?.pagination?.total_items === "number"
+            ? firstPayload.pagination.total_items
+            : firstItems.length;
+        if (total === 0) {
+          toast.error("No rows to export.");
+          throw new Error("empty");
+        }
+        const pages = Math.max(1, Math.ceil(total / perPage));
+        const acc: Record<string, unknown>[] = [];
+        for (let p = 1; p <= pages; p++) {
+          const res = await adminService.listSports({ ...baseParams, page: p });
+          const payload =
+            (res as { data?: { items?: unknown[] } })?.data ?? res;
+          const items = Array.isArray(payload?.items)
+            ? (payload.items as Record<string, unknown>[])
+            : [];
+          acc.push(...items);
+        }
+        const rows = sortSportsRows(acc).map(mapSportApiRowToEntity);
+        const headers = [
+          "ID",
+          "Name (EN)",
+          "Status",
+          "Created At",
+          "Updated At",
+          "Icon URL",
+        ];
+        const exportRows = rows.map((r) => [
+          r.id,
+          r.nameEn,
+          r.status === "active" ? "Active" : "Inactive",
+          r.createdAt,
+          r.updatedAt,
+          r.icon ?? "",
+        ]);
+        await exportTable({
+          format: fmt,
+          filenamePrefix: "sports",
+          sqlTableName: "sports",
+          pdfTitle: "Sports export",
+          headers,
+          rows: exportRows,
+        });
+        return;
+      }
+
+      const rows = filteredByStatus;
+      if (rows.length === 0) {
+        toast.error("No rows to export.");
+        throw new Error("empty");
+      }
+      const slug =
+        activeTab === "Court Types"
+          ? "court_types"
+          : activeTab === "Court Stations"
+            ? "court_stations"
+            : "master_data";
+      const headers = ["ID", "Name (EN)", "Name (AR)", "Status", "Created At", "Updated At"];
+      const exportRows = rows.map((r) => [
+        r.id,
+        r.nameEn,
+        r.nameAr,
+        r.status === "active" ? "Active" : "Inactive",
+        r.createdAt,
+        r.updatedAt,
+      ]);
+      await exportTable({
+        format: fmt,
+        filenamePrefix: slug,
+        sqlTableName: slug,
+        pdfTitle: `${activeTab} export`,
+        headers,
+        rows: exportRows,
+      });
+    },
+    [activeTab, statusFilter, filteredByStatus],
+  );
 
   // Actions
   const handleAdd = () => {
@@ -301,7 +377,21 @@ export function MasterDataPage() {
 
   const handleDelete = async (item: MasterDataEntity) => {
     if (activeTab !== "Sports") return;
-    const confirmed = window.confirm(`Delete ${item.nameEn}? This action cannot be undone.`);
+    let assigned = false;
+    try {
+      const res = await adminService.getMasterDataItem("sports", item.id);
+      const row =
+        (res as { data?: { is_assigned?: boolean } })?.data ??
+        (res as { is_assigned?: boolean });
+      assigned = !!(row && typeof row === "object" && row.is_assigned);
+    } catch {
+      toast.error("Could not verify sport usage. Please try again.");
+      return;
+    }
+    const msg = assigned
+      ? `This sport is assigned to users. Deleting it may affect existing data.\n\nDelete "${item.nameEn}" anyway? This action cannot be undone.`
+      : `Delete ${item.nameEn}? This action cannot be undone.`;
+    const confirmed = window.confirm(msg);
     if (!confirmed) return;
     try {
       await adminService.deleteMasterDataItem("sports", item.id);
@@ -457,42 +547,15 @@ export function MasterDataPage() {
           </select>
         </div>
 
-        {/* Export Dropdown */}
-        <div className="relative" ref={exportRef}>
-          <button
-            onClick={() => setExportOpen(!exportOpen)}
-            className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:ring-offset-2 transition-colors"
-          >
-            <Download className="h-4 w-4" />
-            Export
-            <ChevronDown
-              className={cn(
-                "h-4 w-4 transition-transform",
-                exportOpen && "rotate-180",
-              )}
-            />
-          </button>
-          {exportOpen && (
-            <>
-              <div
-                className="fixed inset-0 z-10"
-                onClick={() => setExportOpen(false)}
-              />
-              <div className="absolute right-0 z-20 mt-1 w-44 rounded-md border border-gray-200 bg-white py-1 shadow-lg">
-                {EXPORT_FORMATS.map(({ label, icon: Icon }) => (
-                  <button
-                    key={label}
-                    onClick={() => handleExport(label)}
-                    className="flex w-full items-center gap-2 px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 transition-colors"
-                  >
-                    <Icon className="h-4 w-4 text-gray-400" />
-                    {label}
-                  </button>
-                ))}
-              </div>
-            </>
-          )}
-        </div>
+        <button
+          type="button"
+          disabled={activeTab === "Sports" && sportsLoading}
+          onClick={() => setExportModalOpen(true)}
+          className="inline-flex items-center gap-2 rounded-md border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#003B95] focus:ring-offset-2 transition-colors disabled:opacity-50 disabled:pointer-events-none"
+        >
+          <Download className="h-4 w-4" />
+          Export
+        </button>
       </div>
 
       {/* Content */}
@@ -605,6 +668,18 @@ export function MasterDataPage() {
         item={itemToDeactivate}
         category={activeTab}
         impactCount={Math.floor(Math.random() * 50) + 5} // Mock impact count
+      />
+
+      <SimpleExportModal
+        open={exportModalOpen}
+        onOpenChange={setExportModalOpen}
+        title={`Export ${activeTab}`}
+        description={
+          activeTab === "Sports"
+            ? "Export all sports matching the current status filter."
+            : "Export all rows matching the current status filter."
+        }
+        onDownload={handleMasterDataExport}
       />
     </div>
   );
