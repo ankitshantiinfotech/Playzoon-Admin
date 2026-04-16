@@ -402,23 +402,47 @@ export function ServiceProvidersPage() {
     [],
   );
 
-  // ── Fetch providers from API ─────────────────────────
+  // ── Fetch providers from API (paginate: backend max limit is 100) ─────────────────────────
   const fetchProviders = useCallback(async () => {
     setIsLoading(true);
     try {
-      const res = await adminService.listProviders({ page: 1, limit: 100 });
-      const list = res?.providers || res?.data?.providers || [];
-      const filtered = Array.isArray(list)
-        ? list.filter((p: Record<string, unknown>) => {
-            const approval = String(
-              p.admin_approval_status || p.profile_status || "",
-            ).toLowerCase();
-            const profileCompleted = p.profile_completed === true;
-            if (approval === "approved") return true;
-            if (approval === "pending") return profileCompleted;
-            return false;
-          })
-        : [];
+      const pageSize = 100;
+      let page = 1;
+      const all: Record<string, unknown>[] = [];
+      let totalItems = 0;
+      for (;;) {
+        const envelope = await adminService.listProviders({ page, limit: pageSize });
+        const payload =
+          (
+            envelope as {
+              data?: { providers?: unknown[]; pagination?: { total_items?: number } };
+            }
+          )?.data ??
+          (envelope as {
+            providers?: unknown[];
+            pagination?: { total_items?: number };
+          });
+        const list = payload?.providers ?? [];
+        if (typeof payload?.pagination?.total_items === "number") {
+          totalItems = payload.pagination.total_items;
+        }
+        if (Array.isArray(list) && list.length > 0) {
+          all.push(...(list as Record<string, unknown>[]));
+        }
+        if (!Array.isArray(list) || list.length < pageSize) break;
+        if (totalItems > 0 && all.length >= totalItems) break;
+        page += 1;
+        if (page > 500) break;
+      }
+      const filtered = all.filter((p: Record<string, unknown>) => {
+        const approval = String(
+          p.admin_approval_status || p.profile_status || "",
+        ).toLowerCase();
+        const profileCompleted = p.profile_completed === true;
+        if (approval === "approved") return true;
+        if (approval === "pending") return profileCompleted;
+        return false;
+      });
       setProviders(filtered.map(mapProvider));
     } catch (err) {
       console.error("Failed to load providers:", err);
