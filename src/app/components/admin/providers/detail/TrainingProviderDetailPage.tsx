@@ -33,6 +33,8 @@ import {
   ClipboardList,
   CreditCard,
   Inbox,
+  Unlock,
+  Loader2,
 } from "lucide-react";
 import { cn } from "../../../ui/utils";
 import { Button } from "../../../ui/button";
@@ -61,11 +63,12 @@ function mapApiProviderToDetail(api: Record<string, unknown>): TrainingProviderD
   const mobileDisplay =
     cc && phone && !phone.startsWith("+") ? `${cc}${phone}` : phone || cc || "";
   const biz = String(api.business_name ?? api.club_name ?? "Training Provider");
-  const locked = Boolean(api.is_locked);
   const pst = String(api.profile_status ?? "draft").toLowerCase();
   const verificationStatus: VerificationStatus =
     pst === "approved" ? "Approved" : pst === "rejected" ? "Rejected" : "Pending";
   const st = String(api.status ?? "active").toLowerCase();
+  const lockedByStatus = st === "locked";
+  const locked = Boolean(api.is_locked) || lockedByStatus;
   const platformStatus: PlatformStatus = st === "active" ? "Active" : "Inactive";
   const docsRaw = Array.isArray(api.official_documents)
     ? (api.official_documents as Record<string, unknown>[])
@@ -358,6 +361,7 @@ export function TrainingProviderDetailPage() {
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [unlockSubmitting, setUnlockSubmitting] = useState(false);
 
   useEffect(() => {
     if (!id) return;
@@ -461,19 +465,28 @@ export function TrainingProviderDetailPage() {
     setLightboxOpen(true);
   };
 
-  // ── Unlock handler ───────────────────────────
+  // ── Unlock handler (Account tab card + header — same as player detail) ──
   const handleUnlock = async () => {
-    if (!provider) return;
-    await adminService.updateProvider(provider.id, { is_locked: false });
-    setProvider((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        accountStatus: "Unlocked",
-        lockedAt: undefined,
-        lockedBy: undefined,
-      };
-    });
+    if (!provider || unlockSubmitting) return;
+    setUnlockSubmitting(true);
+    try {
+      await adminService.updateProvider(provider.id, { is_locked: false });
+      setProvider((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          accountStatus: "Unlocked",
+          lockedAt: undefined,
+          lockedBy: undefined,
+          platformStatus: "Active",
+        };
+      });
+      toast.success("User has been unlocked successfully.");
+    } catch {
+      toast.error("Could not unlock account. Please try again.");
+    } finally {
+      setUnlockSubmitting(false);
+    }
   };
 
   // ── Loading / Not found ──────────────────────
@@ -524,7 +537,7 @@ export function TrainingProviderDetailPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6">
       {/* ── Back Navigation ────────────────────────── */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <Button
           variant="ghost"
           size="icon"
@@ -534,32 +547,51 @@ export function TrainingProviderDetailPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="min-w-0 flex-1">
-          <div className="flex items-center gap-2 flex-wrap">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <h1 className="text-xl text-[#111827] tracking-tight truncate max-w-lg">
-                  {provider.clubName}
-                </h1>
-              </TooltipTrigger>
-              {provider.clubName.length > 50 && (
-                <TooltipContent side="bottom" className="max-w-sm">
-                  {provider.clubName}
-                </TooltipContent>
-              )}
-            </Tooltip>
-            <VerificationBadge status={provider.verificationStatus} />
-            <Badge
-              variant="outline"
-              className="text-[10px] text-gray-500 border-gray-200"
-            >
-              {provider.id}
-            </Badge>
+        <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <h1 className="text-xl text-[#111827] tracking-tight truncate max-w-lg">
+                    {provider.clubName}
+                  </h1>
+                </TooltipTrigger>
+                {provider.clubName.length > 50 && (
+                  <TooltipContent side="bottom" className="max-w-sm">
+                    {provider.clubName}
+                  </TooltipContent>
+                )}
+              </Tooltip>
+              <VerificationBadge status={provider.verificationStatus} />
+              <Badge
+                variant="outline"
+                className="text-[10px] text-gray-500 border-gray-200"
+              >
+                {provider.id}
+              </Badge>
+            </div>
+            <p className="text-xs text-gray-400 mt-0.5">
+              Training Provider &middot; Registered{" "}
+              {format(provider.createdAt, "dd MMM yyyy")}
+            </p>
           </div>
-          <p className="text-xs text-gray-400 mt-0.5">
-            Training Provider &middot; Registered{" "}
-            {format(provider.createdAt, "dd MMM yyyy")}
-          </p>
+          {isLocked && (
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              className="h-9 text-xs border-red-200 text-red-700 hover:bg-red-50 shrink-0"
+              disabled={unlockSubmitting}
+              onClick={handleUnlock}
+            >
+              {unlockSubmitting ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+              ) : (
+                <Unlock className="h-3.5 w-3.5 mr-1" />
+              )}
+              Unlock account
+            </Button>
+          )}
         </div>
       </div>
 
