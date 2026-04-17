@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useCallback } from "react";
+import { useState, useRef, useEffect, useCallback, useMemo, type ReactNode } from "react";
 import "react-phone-number-input/style.css";
 import { format, isAfter, startOfDay } from "date-fns";
 import { useNavigate, useParams } from "react-router";
@@ -14,11 +14,14 @@ import {
   AlertTriangle,
   Check,
   ArrowLeft,
+  Lock,
+  Unlock,
   Trash2,
   Building2,
   CheckCircle2,
   Calendar as CalendarIcon,
 } from "lucide-react";
+import type { LucideIcon } from "lucide-react";
 import { toast } from "sonner";
 import { adminService } from "@/services/admin.service";
 import { handleApiError, handleApiErrorWithDetails } from "@/lib/error-handler";
@@ -31,6 +34,13 @@ import { Button } from "../../ui/button";
 import { Badge } from "../../ui/badge";
 import { Calendar } from "../../ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "../../ui/popover";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "../../ui/select";
 import { cn } from "../../ui/utils";
 import MobileNumber from "../../ui/MobileNumber";
 import { isLandlineInvalid } from "@/lib/landline";
@@ -213,6 +223,8 @@ function scrollFormErrorIntoView(errMap: FieldErrors) {
 }
 const PROFILE_EMAIL_BRAND = "#003B95";
 const INCORPORATION_CALENDAR_MIN_YEAR = 1800;
+/** Radix Select requires a non-empty string value; maps to cleared designation in form state. */
+const DESIGNATION_SELECT_EMPTY = "__designation_none__";
 
 /** Local calendar date from YYYY-MM-DD (avoids UTC shift from parseISO). */
 function dateFromYmd(value: string): Date | undefined {
@@ -733,14 +745,18 @@ function ProfilePhotoUploader({
  * Duplicating the same block under `md:hidden` and `hidden md:block` breaks Radix Popover / DayPicker
  * (two triggers, two portals, duplicate ids).
  */
-function ResponsiveProfileSection({
+export function ResponsiveProfileSection({
   title,
   defaultOpen,
   children,
+  icon: Icon,
+  titleRight,
 }: {
   title: string;
   defaultOpen?: boolean;
-  children: React.ReactNode;
+  children: ReactNode;
+  icon?: LucideIcon;
+  titleRight?: ReactNode;
 }) {
   const [isOpen, setIsOpen] = useState(defaultOpen !== false);
 
@@ -749,25 +765,40 @@ function ResponsiveProfileSection({
       <button
         type="button"
         onClick={() => setIsOpen((o) => !o)}
-        className="md:hidden w-full flex items-center justify-between py-4 text-left"
+        className="md:hidden w-full flex items-center justify-between gap-2 py-4 text-left min-w-0"
         aria-expanded={isOpen}
       >
-        <span className="text-base font-semibold text-neutral-900">{title}</span>
-        <svg
-          className={
-            "w-4 h-4 text-neutral-400 transition-transform duration-200 " +
-            (isOpen ? "rotate-180" : "")
-          }
-          fill="none"
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={2}
-        >
-          <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
-        </svg>
+        <span className="flex min-w-0 items-center gap-2 text-base font-semibold text-neutral-900">
+          {Icon ? (
+            <Icon className="h-5 w-5 shrink-0 text-neutral-500" aria-hidden />
+          ) : null}
+          <span className="truncate">{title}</span>
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          {titleRight}
+          <svg
+            className={
+              "w-4 h-4 text-neutral-400 transition-transform duration-200 " +
+              (isOpen ? "rotate-180" : "")
+            }
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+            strokeWidth={2}
+            aria-hidden
+          >
+            <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+          </svg>
+        </span>
       </button>
-      <div className="hidden md:block text-lg font-semibold text-neutral-900 mb-6 pb-2 border-b border-neutral-200 w-full">
-        {title}
+      <div className="hidden md:flex md:items-center md:justify-between md:gap-4 text-lg font-semibold text-neutral-900 mb-6 pb-2 border-b border-neutral-200 w-full">
+        <span className="flex min-w-0 items-center gap-2">
+          {Icon ? (
+            <Icon className="h-5 w-5 shrink-0 text-neutral-500" aria-hidden />
+          ) : null}
+          {title}
+        </span>
+        {titleRight ? <span className="shrink-0 font-normal">{titleRight}</span> : null}
       </div>
       <div
         className={cn(
@@ -836,6 +867,22 @@ function ConfirmModal({
 
 export type ProviderCompleteProfileVariant = "onboarding" | "postApproval";
 
+/** Matches admin provider API / detail page: locked flag, status, or time-based lock */
+function providerProfileIsLocked(
+  p: Record<string, unknown> | null | undefined,
+): boolean {
+  if (!p) return false;
+  if (p.is_locked === true) return true;
+  const st = String(p.status ?? "").toLowerCase();
+  if (st === "locked") return true;
+  const lu = p.locked_until;
+  if (lu) {
+    const t = new Date(String(lu)).getTime();
+    if (!Number.isNaN(t) && t > Date.now()) return true;
+  }
+  return false;
+}
+
 // ── Main Component ────────────────────────────────────────
 export function AdminProviderCompleteProfilePage({
   variant = "onboarding",
@@ -884,6 +931,27 @@ export function AdminProviderCompleteProfilePage({
       setStoreLoading(false);
     }
   }, [hasProviderId, providerId, navigate]);
+
+  const isAccountLocked = useMemo(
+    () => providerProfileIsLocked(profile as Record<string, unknown> | null),
+    [profile],
+  );
+
+  const [unlockSubmitting, setUnlockSubmitting] = useState(false);
+
+  const handleManualUnlock = useCallback(async () => {
+    if (!providerId || unlockSubmitting || !isAccountLocked) return;
+    setUnlockSubmitting(true);
+    try {
+      await adminService.updateProvider(providerId, { is_locked: false });
+      toast.success("User has been unlocked successfully.");
+      await fetchProfile();
+    } catch (err) {
+      handleApiError(err);
+    } finally {
+      setUnlockSubmitting(false);
+    }
+  }, [providerId, unlockSubmitting, isAccountLocked, fetchProfile]);
 
   const updateProviderProfile = useCallback(
     async (
@@ -1055,12 +1123,12 @@ export function AdminProviderCompleteProfilePage({
   useEffect(() => {
     api.get("/config/designations").then((res) => {
       // Admin API client keeps envelope shape: { success, data: {...} }
-      const list =
-        res?.data?.designations ||
-        res?.data?.data?.designations ||
-        res?.designations ||
-        [];
-      if (Array.isArray(list)) setDesignations(list);
+      const body = res.data as {
+        designations?: unknown;
+        data?: { designations?: unknown };
+      };
+      const list = body?.designations ?? body?.data?.designations ?? [];
+      if (Array.isArray(list)) setDesignations(list as { id: string; name_en: string; name_ar: string }[]);
     }).catch(() => {});
   }, []);
 
@@ -1557,6 +1625,26 @@ export function AdminProviderCompleteProfilePage({
   const primaryContactContent = (
     <div className="space-y-5">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {/* <div id="field-clubName">
+          <Label htmlFor="clubName" className="mb-1.5">
+            Club/Institute Name <span className="text-red-500">*</span>
+          </Label>
+          <Input
+            id="clubName"
+            value={''}
+            onChange={(e) => updateField("clubName", e.target.value)}
+            placeholder="e.g. Dubai Elite Sports Academy"
+            maxLength={50}
+            aria-describedby={errors.clubName ? "err-clubName" : undefined}
+            aria-invalid={!!errors.clubName}
+            className={
+              errors.clubName
+                ? "border-red-400 focus-visible:ring-red-200 focus-visible:border-red-400"
+                : ""
+            }
+          />
+          <FieldError message={errors.clubName} id="err-clubName" />
+        </div> */}
         <div id="field-firstName">
           <Label htmlFor="firstName" className="mb-1.5">
             {t("auth.firstName")} <span className="text-red-500">*</span>
@@ -1653,21 +1741,32 @@ export function AdminProviderCompleteProfilePage({
         <Label htmlFor="designation" className="mb-1.5">
           Designation / Job Title <span className="text-red-500">*</span>
         </Label>
-        <select
-          id="designation"
-          value={form.designation}
-          onChange={(e) => updateField("designation", e.target.value)}
-          aria-describedby={errors.designation ? "err-designation" : undefined}
-          aria-invalid={!!errors.designation}
-          className={`flex h-10 w-full rounded-md border bg-background px-3 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 ${errors.designation ? "border-red-400 focus-visible:ring-red-200 focus-visible:border-red-400" : "border-input"}`}
+        <Select
+          value={form.designation ? String(form.designation) : DESIGNATION_SELECT_EMPTY}
+          onValueChange={(v) =>
+            updateField("designation", v === DESIGNATION_SELECT_EMPTY ? "" : v)
+          }
         >
-          <option value="">Select designation...</option>
-          {designations.map((d) => (
-            <option key={d.id} value={d.id}>
-              {lang === "ar" ? d.name_ar : d.name_en}
-            </option>
-          ))}
-        </select>
+          <SelectTrigger
+            id="designation"
+            size="default"
+            aria-describedby={errors.designation ? "err-designation" : undefined}
+            aria-invalid={!!errors.designation}
+            className={cn(errors.designation && "border-red-400 focus:border-red-400 focus:ring-red-200/30")}
+          >
+            <SelectValue placeholder={t("providerCompleteProfile.designationPlaceholder")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value={DESIGNATION_SELECT_EMPTY}>
+              {t("providerCompleteProfile.designationPlaceholder")}
+            </SelectItem>
+            {designations.map((d) => (
+              <SelectItem key={d.id} value={String(d.id)}>
+                {lang === "ar" ? d.name_ar : d.name_en}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
         <FieldError message={errors.designation} id="err-designation" />
       </div>
 
@@ -1709,14 +1808,15 @@ export function AdminProviderCompleteProfilePage({
             <Button
               id="dateOfIncorporation"
               type="button"
-              variant="field"
-              size="field"
+              variant="outline"
               className={cn(
-                "w-full justify-start text-left",
+                "h-10 w-full justify-start gap-2 rounded-xl border-neutral-200 px-4 text-left text-[15px] font-normal shadow-none",
+                "transition-all duration-200 hover:border-neutral-300 hover:bg-white",
+                "focus-visible:border-[#003B95] focus-visible:ring-4 focus-visible:ring-[#003B95]/[0.08] focus-visible:ring-offset-0",
                 form.dateOfIncorporation ? "text-neutral-800" : "text-neutral-400",
                 errors.dateOfIncorporation &&
-                  "border-red-500 ring-1 ring-red-500/20",
-              )} 
+                  "border-red-300 bg-red-50 focus-visible:border-red-400 focus-visible:ring-red-300/20",
+              )}
               aria-invalid={!!errors.dateOfIncorporation}
               aria-describedby={
                 errors.dateOfIncorporation ? "err-dateOfIncorporation" : undefined
@@ -1726,7 +1826,7 @@ export function AdminProviderCompleteProfilePage({
               {form.dateOfIncorporation
                 ? (() => {
                     const d = dateFromYmd(form.dateOfIncorporation);
-                    return d ? format(d, "PPP") : t("provider.edit.selectDate");
+                    return d ? format(d, "dd/MM/yyyy") : t("provider.edit.selectDate");
                   })()
                 : t("provider.edit.selectDate")}
             </Button>
@@ -1880,37 +1980,74 @@ export function AdminProviderCompleteProfilePage({
   }
 
   return (
-    <div className={isPostApproval ? "min-h-0 bg-[#f8f9fc]" : "min-h-screen bg-neutral-50"}>
-      {/* Header bar with logout — onboarding / fullscreen flow only */}
-      {!isPostApproval && (
-        <header className="bg-white border-b border-neutral-100 sticky top-0 z-30">
-          <div className="max-w-[780px] mx-auto px-4 sm:px-6 h-14 flex items-center justify-between">
-            <button
-              type="button"
-              onClick={() => navigate("/providers")}
-              className="text-sm text-neutral-600 hover:text-neutral-900 flex items-center gap-2"
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Back to providers
-            </button>
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-lg bg-[#003B95] flex items-center justify-center">
-                <Building2 className="w-4 h-4 text-white" />
-              </div>
-              <span className="text-sm text-neutral-900">Admin</span>
+    <div className="p-6 space-y-5 bg-[#F9FAFB] min-h-screen pb-24">
+      <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+        <div className="flex items-start gap-3 min-w-0">
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-10 w-9 shrink-0"
+            onClick={() => {
+              if (isPostApproval) navigate(-1);
+              else navigate("/providers");
+            }}
+            aria-label="Go back"
+          >
+            <ArrowLeft className="h-5 w-5" />
+          </Button>
+          <div className="min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h1 className="text-xl text-[#111827]">
+                {t("providerCompleteProfile.editTrainingProvider")}
+              </h1>
+              {hasProviderId && isAccountLocked && (
+                <Badge
+                  variant="outline"
+                  className="text-xs bg-red-50 text-red-700 border-red-200 gap-1"
+                >
+                  <Lock className="h-3 w-3" />
+                  Locked
+                </Badge>
+              )}
+            </div>
+            <p className="text-sm text-gray-500 mt-0.5">
+              {t("providerCompleteProfile.editTrainingProviderSubtitle")}
+            </p>
+          </div>
+        </div>
+
+        {hasProviderId && isAccountLocked && (
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2 shrink-0 lg:pt-0.5">
+            <span className="text-xs text-[#6B7280]">Account status</span>
+            <div className="flex items-center gap-2 flex-wrap">
+              <span
+                className={cn(
+                  "px-2.5 py-1 rounded-md text-[11px] border",
+                  "bg-red-50 border-red-200 text-red-700",
+                )}
+              >
+                Lock status: user is locked
+              </span>
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                className="h-8 text-xs border-red-200 text-red-700 hover:bg-red-50"
+                disabled={unlockSubmitting}
+                onClick={() => void handleManualUnlock()}
+              >
+                {unlockSubmitting ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
+                ) : (
+                  <Unlock className="h-3.5 w-3.5 mr-1" />
+                )}
+                Unlock account
+              </Button>
             </div>
           </div>
-        </header>
-      )}
+        )}
+      </div>
 
-      {/* Main content */}
-      <main
-        className={
-          isPostApproval
-            ? "max-w-[720px] mx-auto px-4 sm:px-6 py-6 pb-16"
-            : "max-w-[720px] mx-auto px-4 sm:px-6 py-10 pb-32"
-        }
-      >
         {/* Rejection banner */}
         {profileStatus === "rejected" && rejectionReason && (
           <div
@@ -1927,76 +2064,90 @@ export function AdminProviderCompleteProfilePage({
             </div>
           </div>
         )}
+        <div className="bg-white rounded-xl border border-gray-200 divide-y divide-gray-100 p-6 space-y-5 max-w-4xl">
+         
+          {/* Form */}
+          <form
+            ref={formRef}
+            role="form"
+            aria-label={t("providerCompleteProfile.completeServiceProviderProfile")}
+            onSubmit={(e) => {
+              e.preventDefault();
+              if (isPostApproval) {
+                void handlePostApprovalSave();
+              } else {
+                handleSubmit();
+              }
+            }}
+            className="max-w-4xl"
+          >
+            {/* Single mount per section — duplicate trees break date Popover / DayPicker */}
+            <div className="mt-8 md:mt-0 mb-6 md:mb-0 border-t border-b border-neutral-100 md:border-0 md:space-y-12">
+              <ResponsiveProfileSection title="Profile Photo / Logo" defaultOpen>
+                {profilePhotoContent}
+              </ResponsiveProfileSection>
+              <ResponsiveProfileSection title="Primary Contact Details" defaultOpen>
+                {primaryContactContent}
+              </ResponsiveProfileSection>
+              <ResponsiveProfileSection title="Document Uploads" defaultOpen>
+                {documentUploadsContent}
+              </ResponsiveProfileSection>
+            </div>
 
-        {/* Form */}
-        <form
-          ref={formRef}
-          role="form"
-          aria-label={t("providerCompleteProfile.completeServiceProviderProfile")}
-          onSubmit={(e) => {
-            e.preventDefault();
-            if (isPostApproval) {
-              void handlePostApprovalSave();
-            } else {
-              handleSubmit();
-            }
-          }}
-          className="space-y-12"
-        >
-          {/* Single mount per section — duplicate trees break date Popover / DayPicker */}
-          <div className="mt-8 md:mt-0 mb-6 md:mb-0 border-t border-b border-neutral-100 md:border-0 md:space-y-12">
-            <ResponsiveProfileSection title="Profile Photo / Logo" defaultOpen>
-              {profilePhotoContent}
-            </ResponsiveProfileSection>
-            <ResponsiveProfileSection title="Primary Contact Details" defaultOpen>
-              {primaryContactContent}
-            </ResponsiveProfileSection>
-            <ResponsiveProfileSection title="Document Uploads" defaultOpen>
-              {documentUploadsContent}
-            </ResponsiveProfileSection>
-          </div>
-
-          {/* Actions */}
-          <div className="flex flex-col md:flex-row gap-4 pt-8 mt-12 border-t border-neutral-100">
-            {isPostApproval ? (
-              <Button
-                type="submit"
-                disabled={isSaving}
-                className="flex-1 h-12 rounded-xl bg-[#003B95] hover:bg-[#002a6b] text-white shadow-sm disabled:opacity-50 font-semibold text-sm transition-colors flex items-center justify-center gap-2"
-              >
-                {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                {createMode
-                  ? "Create Provider"
-                  : t("providerCompleteProfile.saveProfileChanges")}
-              </Button>
-            ) : (
-              <>
-                <Button
-                  type="submit"
-                  disabled={isSubmitting}
-                  className="flex-1 h-12 rounded-xl bg-[#003B95] hover:bg-[#002a6b] text-white shadow-sm disabled:opacity-50 font-semibold text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                  {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {t("providerCompleteProfile.submitForReview")}
-                </Button>
-                <Button
-                  type="button"
-                  variant="outline"
-                  disabled={isSaving}
-                  onClick={handleSaveDraft}
-                  className="flex-1 h-12 rounded-xl border-neutral-200 text-neutral-700 hover:bg-neutral-50 shadow-sm font-medium text-sm transition-colors flex items-center justify-center gap-2"
-                >
-                  {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
-                  {t("providerCompleteProfile.saveDraft")}
-                </Button>
-              </>
-            )}
-          </div>
-        </form>
-
+              {/* Actions — design reference: right-aligned Cancel + Save */}
+              <div className="fixed bottom-0 left-0 right-0 bg-white border-t border-gray-200 px-6 py-3 z-20">
+                <div className="max-w-4xl mx-auto flex items-center justify-end gap-3">
+                {isPostApproval ? (
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={isSaving}
+                          onClick={() => navigate(-1)}
+                          className="h-12 rounded-xl border-neutral-300 bg-white px-6 text-neutral-900 font-medium sm:min-w-[120px]"
+                        >
+                          {t("providerCompleteProfile.cancel")}
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={isSaving}
+                          className="h-12 rounded-xl bg-[#003B95] hover:bg-[#002a6b] text-white px-8 font-semibold text-sm shadow-sm disabled:opacity-50 sm:min-w-[160px]"
+                        >
+                          {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                          {createMode
+                            ? "Create Provider"
+                            : t("providerCompleteProfile.saveProfileChanges")}
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          disabled={isSaving}
+                          onClick={handleSaveDraft}
+                          className="h-12 rounded-xl border-neutral-300 bg-white px-6 text-neutral-900 font-medium sm:min-w-[120px]"
+                        >
+                          {isSaving && <Loader2 className="w-4 h-4 animate-spin" />}
+                          {t("providerCompleteProfile.saveDraft")}
+                        </Button>
+                        <Button
+                          type="submit"
+                          disabled={isSubmitting}
+                          className="h-12 rounded-xl bg-[#003B95] hover:bg-[#002a6b] text-white px-8 font-semibold text-sm shadow-sm disabled:opacity-50 sm:min-w-[180px]"
+                        >
+                          {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
+                          {t("providerCompleteProfile.submitForReview")}
+                        </Button>
+                      </>
+                    )}
+                </div>
+              </div>
+              
+          </form>
+        </div>
         {/* Live region for draft save announcements */}
         <div aria-live="polite" className="sr-only" />
-      </main>
 
       {/* Confirm Modals */}
       {!isPostApproval && (

@@ -31,7 +31,7 @@ const phoneStyles = `
     border: 1px solid #e5e7eb;
     border-radius: 12px;
     height: 40px;
-    background: #f9fafb;
+    background: #ffffff;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     cursor: pointer;
     width: auto;
@@ -50,7 +50,7 @@ const phoneStyles = `
     border-radius: 12px;
     outline: none;
     font-size: 14px;
-    background: #f9fafb;
+    background: #ffffff;
     transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
     color: #1f2937;
   }
@@ -120,7 +120,7 @@ function CountrySelect({
           <SelectItem
             key={option.value}
             value={option.value}
-            className="py-2.5 rounded-lg focus:bg-primary-50"
+            className="py-2.5 rounded-lg focus:bg-primary-500/5"
           >
             <div className="flex items-center gap-2.5 w-full">
               <Icon

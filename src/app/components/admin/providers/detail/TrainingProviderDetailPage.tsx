@@ -4,7 +4,9 @@ import {
   type AssignedFacility,
   type FacilityRequest,
   type ProviderCoach,
+  type ProviderDocument,
 } from "./training-provider-detail-data";
+import type { VerificationStatus, PlatformStatus } from "../provider-data";
 import type React from "react";
 import { useState, useEffect, useCallback } from "react";
 import { useParams, useNavigate } from "react-router";
@@ -31,6 +33,8 @@ import {
   ClipboardList,
   CreditCard,
   Inbox,
+  Unlock,
+  Loader2,
 } from "lucide-react";
 import { cn } from "../../../ui/utils";
 import { Button } from "../../../ui/button";
@@ -44,8 +48,93 @@ import { FacilityRequests } from "./FacilityRequests";
 import { CoachManagement } from "./CoachManagement";
 import { AccountLockStatusCard } from "../components/AccountLockStatusCard";
 import { adminService } from "@/services/admin.service";
-import { BankDetailsCard } from "../components/BankDetailsCard";
+import {
+  BankDetailsCard,
+  generateMockBankDetails,
+  type BankAccountDetails,
+} from "../components/BankDetailsCard";
 import { ProviderAuditTrailTable } from "../components/ProviderAuditTrailTable";
+
+/** Map GET /admin/providers/:id response into the detail page model (API-first; mock fallback for demo IDs). */
+function mapApiProviderToDetail(api: Record<string, unknown>): TrainingProviderDetail {
+  const pid = String(api.id ?? "");
+  const cc = api.country_code ? String(api.country_code) : "";
+  const phone = api.phone != null ? String(api.phone) : "";
+  const mobileDisplay =
+    cc && phone && !phone.startsWith("+") ? `${cc}${phone}` : phone || cc || "";
+  const biz = String(api.business_name ?? api.club_name ?? "Training Provider");
+  const pst = String(api.profile_status ?? "draft").toLowerCase();
+  const verificationStatus: VerificationStatus =
+    pst === "approved" ? "Approved" : pst === "rejected" ? "Rejected" : "Pending";
+  const st = String(api.status ?? "active").toLowerCase();
+  const lockedByStatus = st === "locked";
+  const locked = Boolean(api.is_locked) || lockedByStatus;
+  const platformStatus: PlatformStatus = st === "active" ? "Active" : "Inactive";
+  const docsRaw = Array.isArray(api.official_documents)
+    ? (api.official_documents as Record<string, unknown>[])
+    : [];
+  const documents: ProviderDocument[] = docsRaw.map((d, i) => {
+    const fn = String(d.file_name ?? "document");
+    const lower = fn.toLowerCase();
+    const fileType: ProviderDocument["fileType"] = lower.endsWith(".pdf")
+      ? "pdf"
+      : /\.(png|jpg|jpeg|webp)$/.test(lower)
+        ? "image"
+        : "pdf";
+    return {
+      id: String(d.id ?? `doc-${i}`),
+      name: fn,
+      fileType,
+      size: "—",
+      sizeBytes: 0,
+      uploadedAt: d.created_at ? new Date(String(d.created_at)) : new Date(),
+      url: String(d.file_url ?? "#"),
+    };
+  });
+  let bankDetails: BankAccountDetails;
+  const bank = api.bank_account as Record<string, unknown> | null | undefined;
+  if (bank && typeof bank === "object") {
+    const bstatus = String(bank.status ?? "pending").toLowerCase();
+    const approvalStatus: BankAccountDetails["approvalStatus"] =
+      bstatus === "approved" ? "Approved" : bstatus === "rejected" ? "Rejected" : "Pending";
+    bankDetails = {
+      accountHolderName: String(bank.holder_name ?? "—"),
+      bankName: String(bank.bank_name ?? "—"),
+      accountNumber: String(bank.account_number_masked ?? "****"),
+      iban: String(bank.iban_masked ?? "—"),
+      swiftCode: undefined,
+      branch: "—",
+      approvalStatus,
+    };
+  } else {
+    bankDetails = generateMockBankDetails(pid, biz);
+  }
+  return {
+    id: pid,
+    clubName: biz,
+    firstName: String(api.first_name ?? ""),
+    lastName: String(api.last_name ?? ""),
+    email: String(api.email ?? ""),
+    mobile: mobileDisplay,
+    dateOfIncorporation: api.date_of_incorporation
+      ? new Date(String(api.date_of_incorporation))
+      : new Date(),
+    landline: api.landline ? String(api.landline) : undefined,
+    profilePhotoUrl: (api.business_logo_url as string) || undefined,
+    providerType: "Training Provider",
+    verificationStatus,
+    accountStatus: locked ? "Locked" : "Unlocked",
+    platformStatus,
+    createdAt: api.created_at ? new Date(String(api.created_at)) : new Date(),
+    lockedAt: api.locked_at ? new Date(String(api.locked_at)) : undefined,
+    lockedBy: undefined,
+    documents,
+    assignedFacilities: [],
+    facilityRequests: [],
+    coaches: [],
+    bankDetails,
+  };
+}
 
 // ─── Verification badge ──────────────────────────────────────
 
@@ -272,6 +361,7 @@ export function TrainingProviderDetailPage() {
   // Lightbox state
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
+  const [unlockSubmitting, setUnlockSubmitting] = useState(false);
 
   // Fetch provider from API
   useEffect(() => {
@@ -309,7 +399,15 @@ export function TrainingProviderDetailPage() {
             assignedFacilities: [],
             facilityRequests: [],
             coaches: [],
-            bankDetails: { accountHolderName: '', bankName: '', iban: '', swiftCode: '', accountNumber: '', branchName: '', status: 'Not Submitted' },
+            bankDetails: {
+              accountHolderName: '',
+              bankName: '',
+              iban: '',
+              swiftCode: '',
+              accountNumber: '',
+              branch: '',
+              approvalStatus: 'Pending',
+            },
           };
           setProvider(mapped);
         }
@@ -397,19 +495,28 @@ export function TrainingProviderDetailPage() {
     setLightboxOpen(true);
   };
 
-  // ── Unlock handler ───────────────────────────
+  // ── Unlock handler (Account tab card + header — same as player detail) ──
   const handleUnlock = async () => {
-    if (!provider) return;
-    await adminService.updateProvider(provider.id, { is_locked: false });
-    setProvider((prev) => {
-      if (!prev) return prev;
-      return {
-        ...prev,
-        accountStatus: "Unlocked",
-        lockedAt: undefined,
-        lockedBy: undefined,
-      };
-    });
+    if (!provider || unlockSubmitting) return;
+    setUnlockSubmitting(true);
+    try {
+      await adminService.updateProvider(provider.id, { is_locked: false });
+      setProvider((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          accountStatus: "Unlocked",
+          lockedAt: undefined,
+          lockedBy: undefined,
+          platformStatus: "Active",
+        };
+      });
+      toast.success("User has been unlocked successfully.");
+    } catch {
+      toast.error("Could not unlock account. Please try again.");
+    } finally {
+      setUnlockSubmitting(false);
+    }
   };
 
   // ── Loading / Not found ──────────────────────
@@ -460,7 +567,7 @@ export function TrainingProviderDetailPage() {
   return (
     <div className="max-w-5xl mx-auto space-y-6 pt-6">
       {/* ── Back Navigation ────────────────────────── */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-start gap-3">
         <Button
           variant="ghost"
           size="icon"
