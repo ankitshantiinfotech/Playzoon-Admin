@@ -1110,6 +1110,15 @@ export function PlayerManagementPage() {
               <RefreshCw className="h-3 w-3" />
               Change Status
             </Button>
+            <Button
+              size="sm"
+              variant="secondary"
+              className="h-7 text-xs gap-1.5 bg-red-500/80 text-white hover:bg-red-600 border-0"
+              onClick={() => setBulkDeleteSimpleOpen(true)}
+            >
+              <Trash2 className="h-3 w-3" />
+              Delete
+            </Button>
             <button
               onClick={clearSelection}
               className="p-1 rounded hover:bg-white/20 ml-1"

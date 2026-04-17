@@ -441,6 +441,7 @@ export function ServiceProvidersPage() {
         ).toLowerCase();
         const profileCompleted = p.profile_completed === true;
         if (approval === "approved") return true;
+        if (approval === "rejected") return true;
         if (approval === "pending") return profileCompleted;
         return false;
       });

@@ -38,8 +38,10 @@ import { adminService } from "@/services/admin.service";
 // ═══════════════════════════════════════════════════════════════
 
 interface ProviderAuditTrailTableProps {
-  /** Filter entries to a single provider. Omit for global view. */
+  /** Filter entries to a single entity (provider or player). Omit for global view. */
   providerId?: string;
+  /** Backend entity_type — defaults to "provider". Pass "player" for player audit. */
+  entityType?: string;
   /** Optional heading override */
   title?: string;
   /** Hide the stats row (useful in embedded contexts) */
@@ -105,6 +107,7 @@ function ValueCell({ value, isNA }: { value: string; isNA?: boolean }) {
 
 export function ProviderAuditTrailTable({
   providerId,
+  entityType = "provider",
   title,
   compact = false,
 }: ProviderAuditTrailTableProps) {
@@ -128,16 +131,20 @@ export function ProviderAuditTrailTable({
       setIsLoadingEntries(true);
       try {
         const params: Record<string, unknown> = {
-          entity_type: 'provider',
+          entity_type: entityType,
           page: 1,
-          limit: 200,
+          limit: 100,
           sort_order: 'desc',
         };
         if (providerId) params.entity_id = providerId;
         const res = await adminService.getAuditTrail(params);
         const data = res?.data || res;
-        const entries: ProviderAuditEntry[] = (data?.entries || []).map((e: Record<string, unknown>) => {
-          const changes = e.changes as Record<string, unknown> | null;
+        const rawEntries = data?.entries || [];
+        const entries: ProviderAuditEntry[] = rawEntries.map((e: Record<string, unknown>) => {
+          let changes = e.changes as Record<string, unknown> | null;
+          if (typeof changes === 'string') {
+            try { changes = JSON.parse(changes); } catch { changes = null; }
+          }
           return {
             id: String(e.id),
             providerId: String(e.entity_id || ''),
@@ -160,7 +167,7 @@ export function ProviderAuditTrailTable({
     };
     fetchAudit();
     return () => { cancelled = true; };
-  }, [providerId]);
+  }, [providerId, entityType]);
 
   // ── Filter values ─────────────────────────────────
   const uniqueEditors = useMemo(() => [...new Set(baseEntries.map(e => e.editedBy))].sort(), [baseEntries]);
