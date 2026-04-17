@@ -755,7 +755,6 @@ export function ServiceProvidersPage() {
         throw new Error("empty");
       }
       const headers = [
-        "ID",
         "Name",
         "Email",
         "Mobile",
@@ -765,10 +764,9 @@ export function ServiceProvidersPage() {
         "Created",
       ];
       const data = rows.map((p) => [
-        p.id,
         p.name,
         p.email,
-        p.mobile,
+        `\t${p.mobile}`,
         p.verificationStatus,
         p.accountStatus,
         p.platformStatus,
