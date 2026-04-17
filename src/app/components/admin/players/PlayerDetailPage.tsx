@@ -1336,8 +1336,7 @@ export function PlayerDetailPage() {
             <div className="flex items-center gap-3 flex-wrap">
               <h1 className="text-2xl text-[#111827] tracking-tight">
                 Player: {formData.firstName || player.firstName}{" "}
-                {formData.lastName || player.lastName}{" "}
-                <span className="text-[#9CA3AF]">&#183; #{player.id}</span>
+                {formData.lastName || player.lastName}
               </h1>
               <div className="flex items-center gap-2">
                 <StatusPill status={player.status} />
@@ -1790,9 +1789,6 @@ export function PlayerDetailPage() {
                         </Tooltip>
                       )}
                     </div>
-                    <p className="text-[11px] text-[#9CA3AF] font-mono">
-                      {player.id}
-                    </p>
                   </div>
                 </div>
 

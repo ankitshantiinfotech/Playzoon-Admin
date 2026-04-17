@@ -99,6 +99,8 @@ export interface TrainingProviderDetail {
   clubName: string;              // "Club/Institute Name"
   firstName: string;
   lastName: string;
+  /** Resolved label from master designation (GET /admin/providers/:id → designation.name_en) */
+  designationLabel?: string;
   email: string;
   mobile: string;
   dateOfIncorporation: Date;

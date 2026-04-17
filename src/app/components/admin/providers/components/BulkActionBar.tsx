@@ -2,7 +2,7 @@
 // Shows selection counter, bulk action dropdown, and confirmation
 // modals with progress bar for large batches.
 
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
 import {
   ChevronDown, CheckCircle2, Ban, Lock, Unlock,
   ToggleLeft, ToggleRight, Loader2, AlertTriangle,
@@ -123,6 +123,8 @@ interface BulkActionBarProps {
   onClearSelection: () => void;
   /** Is bulk processing in progress? */
   disabled?: boolean;
+  /** Hide specific actions (e.g. lock on Training Provider list — system locks via OTP) */
+  excludedBulkActions?: BulkActionType[];
 }
 
 // ═══════════════════════════════════════════════════════════════
@@ -135,8 +137,14 @@ export function BulkActionBar({
   onBulkAction,
   onClearSelection,
   disabled = false,
+  excludedBulkActions = [],
 }: BulkActionBarProps) {
   const count = selectedIds.size;
+
+  const visibleActions = useMemo(() => {
+    const ex = new Set(excludedBulkActions);
+    return BULK_ACTIONS.filter((a) => !ex.has(a.key));
+  }, [excludedBulkActions]);
 
   // ── Modal state ───────────────────────────────────
   const [pendingAction, setPendingAction] = useState<ActionConfig | null>(null);
@@ -303,12 +311,16 @@ export function BulkActionBar({
                 )}
               </Tooltip>
               <DropdownMenuContent align="end" className="w-48">
-                {BULK_ACTIONS.map((action, i) => {
+                {visibleActions.map((action, i) => {
                   const Icon = action.icon;
+                  const prev = i > 0 ? visibleActions[i - 1] : null;
+                  const showSep =
+                    action.key === "lock" ||
+                    action.key === "activate" ||
+                    (action.key === "unlock" && prev?.key !== "lock");
                   return (
                     <div key={action.key}>
-                      {i === 2 && <DropdownMenuSeparator />}
-                      {i === 4 && <DropdownMenuSeparator />}
+                      {showSep && <DropdownMenuSeparator />}
                       <DropdownMenuItem
                         onClick={() => handleActionSelect(action)}
                         className={cn("gap-2 text-xs cursor-pointer", action.color)}
