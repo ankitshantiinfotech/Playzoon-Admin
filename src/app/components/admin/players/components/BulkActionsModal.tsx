@@ -84,13 +84,10 @@ export function BulkActionsModal({ open, onOpenChange, selectedCount, preselecte
 
     if (actionType === "change_status") {
       if (!selectedStatus) e.selectedStatus = "Please select a status.";
-      if ((selectedStatus === "Inactive" || selectedStatus === "Locked") && !reason.trim()) {
-        e.reason = "Reason is required for Inactive/Locked status.";
+      if (selectedStatus === "Inactive" && !reason.trim()) {
+        e.reason = "Reason is required for Inactive status.";
       }
       if (reason.length > 500) e.reason = "Reason must be 500 characters or less.";
-      if (selectedStatus === "Locked" && lockUntil && isBefore(lockUntil, startOfToday())) {
-        e.lockUntil = "Lock date must be in the future.";
-      }
     }
 
     if (actionType === "send_notification") {
@@ -129,7 +126,7 @@ export function BulkActionsModal({ open, onOpenChange, selectedCount, preselecte
     onOpenChange(false);
   };
 
-  const needsReason = selectedStatus === "Inactive" || selectedStatus === "Locked";
+  const needsReason = selectedStatus === "Inactive";
 
   return (
     <Dialog open={open} onOpenChange={(o) => { if (!o) resetForm(); onOpenChange(o); }}>
@@ -137,29 +134,11 @@ export function BulkActionsModal({ open, onOpenChange, selectedCount, preselecte
         <DialogHeader>
           <DialogTitle>Bulk Action — {selectedCount} Player{selectedCount !== 1 && "s"}</DialogTitle>
           <DialogDescription>
-            Choose an action to apply to the selected players.
+            Change the status of the selected players.
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-5 py-2">
-          {/* Action Type */}
-          <div className="space-y-3">
-            <Label>Action Type</Label>
-            <RadioGroup value={actionType} onValueChange={(v) => { setActionType(v as ActionType); setErrors({}); }}>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="change_status" id="bulk-cs" />
-                <Label htmlFor="bulk-cs" className="cursor-pointer text-sm">Change Status</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="send_notification" id="bulk-sn" />
-                <Label htmlFor="bulk-sn" className="cursor-pointer text-sm">Send Notification</Label>
-              </div>
-              <div className="flex items-center gap-2">
-                <RadioGroupItem value="delete" id="bulk-del" />
-                <Label htmlFor="bulk-del" className="cursor-pointer text-sm text-red-600">Delete Players</Label>
-              </div>
-            </RadioGroup>
-          </div>
 
           {/* ── Change Status Fields ─────────────────────── */}
           {actionType === "change_status" && (
@@ -173,7 +152,7 @@ export function BulkActionsModal({ open, onOpenChange, selectedCount, preselecte
                   <SelectContent>
                     <SelectItem value="Active">Active</SelectItem>
                     <SelectItem value="Inactive">Inactive</SelectItem>
-                    <SelectItem value="Locked">Locked</SelectItem>
+                    <SelectItem value="Unlocked">Unlocked</SelectItem>
                   </SelectContent>
                 </Select>
                 {errors.selectedStatus && <p className="text-xs text-red-500">{errors.selectedStatus}</p>}
@@ -197,29 +176,6 @@ export function BulkActionsModal({ open, onOpenChange, selectedCount, preselecte
                 </div>
               )}
 
-              {selectedStatus === "Locked" && (
-                <div className="space-y-1.5">
-                  <Label>Lock Until</Label>
-                  <Popover>
-                    <PopoverTrigger asChild>
-                      <Button variant="outline" className={cn("w-full justify-start gap-2 text-sm", !lockUntil && "text-muted-foreground", errors.lockUntil && "border-red-400")}>
-                        <CalendarIcon className="h-4 w-4" />
-                        {lockUntil ? format(lockUntil, "MMM d, yyyy") : "Select date"}
-                      </Button>
-                    </PopoverTrigger>
-                    <PopoverContent className="w-auto p-0" align="start">
-                      <Calendar mode="single" selected={lockUntil} onSelect={setLockUntil} initialFocus disabled={(d) => isBefore(d, startOfToday())} />
-                    </PopoverContent>
-                  </Popover>
-                  {errors.lockUntil && <p className="text-xs text-red-500">{errors.lockUntil}</p>}
-                </div>
-              )}
-
-              <div className="flex items-center gap-2">
-                <Checkbox id="bulk-notify" checked={notifyPlayer} onCheckedChange={(c) => setNotifyPlayer(!!c)} />
-                <Label htmlFor="bulk-notify" className="text-sm cursor-pointer">Notify affected players via email</Label>
-              </div>
-
               {selectedCount > 50 && (
                 <div className="flex items-start gap-2 bg-amber-50 border border-amber-200 rounded-lg p-3">
                   <AlertTriangle className="h-4 w-4 text-amber-500 shrink-0 mt-0.5" />
@@ -229,90 +185,15 @@ export function BulkActionsModal({ open, onOpenChange, selectedCount, preselecte
             </div>
           )}
 
-          {/* ── Send Notification Fields ─────────────────── */}
-          {actionType === "send_notification" && (
-            <div className="space-y-4 border-t pt-4">
-              <div className="space-y-1.5">
-                <Label htmlFor="bulk-subject">
-                  Subject <span className="text-red-500">*</span>
-                  <span className="text-[11px] text-gray-400 ml-2">{subject.length}/120</span>
-                </Label>
-                <Input
-                  id="bulk-subject"
-                  value={subject}
-                  onChange={(e) => setSubject(e.target.value)}
-                  placeholder="Notification subject line"
-                  className={cn(errors.subject && "border-red-400")}
-                />
-                {errors.subject && <p className="text-xs text-red-500">{errors.subject}</p>}
-              </div>
-
-              <div className="space-y-1.5">
-                <Label htmlFor="bulk-body">
-                  Message <span className="text-red-500">*</span>
-                  <span className="text-[11px] text-gray-400 ml-2">{body.length}/2000</span>
-                </Label>
-                <Textarea
-                  id="bulk-body"
-                  value={body}
-                  onChange={(e) => setBody(e.target.value)}
-                  placeholder="Write your notification message…"
-                  rows={5}
-                  className={cn(errors.body && "border-red-400")}
-                />
-                {errors.body && <p className="text-xs text-red-500">{errors.body}</p>}
-              </div>
-
-              <div className="flex items-center gap-2">
-                <Checkbox id="bulk-deps" checked={includeDependents} onCheckedChange={(c) => setIncludeDependents(!!c)} />
-                <Label htmlFor="bulk-deps" className="text-sm cursor-pointer">Also notify dependents (if applicable)</Label>
-              </div>
-            </div>
-          )}
-
-          {/* ── Delete Fields ────────────────────────────── */}
-          {actionType === "delete" && (
-            <div className="space-y-4 border-t pt-4">
-              <div className="flex items-start gap-3 bg-red-50 border border-red-200 rounded-xl p-4">
-                <Trash2 className="h-5 w-5 text-red-500 shrink-0 mt-0.5" />
-                <div>
-                  <p className="text-sm text-red-800 font-semibold">This action is irreversible.</p>
-                  <p className="text-xs text-red-700 mt-1">
-                    Are you sure you want to delete {selectedCount} selected player{selectedCount !== 1 ? "s" : ""}?
-                    All their data — bookings, dependents, addresses, and wallet balance — will be permanently removed.
-                  </p>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="del-confirm" className="text-sm">
-                  Type <span className="font-mono font-bold">DELETE</span> to confirm
-                </Label>
-                <Input
-                  id="del-confirm"
-                  value={deleteConfirm}
-                  onChange={(e) => setDeleteConfirm(e.target.value.toUpperCase())}
-                  placeholder="DELETE"
-                  className={cn("font-mono", errors.deleteConfirm && "border-red-400")}
-                />
-                {errors.deleteConfirm && <p className="text-xs text-red-500">{errors.deleteConfirm}</p>}
-              </div>
-            </div>
-          )}
         </div>
 
         <DialogFooter>
           <Button variant="outline" onClick={() => { resetForm(); onOpenChange(false); }}>Cancel</Button>
           <Button
             onClick={handleSubmit}
-            className={cn(
-              actionType === "delete"
-                ? "bg-red-600 hover:bg-red-700"
-                : "bg-[#003B95] hover:bg-[#002a6b]"
-            )}
+            className="bg-[#003B95] hover:bg-[#002a6b]"
           >
-            {actionType === "change_status" ? "Update Status"
-              : actionType === "send_notification" ? "Send Notification"
-              : `Delete ${selectedCount} Player${selectedCount !== 1 ? "s" : ""}`}
+            Update Status
           </Button>
         </DialogFooter>
       </DialogContent>
