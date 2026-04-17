@@ -1278,6 +1278,9 @@ export function ServiceProvidersPage() {
             onBulkAction={handleBulkAction}
             onClearSelection={clearSelection}
             disabled={bulkProcessing}
+            excludedBulkActions={
+              activeTab === "Training Provider" ? (["lock"] as BulkActionType[]) : []
+            }
           />
         )}
 

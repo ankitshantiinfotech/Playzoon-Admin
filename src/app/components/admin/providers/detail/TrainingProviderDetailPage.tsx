@@ -35,6 +35,7 @@ import {
   Inbox,
   Unlock,
   Loader2,
+  Briefcase,
 } from "lucide-react";
 import { cn } from "../../../ui/utils";
 import { Button } from "../../../ui/button";
@@ -114,6 +115,11 @@ function mapApiProviderToDetail(api: Record<string, unknown>): TrainingProviderD
     clubName: biz,
     firstName: String(api.first_name ?? ""),
     lastName: String(api.last_name ?? ""),
+    designationLabel: (() => {
+      const d = api.designation as { name_en?: string } | null | undefined;
+      if (d && typeof d === "object" && d.name_en) return String(d.name_en);
+      return "";
+    })(),
     email: String(api.email ?? ""),
     mobile: mobileDisplay,
     dateOfIncorporation: api.date_of_incorporation
@@ -378,6 +384,11 @@ export function TrainingProviderDetailPage() {
             clubName: String(p.business_name || p.club_name || ''),
             firstName: String(p.first_name || ''),
             lastName: String(p.last_name || ''),
+            designationLabel: (() => {
+              const d = p.designation as { name_en?: string } | null | undefined;
+              if (d && typeof d === 'object' && d.name_en) return String(d.name_en);
+              return '';
+            })(),
             email: String(p.email || ''),
             mobile: p.country_code ? `${p.country_code}${p.mobile || p.phone || ''}` : String(p.mobile || p.phone || ''),
             dateOfIncorporation: p.date_of_incorporation ? new Date(String(p.date_of_incorporation)) : new Date(),
@@ -691,6 +702,11 @@ export function TrainingProviderDetailPage() {
                 value={provider.mobile}
                 href={`tel:${provider.mobile}`}
                 type="phone"
+              />
+              <ProfileField
+                icon={Briefcase}
+                label="Designation / Job Title"
+                value={provider.designationLabel?.trim() || "—"}
               />
               <ProfileField
                 icon={Calendar}

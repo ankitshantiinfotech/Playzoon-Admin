@@ -1201,8 +1201,7 @@ export function PlayerManagementPage() {
                   <SkeletonRow />
                 </>
               ) : paged.length > 0 ? (
-                paged.map((player, rowIndex) => {
-                  const serialNumber = (page - 1) * pageSize + rowIndex + 1;
+                paged.map((player) => {
                   const isSelected = selectedIds.has(player.id);
                   return (
                     <TableRow
@@ -1234,14 +1233,8 @@ export function PlayerManagementPage() {
                             </AvatarFallback>
                           </Avatar>
                           <div className="min-w-0">
-                            <button
-                              onClick={() => navigate(`/players/${player.id}`)}
-                              className="text-sm text-[#111827] truncate hover:text-[#003B95] hover:underline text-left cursor-pointer"
-                            >
+                            <p className="text-sm text-[#111827] truncate">
                               {player.firstName} {player.lastName}
-                            </button>
-                            <p className="text-[10px] text-[#9CA3AF] font-mono">
-                              #{serialNumber}
                             </p>
                           </div>
                         </div>

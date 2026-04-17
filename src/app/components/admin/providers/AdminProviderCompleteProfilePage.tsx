@@ -189,6 +189,29 @@ const PROVIDER_PHONE_REGEX = /^\+[1-9]\d{6,14}$/;
 const DESIGNATION_UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Normalize + read designation id from GET /admin/providers/:id (nested object, Sequelize keys, or designation_id). */
+function extractDesignationIdFromProfilePayload(
+  p: Record<string, unknown>,
+): string {
+  const top = p.designation_id;
+  if (top != null && String(top).trim() !== "") {
+    return String(top).trim().toLowerCase();
+  }
+  const loose = p.designation;
+  if (typeof loose === "string" && DESIGNATION_UUID_REGEX.test(loose.trim())) {
+    return loose.trim().toLowerCase();
+  }
+  const nest = (p.designation ?? p.Designation) as unknown;
+  if (nest != null && typeof nest === "object" && !Array.isArray(nest)) {
+    const o = nest as Record<string, unknown>;
+    const id = o.id ?? o.uuid;
+    if (id != null && String(id).trim() !== "") {
+      return String(id).trim().toLowerCase();
+    }
+  }
+  return "";
+}
+
 /** Maps Joi `field` paths from PUT /profile/provider to local form keys for inline errors */
 const PROVIDER_API_FIELD_TO_FORM: Record<string, string> = {
   first_name: "firstName",
@@ -1055,9 +1078,7 @@ export function AdminProviderCompleteProfilePage({
       contactEmail: pendingVerifyEmail
         ? prev.contactEmail
         : String(p.email || prev.contactEmail),
-      designation: typeof p.designation === "object" && p.designation
-        ? String((p.designation as Record<string, unknown>).id || "")
-        : String(p.designation_id || p.designation || ""),
+      designation: extractDesignationIdFromProfilePayload(p) || prev.designation,
       contactMobile: contactMobileFromProfilePayload(p) || prev.contactMobile,
       landline: String(p.landline || ""),
       dateOfIncorporation: p.date_of_incorporation
@@ -1122,15 +1143,54 @@ export function AdminProviderCompleteProfilePage({
   const [designations, setDesignations] = useState<{ id: string; name_en: string; name_ar: string }[]>([]);
   useEffect(() => {
     api.get("/config/designations").then((res) => {
-      // Admin API client keeps envelope shape: { success, data: {...} }
+      // Envelope: { success, data: { designations }, message } — ids normalized for Radix Select matching
       const body = res.data as {
         designations?: unknown;
         data?: { designations?: unknown };
       };
-      const list = body?.designations ?? body?.data?.designations ?? [];
-      if (Array.isArray(list)) setDesignations(list as { id: string; name_en: string; name_ar: string }[]);
+      const list = body?.data?.designations ?? body?.designations ?? [];
+      if (Array.isArray(list)) {
+        setDesignations(
+          (list as { id: string; name_en: string; name_ar: string }[]).map(
+            (d) => ({
+              ...d,
+              id: String(d.id).toLowerCase(),
+            }),
+          ),
+        );
+      }
     }).catch(() => {});
   }, []);
+
+  /** Ensure Radix Select has a matching item (catalog may load after profile; API may include names not yet in list). */
+  const designationSelectOptions = useMemo(() => {
+    const id = form.designation?.trim().toLowerCase();
+    if (!id) return designations;
+    if (designations.some((d) => String(d.id).toLowerCase() === id)) {
+      return designations;
+    }
+    const prof = profile as Record<string, unknown> | null;
+    const nest = prof?.designation ?? prof?.Designation;
+    if (
+      nest &&
+      typeof nest === "object" &&
+      !Array.isArray(nest) &&
+      String((nest as Record<string, unknown>).id ?? "")
+        .trim()
+        .toLowerCase() === id
+    ) {
+      const o = nest as Record<string, unknown>;
+      return [
+        ...designations,
+        {
+          id,
+          name_en: String(o.name_en ?? id),
+          name_ar: String(o.name_ar ?? ""),
+        },
+      ];
+    }
+    return designations;
+  }, [designations, form.designation, profile]);
 
   const [errors, setErrors] = useState<FieldErrors>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -1742,9 +1802,17 @@ export function AdminProviderCompleteProfilePage({
           Designation / Job Title <span className="text-red-500">*</span>
         </Label>
         <Select
-          value={form.designation ? String(form.designation) : DESIGNATION_SELECT_EMPTY}
+          key={`designation-select-${designations.length}-${form.designation?.trim().toLowerCase() || "none"}`}
+          value={
+            form.designation
+              ? String(form.designation).trim().toLowerCase()
+              : DESIGNATION_SELECT_EMPTY
+          }
           onValueChange={(v) =>
-            updateField("designation", v === DESIGNATION_SELECT_EMPTY ? "" : v)
+            updateField(
+              "designation",
+              v === DESIGNATION_SELECT_EMPTY ? "" : v.toLowerCase(),
+            )
           }
         >
           <SelectTrigger
@@ -1760,8 +1828,8 @@ export function AdminProviderCompleteProfilePage({
             <SelectItem value={DESIGNATION_SELECT_EMPTY}>
               {t("providerCompleteProfile.designationPlaceholder")}
             </SelectItem>
-            {designations.map((d) => (
-              <SelectItem key={d.id} value={String(d.id)}>
+            {designationSelectOptions.map((d) => (
+              <SelectItem key={d.id} value={String(d.id).toLowerCase()}>
                 {lang === "ar" ? d.name_ar : d.name_en}
               </SelectItem>
             ))}
@@ -1988,7 +2056,7 @@ export function AdminProviderCompleteProfilePage({
             size="icon"
             className="h-10 w-9 shrink-0"
             onClick={() => {
-              if (isPostApproval) navigate(-1);
+              if (isPostApproval) navigate("/providers?tab=training");
               else navigate("/providers");
             }}
             aria-label="Go back"
@@ -2103,7 +2171,7 @@ export function AdminProviderCompleteProfilePage({
                           type="button"
                           variant="outline"
                           disabled={isSaving}
-                          onClick={() => navigate(-1)}
+                          onClick={() => navigate("/providers?tab=training")}
                           className="h-12 rounded-xl border-neutral-300 bg-white px-6 text-neutral-900 font-medium sm:min-w-[120px]"
                         >
                           {t("providerCompleteProfile.cancel")}
