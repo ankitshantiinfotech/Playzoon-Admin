@@ -32,7 +32,6 @@ export interface AppliedFilters {
   lockStatuses: LockStatus[];
   createdFrom: Date | undefined;
   createdTo: Date | undefined;
-  hasDependents: boolean;
 }
 
 export const EMPTY_FILTERS: AppliedFilters = {
@@ -42,7 +41,6 @@ export const EMPTY_FILTERS: AppliedFilters = {
   lockStatuses: [],
   createdFrom: undefined,
   createdTo: undefined,
-  hasDependents: false,
 };
 
 export interface PlayerAuditEvent {

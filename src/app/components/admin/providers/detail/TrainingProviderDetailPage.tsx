@@ -330,12 +330,12 @@ const PROVIDER_DETAIL_TABS: {
   label: string;
   icon: React.ElementType;
 }[] = [
-  { key: "profile", label: "Profile Information", icon: User },
+  { key: "profile", label: "Profile", icon: User },
   { key: "documents", label: "Documents", icon: FileText },
-  { key: "account", label: "Account & Verification", icon: ShieldCheck },
-  { key: "bank", label: "Bank Details", icon: CreditCard },
-  { key: "facilities", label: "Assigned Facilities", icon: Building2 },
-  { key: "coaches", label: "Coach Profiles", icon: Users },
+  { key: "account", label: "Verification", icon: ShieldCheck },
+  { key: "bank", label: "Bank", icon: CreditCard },
+  { key: "facilities", label: "Facilities", icon: Building2 },
+  { key: "coaches", label: "Coaches", icon: Users },
   { key: "audit", label: "Audit Trail", icon: ClipboardList },
 ];
 
@@ -363,33 +363,63 @@ export function TrainingProviderDetailPage() {
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [unlockSubmitting, setUnlockSubmitting] = useState(false);
 
+  // Fetch provider from API
   useEffect(() => {
     if (!id) return;
     let cancelled = false;
-    setLoading(true);
-    (async () => {
+    const fetchProvider = async () => {
+      setLoading(true);
       try {
-        const raw = await adminService.getProvider(id);
-        const api =
-          (raw as { data?: Record<string, unknown> })?.data ??
-          (raw as Record<string, unknown>);
-        if (!cancelled && api && typeof api === "object" && api.id) {
-          setProvider(mapApiProviderToDetail(api as Record<string, unknown>));
-          setLoading(false);
-          return;
+        const res = await adminService.getProvider(id);
+        const p = res?.data || res;
+        if (!cancelled && p) {
+          const mapped: TrainingProviderDetail = {
+            id: String(p.id),
+            clubName: String(p.business_name || p.club_name || ''),
+            firstName: String(p.first_name || ''),
+            lastName: String(p.last_name || ''),
+            email: String(p.email || ''),
+            mobile: p.country_code ? `${p.country_code}${p.mobile || p.phone || ''}` : String(p.mobile || p.phone || ''),
+            dateOfIncorporation: p.date_of_incorporation ? new Date(String(p.date_of_incorporation)) : new Date(),
+            landline: p.landline || undefined,
+            profilePhotoUrl: p.profile_photo_url || undefined,
+            providerType: 'Training Provider',
+            verificationStatus: (() => {
+              const s = String(p.profile_status || p.provider_approval_status || 'pending').toLowerCase();
+              if (s === 'approved') return 'Approved' as const;
+              if (s === 'rejected') return 'Rejected' as const;
+              return 'Pending' as const;
+            })(),
+            accountStatus: p.is_locked ? 'Locked' as const : 'Unlocked' as const,
+            platformStatus: String(p.status) === 'active' ? 'Active' as const : 'Inactive' as const,
+            createdAt: new Date(String(p.created_at || Date.now())),
+            lockedAt: p.locked_at ? new Date(String(p.locked_at)) : undefined,
+            lockedBy: p.locked_by || undefined,
+            documents: [],
+            assignedFacilities: [],
+            facilityRequests: [],
+            coaches: [],
+            bankDetails: {
+              accountHolderName: '',
+              bankName: '',
+              iban: '',
+              swiftCode: '',
+              accountNumber: '',
+              branch: '',
+              approvalStatus: 'Pending',
+            },
+          };
+          setProvider(mapped);
         }
-      } catch {
-        /* fallback mock for demo IDs */
+      } catch (err) {
+        console.error('Failed to load provider:', err);
+        toast.error('Failed to load provider details.');
+      } finally {
+        if (!cancelled) setLoading(false);
       }
-      if (!cancelled) {
-        const mock = getTrainingProviderDetail(id);
-        setProvider(mock);
-      }
-      if (!cancelled) setLoading(false);
-    })();
-    return () => {
-      cancelled = true;
     };
+    fetchProvider();
+    return () => { cancelled = true; };
   }, [id]);
 
   // ── Facility handlers ────────────────────────
@@ -535,7 +565,7 @@ export function TrainingProviderDetailPage() {
     : PROVIDER_DETAIL_TABS;
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6">
+    <div className="max-w-5xl mx-auto space-y-6 pt-6">
       {/* ── Back Navigation ────────────────────────── */}
       <div className="flex items-start gap-3">
         <Button
@@ -547,58 +577,38 @@ export function TrainingProviderDetailPage() {
         >
           <ArrowLeft className="h-4 w-4" />
         </Button>
-        <div className="min-w-0 flex-1 flex flex-col sm:flex-row sm:items-start sm:justify-between gap-3">
-          <div>
-            <div className="flex items-center gap-2 flex-wrap">
-              <Tooltip>
-                <TooltipTrigger asChild>
-                  <h1 className="text-xl text-[#111827] tracking-tight truncate max-w-lg">
-                    {provider.clubName}
-                  </h1>
-                </TooltipTrigger>
-                {provider.clubName.length > 50 && (
-                  <TooltipContent side="bottom" className="max-w-sm">
-                    {provider.clubName}
-                  </TooltipContent>
-                )}
-              </Tooltip>
-              <VerificationBadge status={provider.verificationStatus} />
-              <Badge
-                variant="outline"
-                className="text-[10px] text-gray-500 border-gray-200"
-              >
-                {provider.id}
-              </Badge>
-            </div>
-            <p className="text-xs text-gray-400 mt-0.5">
-              Training Provider &middot; Registered{" "}
-              {format(provider.createdAt, "dd MMM yyyy")}
-            </p>
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            {(() => {
+              const displayName = provider.clubName || `${provider.firstName} ${provider.lastName}`.trim() || 'Provider';
+              return (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <h1 className="text-xl text-[#111827] tracking-tight truncate max-w-lg">
+                      {displayName}
+                    </h1>
+                  </TooltipTrigger>
+                  {displayName.length > 50 && (
+                    <TooltipContent side="bottom" className="max-w-sm">
+                      {displayName}
+                    </TooltipContent>
+                  )}
+                </Tooltip>
+              );
+            })()}
+            <VerificationBadge status={provider.verificationStatus} />
           </div>
-          {isLocked && (
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9 text-xs border-red-200 text-red-700 hover:bg-red-50 shrink-0"
-              disabled={unlockSubmitting}
-              onClick={handleUnlock}
-            >
-              {unlockSubmitting ? (
-                <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" />
-              ) : (
-                <Unlock className="h-3.5 w-3.5 mr-1" />
-              )}
-              Unlock account
-            </Button>
-          )}
+          <p className="text-xs text-gray-400 mt-0.5">
+            Training Provider &middot; Registered{" "}
+            {format(provider.createdAt, "dd MMM yyyy")}
+          </p>
         </div>
       </div>
 
       {/* ── Tab Bar (SCR-ADM-007) ────────────────────── */}
       <div className="border-b border-gray-200 overflow-x-auto">
         <nav
-          className="-mb-px flex space-x-6 min-w-max"
+          className="-mb-px flex space-x-4"
           aria-label="Provider detail tabs"
         >
           {visibleTabs.map((tab) => {

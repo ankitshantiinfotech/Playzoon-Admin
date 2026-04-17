@@ -30,11 +30,8 @@ import {
   type AuditActionType,
   ACTION_TYPE_STYLES,
   ALL_ACTION_TYPES,
-  MOCK_PROVIDER_AUDIT,
-  getProviderAuditEntries,
-  getUniqueEditors,
-  getUniqueFieldNames,
 } from "./provider-audit-data";
+import { adminService } from "@/services/admin.service";
 
 // ═══════════════════════════════════════════════════════════════
 // Props
@@ -111,15 +108,63 @@ export function ProviderAuditTrailTable({
   title,
   compact = false,
 }: ProviderAuditTrailTableProps) {
-  // ── Base data ─────────────────────────────────────
-  const baseEntries = useMemo(() => {
-    if (providerId) return getProviderAuditEntries(providerId);
-    return [...MOCK_PROVIDER_AUDIT].sort((a, b) => b.dateTime.getTime() - a.dateTime.getTime());
+  // ── Base data from API ────────────────────────────
+  const [baseEntries, setBaseEntries] = useState<ProviderAuditEntry[]>([]);
+  const [isLoadingEntries, setIsLoadingEntries] = useState(false);
+
+  const mapActionType = (action: string): AuditActionType => {
+    const a = action.toLowerCase();
+    if (a.includes('approve') || a.includes('approval')) return 'Approval';
+    if (a.includes('reject')) return 'Rejection';
+    if (a.includes('create') || a.includes('onboard')) return 'Create';
+    if (a.includes('delete') || a.includes('remove')) return 'Delete';
+    if (a.includes('status') || a.includes('lock') || a.includes('unlock') || a.includes('activate') || a.includes('deactivate')) return 'Status Change';
+    return 'Update';
+  };
+
+  useEffect(() => {
+    let cancelled = false;
+    const fetchAudit = async () => {
+      setIsLoadingEntries(true);
+      try {
+        const params: Record<string, unknown> = {
+          entity_type: 'provider',
+          page: 1,
+          limit: 200,
+          sort_order: 'desc',
+        };
+        if (providerId) params.entity_id = providerId;
+        const res = await adminService.getAuditTrail(params);
+        const data = res?.data || res;
+        const entries: ProviderAuditEntry[] = (data?.entries || []).map((e: Record<string, unknown>) => {
+          const changes = e.changes as Record<string, unknown> | null;
+          return {
+            id: String(e.id),
+            providerId: String(e.entity_id || ''),
+            providerName: '',
+            editedBy: String(e.actor_name || 'System'),
+            fieldName: changes?.field ? String(changes.field) : String(e.description || e.action || ''),
+            oldValue: changes?.oldValue != null ? String(changes.oldValue) : 'N/A',
+            newValue: changes?.newValue != null ? String(changes.newValue) : String(e.description || ''),
+            dateTime: new Date(String(e.created_at)),
+            actionType: mapActionType(String(e.action || '')),
+          };
+        });
+        if (!cancelled) setBaseEntries(entries);
+      } catch (err) {
+        console.error('Failed to fetch audit trail:', err);
+        if (!cancelled) setBaseEntries([]);
+      } finally {
+        if (!cancelled) setIsLoadingEntries(false);
+      }
+    };
+    fetchAudit();
+    return () => { cancelled = true; };
   }, [providerId]);
 
   // ── Filter values ─────────────────────────────────
-  const uniqueEditors = useMemo(() => getUniqueEditors(baseEntries), [baseEntries]);
-  const uniqueFields = useMemo(() => getUniqueFieldNames(baseEntries), [baseEntries]);
+  const uniqueEditors = useMemo(() => [...new Set(baseEntries.map(e => e.editedBy))].sort(), [baseEntries]);
+  const uniqueFields = useMemo(() => [...new Set(baseEntries.map(e => e.fieldName))].sort(), [baseEntries]);
 
   // ── Filter state ──────────────────────────────────
   const [searchInput, setSearchInput] = useState("");
@@ -297,165 +342,11 @@ export function ProviderAuditTrailTable({
 
       {/* ── Table card ────────────────────────────── */}
       <div className="bg-white border rounded-xl overflow-hidden">
-        {/* ── Filter bar ──────────────────────────── */}
-        <div className="px-4 py-3 border-b bg-gray-50/50 space-y-3">
-          <div className="flex flex-col sm:flex-row gap-3">
-            {/* Search */}
-            <div className="relative flex-1 max-w-sm">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-3.5 w-3.5 text-gray-400" />
-              <Input
-                value={searchInput}
-                onChange={e => setSearchInput(e.target.value)}
-                placeholder="Search entries…"
-                className="h-8 pl-9 pr-8 text-xs"
-              />
-              {searchInput && (
-                <button
-                  onClick={() => { setSearchInput(""); setDebouncedSearch(""); }}
-                  className="absolute right-2.5 top-1/2 -translate-y-1/2 p-0.5 rounded hover:bg-gray-200 text-gray-400"
-                >
-                  <X className="h-3 w-3" />
-                </button>
-              )}
-            </div>
-
-            {/* Filters toggle */}
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className={cn("h-8 gap-1.5 text-xs shrink-0", showFilters && "bg-gray-100")}
-              onClick={() => setShowFilters(v => !v)}
-            >
-              <Filter className="h-3 w-3" />
-              Filters
-              {activeCount > 0 && (
-                <Badge className="bg-[#003B95] text-white text-[9px] h-4 min-w-[16px] px-1 ml-0.5">
-                  {activeCount}
-                </Badge>
-              )}
-            </Button>
-
-            {/* Result count */}
-            <span className="text-xs text-gray-400 ml-auto self-center hidden sm:block">
-              {filtered.length} entr{filtered.length === 1 ? "y" : "ies"}
-              {activeCount > 0 && " (filtered)"}
-            </span>
-          </div>
-
-          {/* ── Expanded filter controls ──────────── */}
-          {showFilters && (
-            <div className="flex flex-wrap items-end gap-3 pt-2 border-t border-gray-200">
-              {/* User filter */}
-              <div className="space-y-1 min-w-[160px]">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider">Edited By</label>
-                <Select value={userFilter} onValueChange={v => { setUserFilter(v); setPage(1); }}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="All Users" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Users</SelectItem>
-                    {uniqueEditors.map(u => (
-                      <SelectItem key={u} value={u}>{u}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Field name filter */}
-              <div className="space-y-1 min-w-[160px]">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider">Field Name</label>
-                <Select value={fieldFilter} onValueChange={v => { setFieldFilter(v); setPage(1); }}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="All Fields" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Fields</SelectItem>
-                    {uniqueFields.map(f => (
-                      <SelectItem key={f} value={f}>{f}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Action type filter */}
-              <div className="space-y-1 min-w-[140px]">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider">Action Type</label>
-                <Select value={actionFilter} onValueChange={v => { setActionFilter(v); setPage(1); }}>
-                  <SelectTrigger className="h-8 text-xs">
-                    <SelectValue placeholder="All Types" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">All Types</SelectItem>
-                    {ALL_ACTION_TYPES.map(t => (
-                      <SelectItem key={t} value={t}>{t}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              {/* Date From */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider">From</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={cn("h-8 gap-1.5 text-xs min-w-[120px] justify-start", !dateFrom && "text-gray-400")}
-                    >
-                      <CalendarIcon className="h-3 w-3 shrink-0" />
-                      {dateFrom ? format(dateFrom, "dd/MM/yyyy") : "Start date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateFrom}
-                      onSelect={d => { setDateFrom(d); setPage(1); }}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Date To */}
-              <div className="space-y-1">
-                <label className="text-[10px] text-gray-400 uppercase tracking-wider">To</label>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className={cn("h-8 gap-1.5 text-xs min-w-[120px] justify-start", !dateTo && "text-gray-400")}
-                    >
-                      <CalendarIcon className="h-3 w-3 shrink-0" />
-                      {dateTo ? format(dateTo, "dd/MM/yyyy") : "End date"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={dateTo}
-                      onSelect={d => { setDateTo(d); setPage(1); }}
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-
-              {/* Clear All */}
-              {activeCount > 0 && (
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={clearAll}
-                  className="h-8 gap-1 text-xs text-red-500 hover:text-red-700 hover:bg-red-50"
-                >
-                  <RotateCcw className="h-3 w-3" />
-                  Clear All
-                </Button>
-              )}
-            </div>
-          )}
+        {/* ── Entry count bar ─────────────────────── */}
+        <div className="px-4 py-3 border-b bg-gray-50/50">
+          <span className="text-xs text-gray-500">
+            {filtered.length} entr{filtered.length === 1 ? "y" : "ies"}
+          </span>
         </div>
 
         {/* ── Desktop Data Table ──────────────────── */}

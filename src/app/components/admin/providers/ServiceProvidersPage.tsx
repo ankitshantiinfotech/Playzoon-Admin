@@ -10,6 +10,7 @@ import {
   ArrowDown,
   MessageCircle,
   Pencil,
+  Eye,
   Trash2,
   Lock,
   Unlock,
@@ -375,8 +376,8 @@ export function ServiceProvidersPage() {
       return {
         id: String(p.id),
         name: String(
-          p.business_name ||
-            `${p.first_name || ""} ${p.last_name || ""}`.trim() ||
+          `${p.first_name || ""} ${p.last_name || ""}`.trim() ||
+            p.business_name ||
             "Unknown",
         ),
         email: String(p.email || ""),
@@ -833,84 +834,28 @@ export function ServiceProvidersPage() {
       const delay = isLarge ? 80 : 400;
 
       try {
-        await adminService.bulkProviderAction({
-          action,
+        const apiAction = action === "reject" ? "reject_verification" : action;
+        const res = await adminService.bulkProviderAction({
+          action: apiAction,
           provider_ids: ids,
-          rejection_reason: rejectionReason,
+          reason: rejectionReason || undefined,
         });
-      } catch (err) {
-        console.error("Bulk action failed, applying optimistic update:", err);
-      }
 
-      for (let i = 0; i < ids.length; i++) {
-        const id = ids[i];
-        let shouldSkip = false;
+        const data = res.data || res;
+        processed = data.successful || 0;
+        skipped = (data.total_requested || ids.length) - (data.successful || 0) - (data.failed || 0);
+        const failedCount = data.failed || 0;
 
-        const p = providers.find((x) => x.id === id);
-        if (p) {
-          if (action === "approve" && p.verificationStatus === "Approved") {
-            shouldSkip = true;
-            skipReason = "already approved";
-          }
-          if (action === "reject" && p.verificationStatus === "Rejected") {
-            shouldSkip = true;
-            skipReason = "already rejected";
-          }
-          if (action === "lock" && p.accountStatus === "Locked") {
-            shouldSkip = true;
-            skipReason = "already locked";
-          }
-          if (action === "unlock" && p.accountStatus === "Unlocked") {
-            shouldSkip = true;
-            skipReason = "already unlocked";
-          }
-          if (action === "activate" && p.platformStatus === "Active") {
-            shouldSkip = true;
-            skipReason = "already active";
-          }
-          if (action === "deactivate" && p.platformStatus === "Inactive") {
-            shouldSkip = true;
-            skipReason = "already inactive";
-          }
+        if (processed > 0) {
+          // Re-fetch providers to reflect actual server state
+          fetchProviders();
         }
-
-        if (shouldSkip) {
-          skipped++;
-        } else {
-          setProviders((prev) =>
-            prev.map((p) => {
-              if (p.id !== id) return p;
-              switch (action) {
-                case "approve":
-                  return {
-                    ...p,
-                    verificationStatus: "Approved" as const,
-                    platformStatus: "Active" as const,
-                  };
-                case "reject":
-                  return {
-                    ...p,
-                    verificationStatus: "Rejected" as const,
-                    rejectionReason,
-                  };
-                case "lock":
-                  return { ...p, accountStatus: "Locked" as const };
-                case "unlock":
-                  return { ...p, accountStatus: "Unlocked" as const };
-                case "activate":
-                  return { ...p, platformStatus: "Active" as const };
-                case "deactivate":
-                  return { ...p, platformStatus: "Inactive" as const };
-                default:
-                  return p;
-              }
-            }),
-          );
-          processed++;
+        if (failedCount > 0) {
+          skipReason = `${failedCount} failed`;
         }
-
-        if (onProgress && (i % 5 === 0 || i === ids.length - 1))
-          onProgress(i + 1, ids.length);
+      } catch (err: any) {
+        console.error("Bulk action failed:", err);
+        skipReason = err.response?.data?.message || "Bulk action failed";
       }
 
       setBulkProcessing(false);
@@ -1518,11 +1463,16 @@ export function ServiceProvidersPage() {
                           </TableCell>
                           {/* Provider Name */}
                           <TableCell className="px-4">
-                            <TruncatedCell
-                              text={provider.name}
-                              maxLength={30}
-                              className="text-sm text-[#111827]"
-                            />
+                            <button
+                              onClick={() => navigate(`/providers/${provider.id}`)}
+                              className="text-sm text-[#003B95] hover:underline cursor-pointer text-left"
+                            >
+                              <TruncatedCell
+                                text={provider.name}
+                                maxLength={30}
+                                className="text-sm text-[#003B95]"
+                              />
+                            </button>
                           </TableCell>
 
                           {/* Provider Type (Onboarding tab only) */}
@@ -1693,6 +1643,22 @@ export function ServiceProvidersPage() {
                                     ? "Open Chat"
                                     : "Chat is disabled"}
                                 </TooltipContent>
+                              </Tooltip>
+
+                              {/* View Details */}
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-7 w-7"
+                                    onClick={() => navigate(`/providers/${provider.id}`)}
+                                    aria-label={`View details for ${provider.name}`}
+                                  >
+                                    <Eye className="h-3.5 w-3.5" />
+                                  </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>View Details</TooltipContent>
                               </Tooltip>
 
                               {/* Edit */}

@@ -327,29 +327,25 @@ export function PlayerManagementPage() {
   const [pageSize, setPageSize] = useState(10);
 
   const buildPlayerQuery = useCallback(
-    (pageNum: number, limitNum: number) => {
-      const selectedStatus = filters.statuses[0]?.toLowerCase();
-      const isLockChip = selectedStatus === "locked" || selectedStatus === "unlocked";
-      return {
-        page: pageNum,
-        limit: limitNum,
-        search: filters.search || undefined,
-        status: selectedStatus && !isLockChip ? selectedStatus : undefined,
-        sort_by:
-          sortField === "createdAt"
-            ? "created_at"
-            : sortField === "name"
-              ? "name"
-              : sortField === "email"
-                ? "email"
-                : "status",
-        sort_order: sortDir,
-        registered_from: filters.createdFrom ? format(filters.createdFrom, "yyyy-MM-dd") : undefined,
-        registered_to: filters.createdTo ? format(filters.createdTo, "yyyy-MM-dd") : undefined,
-        nationality: filters.nationalities[0] || undefined,
-        lock_status: isLockChip ? selectedStatus : (filters.lockStatuses[0]?.toLowerCase() || undefined),
-      };
-    },
+    (pageNum: number, limitNum: number) => ({
+      page: pageNum,
+      limit: limitNum,
+      search: filters.search || undefined,
+      status: filters.statuses[0]?.toLowerCase() || undefined,
+      sort_by:
+        sortField === "createdAt"
+          ? "created_at"
+          : sortField === "name"
+            ? "name"
+            : sortField === "email"
+              ? "email"
+              : "status",
+      sort_order: sortDir,
+      registered_from: filters.createdFrom ? format(filters.createdFrom, "yyyy-MM-dd") : undefined,
+      registered_to: filters.createdTo ? format(filters.createdTo, "yyyy-MM-dd") : undefined,
+      nationality: filters.nationalities[0] || undefined,
+      lock_status: filters.lockStatuses[0]?.toLowerCase() || undefined,
+    }),
     [filters, sortField, sortDir],
   );
 
@@ -495,8 +491,6 @@ export function PlayerManagementPage() {
         label: "Created To",
         value: format(filters.createdTo, "MMM d, yyyy"),
       });
-    if (filters.hasDependents)
-      c.push({ key: "hasDependents", label: "Has dependents", value: "" });
     return c;
   }, [filters]);
 
@@ -512,7 +506,6 @@ export function PlayerManagementPage() {
       if (key === "lockStatuses") next.lockStatuses = [];
       if (key === "createdFrom") next.createdFrom = undefined;
       if (key === "createdTo") next.createdTo = undefined;
-      if (key === "hasDependents") next.hasDependents = false;
       return next;
     });
     setFilterDraft((d) => {
@@ -522,7 +515,6 @@ export function PlayerManagementPage() {
       if (key === "lockStatuses") next.lockStatuses = [];
       if (key === "createdFrom") next.createdFrom = undefined;
       if (key === "createdTo") next.createdTo = undefined;
-      if (key === "hasDependents") next.hasDependents = false;
       return next;
     });
     setPage(1);
@@ -614,20 +606,13 @@ export function PlayerManagementPage() {
     const ids = Array.from(selectedIds);
     if (ids.length === 0) return;
 
-    let action = "";
-    if (result.type === "change_status") {
-      action =
-        result.newStatus?.toLowerCase() === "locked"
-          ? "lock"
-          : result.newStatus?.toLowerCase() === "active"
-            ? "activate"
-            : "deactivate";
-    } else if (result.type === "delete") {
-      action = "delete";
-    } else {
-      showBanner("info", "Feature coming soon.");
-      return;
-    }
+    const statusMap: Record<string, string> = {
+      active: "activate",
+      inactive: "deactivate",
+      unlocked: "unlock",
+    };
+    const action = statusMap[result.newStatus?.toLowerCase() || ""] || "";
+    if (!action) return;
 
     try {
       const res = await adminService.bulkPlayerAction({
@@ -722,34 +707,24 @@ export function PlayerManagementPage() {
         throw new Error("empty");
       }
       const headers = [
-        "ID",
-        "First name",
-        "Last name",
+        "Player",
         "Email",
-        "Phone",
+        "Mobile",
         "Gender",
         "Nationality",
         "Status",
-        "Dependents",
-        "Created",
-        "Last active",
-        "Wallet",
-        "Default country",
+        "Lock Status",
+        "Registration Date",
       ];
       const rows = data.map((p) => [
-        p.id,
-        p.firstName,
-        p.lastName,
+        `${p.firstName} ${p.lastName}`.trim(),
         p.email,
-        p.phone,
-        p.gender,
-        p.nationality,
+        `\t${p.phone}`,
+        p.gender || "-",
+        p.nationality || "-",
         p.status,
-        String(p.dependents),
+        p.status === "Locked" ? "Locked" : "Unlocked",
         format(p.createdAt, "yyyy-MM-dd HH:mm"),
-        format(p.lastActiveAt, "yyyy-MM-dd HH:mm"),
-        String(p.walletBalance),
-        p.defaultCountry,
       ]);
       await exportTable({
         format: fmt,
@@ -908,8 +883,6 @@ export function PlayerManagementPage() {
                       [
                         "Active",
                         "Inactive",
-                        "Locked",
-                        "Unlocked",
                       ] as PlayerStatus[]
                     ).map((s) => (
                       <button
@@ -920,11 +893,7 @@ export function PlayerManagementPage() {
                           filterDraft.statuses.includes(s)
                             ? s === "Active"
                               ? "bg-emerald-100 border-emerald-300 text-emerald-800"
-                              : s === "Locked"
-                                ? "bg-red-100 border-red-300 text-red-800"
-                                : s === "Unlocked"
-                                  ? "bg-blue-100 border-blue-300 text-blue-800"
-                                  : "bg-gray-200 border-gray-300 text-gray-800"
+                              : "bg-gray-200 border-gray-300 text-gray-800"
                             : "bg-white border-gray-200 text-gray-500 hover:border-gray-300",
                         )}
                       >
@@ -933,27 +902,8 @@ export function PlayerManagementPage() {
                     ))}
                   </div>
                   <p className="text-[11px] text-gray-400">
-                    Select one or more statuses.
+                    Select a status.
                   </p>
-                </div>
-
-                {/* Has dependents */}
-                <div className="space-y-1.5 flex items-end pb-1">
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="f-has-deps"
-                      checked={filterDraft.hasDependents}
-                      onCheckedChange={(c) =>
-                        setFilterDraft((d) => ({ ...d, hasDependents: !!c }))
-                      }
-                    />
-                    <Label
-                      htmlFor="f-has-deps"
-                      className="text-sm cursor-pointer"
-                    >
-                      Has Dependents
-                    </Label>
-                  </div>
                 </div>
 
                 {/* Nationality */}
@@ -978,29 +928,6 @@ export function PlayerManagementPage() {
                           {c.name_en}
                         </SelectItem>
                       ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-
-                {/* Lock Status */}
-                <div className="space-y-1.5">
-                  <Label>Lock Status</Label>
-                  <Select
-                    value={filterDraft.lockStatuses[0] || "all"}
-                    onValueChange={(v) =>
-                      setFilterDraft((d) => ({
-                        ...d,
-                        lockStatuses: v === "all" ? [] : [v as any],
-                      }))
-                    }
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="All Accounts" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">All Accounts</SelectItem>
-                      <SelectItem value="Locked">Locked Only</SelectItem>
-                      <SelectItem value="Unlocked">Unlocked Only</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -1076,6 +1003,29 @@ export function PlayerManagementPage() {
                       Must be on or after Created From.
                     </p>
                   )}
+                </div>
+
+                {/* Lock Status */}
+                <div className="space-y-1.5">
+                  <Label>Lock Status</Label>
+                  <Select
+                    value={filterDraft.lockStatuses[0] || "all"}
+                    onValueChange={(v) =>
+                      setFilterDraft((d) => ({
+                        ...d,
+                        lockStatuses: v === "all" ? [] : [v as any],
+                      }))
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="All Accounts" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">All Accounts</SelectItem>
+                      <SelectItem value="Locked">Locked Only</SelectItem>
+                      <SelectItem value="Unlocked">Unlocked Only</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
 
               </div>
@@ -1159,50 +1109,6 @@ export function PlayerManagementPage() {
             >
               <RefreshCw className="h-3 w-3" />
               Change Status
-            </Button>
-            {/* AC-PM-019: Bulk Deactivate — simple confirmation */}
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-7 text-xs gap-1.5 bg-amber-500/80 text-white hover:bg-amber-500 border-0"
-              onClick={() => setBulkDeactivateOpen(true)}
-            >
-              <UserX className="h-3 w-3" />
-              Deactivate
-            </Button>
-            {/* AC-PM-020: Bulk Delete — simple confirmation */}
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-7 text-xs gap-1.5 bg-red-500/80 text-white hover:bg-red-600 border-0"
-              onClick={() => setBulkDeleteSimpleOpen(true)}
-            >
-              <Trash2 className="h-3 w-3" />
-              Delete
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-7 text-xs gap-1.5 bg-white/20 text-white hover:bg-white/30 border-0"
-              onClick={() => {
-                setBulkPreselect("send_notification");
-                setBulkModalOpen(true);
-              }}
-            >
-              <Bell className="h-3 w-3" />
-              Notify
-            </Button>
-            <Button
-              size="sm"
-              variant="secondary"
-              className="h-7 text-xs gap-1.5 bg-white/20 text-white hover:bg-white/30 border-0"
-              onClick={() => {
-                setExportSource("selected");
-                setExportModalOpen(true);
-              }}
-            >
-              <Download className="h-3 w-3" />
-              Export
             </Button>
             <button
               onClick={clearSelection}
