@@ -70,13 +70,13 @@ const BULK_ACTIONS: ActionConfig[] = [
     key: "approve", label: "Approve", icon: CheckCircle2,
     color: "text-emerald-600", confirmTitle: "Approve",
     confirmVerb: "approve", isDanger: false,
-    skipCheck: (p) => p.verificationStatus === "Approved" ? "already approved" : null,
+    skipCheck: (p) => p.verificationStatus !== "Pending" ? `already ${p.verificationStatus.toLowerCase()}` : null,
   },
   {
     key: "reject", label: "Reject Verification", icon: Ban,
     color: "text-red-500", confirmTitle: "Reject",
     confirmVerb: "reject verification for", isDanger: true,
-    skipCheck: (p) => p.verificationStatus === "Rejected" ? "already rejected" : null,
+    skipCheck: (p) => p.verificationStatus !== "Pending" ? `already ${p.verificationStatus.toLowerCase()}` : null,
   },
   {
     key: "lock", label: "Lock", icon: Lock,
